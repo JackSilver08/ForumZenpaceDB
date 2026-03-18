@@ -1,50 +1,44 @@
 @model ForumZenpace.Models.LoginViewModel
 @{
-    ViewData["Title"] = "Đăng Nhập";
+    ViewData["Title"] = "Dang nhap";
 }
 
-<div class="glass-panel animated-entry" style="max-width: 480px; margin: 6rem auto; padding: 4rem; position: relative; overflow: hidden;">
-    @* Background Accents *@
-    <div style="position: absolute; top: -50px; left: -50px; width: 150px; height: 150px; background: var(--accent-blue); filter: blur(60px); opacity: 0.15; pointer-events: none;"></div>
-    <div style="position: absolute; bottom: -50px; right: -50px; width: 150px; height: 150px; background: var(--accent-pink); filter: blur(60px); opacity: 0.15; pointer-events: none;"></div>
-
-    <div style="position: relative; z-index: 1;">
-        <div style="text-align: center; margin-bottom: 3.5rem;">
-            <div style="width: 70px; height: 70px; margin: 0 auto 1.5rem; background: var(--primary-gradient); border-radius: 20px; display: flex; align-items: center; justify-content: center; transform: rotate(-5deg); box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);">
-                <i class="fa-solid fa-shield-halved" style="font-size: 2rem; color: #fff;"></i>
+<div class="auth-shell animated-entry">
+    <div class="surface auth-card">
+        <div class="auth-header">
+            <div class="auth-mark">
+                <i class="fa-solid fa-shield-halved"></i>
             </div>
-            <h2 style="font-size: 2.25rem; font-weight: 900; letter-spacing: -1.5px; margin-bottom: 0.5rem; color: #fff;">Hành trình mới</h2>
-            <p style="color: var(--text-secondary); font-size: 1rem; font-weight: 500;">Bước vào không gian thảo luận Zenpace</p>
+            <h1 class="auth-title">Dang nhap tai khoan</h1>
+            <p class="auth-subtitle">Tro lai khong gian thao luan voi giao dien gon hon va tap trung vao noi dung.</p>
         </div>
-        
-        <form asp-action="Login" method="post" style="display: flex; flex-direction: column; gap: 1.75rem;">
-            <div asp-validation-summary="ModelOnly" class="text-danger mb-2" style="font-size: 0.85rem; font-weight: 700; text-align: center;"></div>
-            
-            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-                <label asp-for="Username" style="font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px;">Danh tính của bạn</label>
-                <div style="position: relative;">
-                    <i class="fa-solid fa-user-astronaut" style="position: absolute; left: 1.25rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.9rem;"></i>
-                    <input asp-for="Username" class="form-control" placeholder="nhập tên tài khoản..." style="padding: 1.1rem 1.1rem 1.1rem 3rem; border-radius: 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);" />
+
+        <form asp-action="Login" method="post" class="auth-form">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-2 text-center"></div>
+
+            <div class="field">
+                <label asp-for="Username" class="field-label">Ten tai khoan</label>
+                <div class="input-icon">
+                    <i class="fa-solid fa-user"></i>
+                    <input asp-for="Username" class="form-control" placeholder="username" />
                 </div>
-                <span asp-validation-for="Username" class="text-danger" style="font-size: 0.75rem; font-weight: 600;"></span>
+                <span asp-validation-for="Username" class="text-danger"></span>
             </div>
-            
-            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-                <label asp-for="Password" style="font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px;">Mật mã bảo mật</label>
-                <div style="position: relative;">
-                    <i class="fa-solid fa-key" style="position: absolute; left: 1.25rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.9rem;"></i>
-                    <input asp-for="Password" class="form-control" type="password" placeholder="••••••••" style="padding: 1.1rem 1.1rem 1.1rem 3rem; border-radius: 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);" />
+
+            <div class="field">
+                <label asp-for="Password" class="field-label">Mat khau</label>
+                <div class="input-icon">
+                    <i class="fa-solid fa-lock"></i>
+                    <input asp-for="Password" class="form-control" type="password" placeholder="••••••••" />
                 </div>
-                <span asp-validation-for="Password" class="text-danger" style="font-size: 0.75rem; font-weight: 600;"></span>
+                <span asp-validation-for="Password" class="text-danger"></span>
             </div>
-            
-            <div style="margin-top: 1rem;">
-                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1.25rem; border-radius: 18px; font-weight: 900; font-size: 1.1rem; box-shadow: 0 15px 30px rgba(59, 130, 246, 0.3); letter-spacing: 0.5px;">Xác thực tài khoản</button>
-            </div>
-            
-            <div class="text-center" style="margin-top: 1rem; font-size: 0.95rem;">
-                <span style="color: var(--text-muted); font-weight: 500;">Bạn chưa có tài khoản?</span> 
-                <a asp-action="Register" style="color: var(--accent-blue); font-weight: 800; text-decoration: none; margin-left: 5px; transition: var(--transition-smooth);" onmouseover="this.style.color='var(--accent-pink)'" onmouseout="this.style.color='var(--accent-blue)'">Khởi tạo ngay</a>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Dang nhap</button>
+
+            <div class="auth-footer">
+                Chua co tai khoan?
+                <a asp-action="Register">Tao tai khoan moi</a>
             </div>
         </form>
     </div>

@@ -1,74 +1,64 @@
 @model IEnumerable<ForumZenpace.Models.Notification>
 @{
-    ViewData["Title"] = "Thông Báo Hệ Thống";
+    ViewData["Title"] = "Thong bao";
     var unreadCount = Model.Count(n => !n.IsRead);
 }
 
-<div class="animated-entry" style="max-width: 850px; margin: 2rem auto; padding-bottom: 5rem;">
-    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 4rem; padding: 0 1rem;">
-        <div>
-            <h1 style="font-size: 2.5rem; font-weight: 900; letter-spacing: -1.5px; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 20px;">
-                <i class="fa-solid fa-bell" style="color: var(--accent-purple); filter: drop-shadow(0 0 10px rgba(139, 92, 246, 0.3));"></i> Trung tâm thông báo
-            </h1>
-            <p style="color: var(--text-secondary); font-size: 1.1rem; font-weight: 500;">Cập nhật những diễn biến mới nhất dành cho bạn</p>
-        </div>
-        @if (unreadCount > 0)
-        {
-            <form asp-action="MarkAllAsRead" method="post">
-                <button type="submit" class="btn btn-outline" style="font-size: 0.8rem; padding: 0.75rem 1.5rem; border-radius: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">
-                    <i class="fa-solid fa-check-double" style="margin-right: 8px;"></i> Hoàn tất tất cả
-                </button>
-            </form>
-        }
-    </div>
-
-    @if (!Model.Any())
-    {
-        <div class="glass-panel text-center" style="padding: 6rem 2rem; border-style: dashed; border-color: rgba(255,255,255,0.1); background: transparent;">
-            <div style="width: 100px; height: 100px; margin: 0 auto 2rem; background: rgba(255,255,255,0.03); border-radius: 30px; display: flex; align-items: center; justify-content: center;">
-                <i class="fa-solid fa-bell-slash" style="font-size: 3rem; color: var(--text-muted); opacity: 0.5;"></i>
+<div class="notice-shell animated-entry">
+    <div class="surface">
+        <div class="surface-header">
+            <div>
+                <h1 class="surface-title">Trung tam thong bao</h1>
+                <p class="surface-subtitle">Danh sach thong bao duoc nen gon hon de uu tien kha nang quet nhanh va xu ly nhieu muc lien tuc.</p>
             </div>
-            <h3 style="font-size: 1.5rem; font-weight: 800; color: #fff; margin-bottom: 0.5rem;">Không có thông báo mới</h3>
-            <p style="color: var(--text-secondary); font-size: 1.05rem;">Chúng mình sẽ cập nhật tại đây khi có tin nhắn hoặc phản hồi mới.</p>
-        </div>
-    }
 
-    <div style="display: flex; flex-direction: column; gap: 1.25rem;">
-        @foreach (var n in Model)
+            @if (unreadCount > 0)
+            {
+                <form asp-action="MarkAllAsRead" method="post">
+                    <button type="submit" class="btn btn-outline">
+                        <i class="fa-solid fa-check-double"></i> Danh dau da doc
+                    </button>
+                </form>
+            }
+        </div>
+
+        @if (!Model.Any())
         {
-            <div class="glass-card @(n.IsRead ? "" : "active-glow")" style="padding: 1.75rem 2rem; display: flex; justify-content: space-between; align-items: center; border-radius: 20px; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; overflow: hidden; border: 1px solid @(n.IsRead ? "rgba(255,255,255,0.05)" : "rgba(139, 92, 246, 0.2)"); background: @(n.IsRead ? "rgba(255,255,255,0.02)" : "rgba(139, 92, 246, 0.04)");">
-                @if (!n.IsRead)
-                {
-                    <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 6px; background: var(--primary-gradient); box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);"></div>
-                }
-                <div style="flex: 1; padding-right: 2rem;">
-                    <div style="font-weight: @(n.IsRead ? "500" : "800"); color: @(n.IsRead ? "var(--text-secondary)" : "#fff"); font-size: 1.15rem; line-height: 1.5; letter-spacing: -0.3px;">@n.Content</div>
-                    <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.75rem; display: flex; align-items: center; gap: 12px; font-weight: 600;">
-                        <span style="display: flex; align-items: center; gap: 6px;"><i class="fa-regular fa-clock" style="color: var(--accent-blue);"></i> @n.CreatedAt.ToString("MMM dd, HH:mm")</span>
-                        <span style="width: 4px; height: 4px; border-radius: 50%; background: rgba(255,255,255,0.1);"></span>
-                        <span style="color: @(n.IsRead ? "var(--text-muted)" : "var(--accent-purple)"); text-transform: uppercase; font-size: 0.7rem; letter-spacing: 1px;">@(n.IsRead ? "Tin cũ" : "Bản tin mới")</span>
-                    </div>
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="fa-solid fa-bell-slash"></i>
                 </div>
-                @if (!n.IsRead)
+                <h2 class="section-heading">Chua co thong bao moi</h2>
+                <p class="muted">Khi co binh luan, phan hoi hoac thay doi quan trong, ban se thay tai day.</p>
+            </div>
+        }
+        else
+        {
+            <div class="notice-list">
+                @foreach (var notification in Model)
                 {
-                    <form asp-action="MarkAsRead" method="post">
-                        <input type="hidden" name="id" value="@n.Id" />
-                        <button type="submit" class="btn-mark-read" style="background: var(--primary-gradient); border: none; width: 44px; height: 44px; border-radius: 14px; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 20px rgba(59, 130, 246, 0.2); transition: all 0.3s;" onmouseover="this.style.transform='scale(1.1) rotate(10deg)'" onmouseout="this.style.transform='scale(1) rotate(0deg)'" title="Xác nhận đã đọc">
-                            <i class="fa-solid fa-check" style="font-size: 1.1rem;"></i>
-                        </button>
-                    </form>
+                    <div class="glass-card notice-item @(notification.IsRead ? "" : "notice-item--unread")">
+                        <div class="notice-content">
+                            <div class="notice-text">@notification.Content</div>
+                            <div class="notice-meta">
+                                <span><i class="fa-regular fa-clock"></i> @notification.CreatedAt.ToString("MMM dd, HH:mm")</span>
+                                <span class="dot"></span>
+                                <span>@(notification.IsRead ? "Da doc" : "Moi")</span>
+                            </div>
+                        </div>
+
+                        @if (!notification.IsRead)
+                        {
+                            <form asp-action="MarkAsRead" method="post">
+                                <input type="hidden" name="id" value="@notification.Id" />
+                                <button type="submit" class="notice-action" title="Danh dau da doc">
+                                    <i class="fa-solid fa-check"></i>
+                                </button>
+                            </form>
+                        }
+                    </div>
                 }
             </div>
         }
     </div>
 </div>
-
-<style>
-    .active-glow {
-        box-shadow: 0 10px 30px rgba(139, 92, 246, 0.1);
-    }
-    .active-glow:hover {
-        background: rgba(139, 92, 246, 0.08) !important;
-        transform: translateY(-5px);
-    }
-</style>

@@ -1,121 +1,103 @@
 @{
-    ViewData["Title"] = "Bảng Quản Trị Hệ Thống";
+    ViewData["Title"] = "Bang quan tri";
     var stats = ViewBag.Stats;
     var topLiked = (ForumZenpace.Models.Post)stats.TopLiked;
     var topViewed = (ForumZenpace.Models.Post)stats.TopViewed;
 }
 
-<div class="animated-entry" style="padding-top: 1.5rem;">
-    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 3.5rem;">
+<div class="admin-shell animated-entry">
+    <div class="admin-header">
         <div>
-            <h1 style="font-size: 2.75rem; font-weight: 900; margin-bottom: 0.5rem; letter-spacing: -1.5px;">Trung tâm điều hành</h1>
-            <p style="color: var(--text-secondary); font-size: 1.1rem;">Tổng quan hiệu suất và quản trị hệ thống Zenpace</p>
+            <h1 class="admin-title">Bang quan tri</h1>
+            <p class="admin-subtitle">Tong quan he thong voi mat do hien thi gon hon, uu tien thong tin va thao tac nhanh.</p>
         </div>
-        <div class="glass-panel" style="padding: 0.75rem 1.5rem; background: rgba(255,255,255,0.05); border-radius: 999px;">
-            <span style="font-size: 0.85rem; font-weight: 700; color: #fff;"><i class="fa-solid fa-clock-rotate-left" style="color: var(--accent-blue); margin-right: 10px;"></i> Cập nhật: @DateTime.Now.ToString("HH:mm")</span>
+
+        <div class="admin-meta">
+            <i class="fa-regular fa-clock"></i> Cap nhat @DateTime.Now.ToString("HH:mm")
         </div>
     </div>
 
-    @* Statistics Cards *@
-    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin-bottom: 3rem;">
-        <div class="glass-panel" style="padding: 2.5rem; position: relative;">
-            <div style="position: absolute; top: 1.5rem; right: 1.5rem; width: 48px; height: 48px; background: rgba(59, 130, 246, 0.1); border-radius: 14px; display: flex; align-items: center; justify-content: center;">
-                <i class="fa-solid fa-users" style="color: var(--accent-blue); font-size: 1.25rem;"></i>
-            </div>
-            <div style="color: var(--text-muted); font-size: 0.85rem; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 1rem;">Cộng đồng</div>
-            <h2 style="font-size: 3rem; font-weight: 900; margin-bottom: 0.25rem; letter-spacing: -1px;">@stats.TotalUsers</h2>
-            <div style="font-size: 0.8rem; color: #10B981; font-weight: 700;"><i class="fa-solid fa-arrow-trend-up"></i> +12% tháng này</div>
+    <div class="admin-stats">
+        <div class="surface admin-stat">
+            <div class="admin-stat-label">Nguoi dung</div>
+            <div class="admin-stat-value">@stats.TotalUsers</div>
+            <div class="admin-stat-trend" style="color: var(--accent-green);">Tang truong on dinh</div>
         </div>
-        
-        <div class="glass-panel" style="padding: 2.5rem; position: relative;">
-            <div style="position: absolute; top: 1.5rem; right: 1.5rem; width: 48px; height: 48px; background: rgba(139, 92, 246, 0.1); border-radius: 14px; display: flex; align-items: center; justify-content: center;">
-                <i class="fa-solid fa-comments" style="color: var(--accent-purple); font-size: 1.25rem;"></i>
-            </div>
-            <div style="color: var(--text-muted); font-size: 0.85rem; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 1rem;">Bài thảo luận</div>
-            <h2 style="font-size: 3rem; font-weight: 900; margin-bottom: 0.25rem; letter-spacing: -1px;">@stats.TotalPosts</h2>
-            <div style="font-size: 0.8rem; color: var(--accent-purple); font-weight: 700;"><i class="fa-solid fa-chart-line"></i> Đang tăng trưởng</div>
+
+        <div class="surface admin-stat">
+            <div class="admin-stat-label">Chu de</div>
+            <div class="admin-stat-value">@stats.TotalPosts</div>
+            <div class="admin-stat-trend" style="color: var(--accent-purple);">Noi dung dang tang</div>
         </div>
-        
-        <div class="glass-panel" style="padding: 2.5rem; position: relative; border-color: rgba(236, 72, 153, 0.2);">
-            <div style="position: absolute; top: 1.5rem; right: 1.5rem; width: 48px; height: 48px; background: rgba(236, 72, 153, 0.1); border-radius: 14px; display: flex; align-items: center; justify-content: center;">
-                <i class="fa-solid fa-shield-halved" style="color: var(--accent-pink); font-size: 1.25rem;"></i>
-            </div>
-            <div style="color: var(--text-muted); font-size: 0.85rem; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 1rem;">Báo cáo chờ</div>
-            <h2 style="font-size: 3rem; font-weight: 900; margin-bottom: 0.25rem; color: var(--accent-pink); letter-spacing: -1px;">@stats.PendingReports</h2>
-            <div style="font-size: 0.8rem; color: var(--accent-pink); font-weight: 700;"><i class="fa-solid fa-circle-exclamation"></i> Cần xử lý ngay</div>
+
+        <div class="surface admin-stat">
+            <div class="admin-stat-label">Bao cao cho</div>
+            <div class="admin-stat-value" style="color: var(--accent-pink);">@stats.PendingReports</div>
+            <div class="admin-stat-trend" style="color: var(--accent-pink);">Can uu tien xu ly</div>
         </div>
     </div>
 
-    @* Highlight Row *@
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 3rem;">
-        <div class="glass-panel" style="padding: 2.5rem;">
-            <h3 style="font-size: 0.9rem; text-transform: uppercase; letter-spacing: 2px; color: #fff; margin-bottom: 2rem; display: flex; align-items: center; gap: 12px;">
-                <i class="fa-solid fa- AWARD" style="color: var(--accent-purple);"></i> Thảo luận nổi bật
-            </h3>
+    <div class="admin-grid-2">
+        <div class="surface admin-card">
+            <div class="panel-label">Noi bat</div>
+            <h2 class="section-heading" style="margin-bottom: 16px;">Chu de duoc de xuat nhieu</h2>
+
             @if (topLiked != null)
             {
-                <div class="glass-card" style="padding: 2rem; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1);">
-                    <div style="font-size: 0.75rem; font-weight: 800; color: var(--accent-blue); margin-bottom: 0.75rem; text-transform: uppercase;">Nhiều phản hồi nhất</div>
-                    <a asp-controller="Post" asp-action="Details" asp-route-id="@topLiked.Id" style="font-size: 1.5rem; font-weight: 900; color: #fff; text-decoration: none; display: block; line-height: 1.3; margin-bottom: 1.5rem;">@topLiked.Title</a>
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <div style="width: 32px; height: 32px; border-radius: 8px; background: var(--primary-gradient); display: flex; align-items: center; justify-content: center; font-weight: 900; color: #fff; font-size: 0.8rem;">@topLiked.User?.FullName.Substring(0,1)</div>
-                            <span style="font-weight: 600; color: var(--text-secondary);">@topLiked.User?.FullName</span>
-                        </div>
-                        <span class="badge-tag" style="background: rgba(139, 92, 246, 0.1); color: var(--accent-purple); border: 1px solid rgba(139, 92, 246, 0.2);">
-                            <i class="fa-solid fa-heart"></i> @topLiked.Likes?.Count
-                        </span>
+                <div class="glass-card summary-card">
+                    <a asp-controller="Post" asp-action="Details" asp-route-id="@topLiked.Id" class="summary-link">@topLiked.Title</a>
+                    <div class="summary-footer">
+                        <span class="table-note">@topLiked.User?.FullName</span>
+                        <span class="badge-tag"><i class="fa-solid fa-heart"></i> @topLiked.Likes?.Count</span>
                     </div>
                 </div>
             }
         </div>
-        
-        <div class="glass-panel" style="padding: 2.5rem;">
-            <h3 style="font-size: 0.9rem; text-transform: uppercase; letter-spacing: 2px; color: #fff; margin-bottom: 2rem; display: flex; align-items: center; gap: 12px;">
-                <i class="fa-solid fa-eye" style="color: var(--accent-blue);"></i> Đang thịnh hành
-            </h3>
+
+        <div class="surface admin-card">
+            <div class="panel-label">Thinh hanh</div>
+            <h2 class="section-heading" style="margin-bottom: 16px;">Chu de co luot xem cao</h2>
+
             @if (topViewed != null)
             {
-                <div class="glass-card" style="padding: 2rem; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1);">
-                    <div style="font-size: 0.75rem; font-weight: 800; color: var(--accent-pink); margin-bottom: 0.75rem; text-transform: uppercase;">Lượt xem đột phá</div>
-                    <a asp-controller="Post" asp-action="Details" asp-route-id="@topViewed.Id" style="font-size: 1.5rem; font-weight: 900; color: #fff; text-decoration: none; display: block; line-height: 1.3; margin-bottom: 1.5rem;">@topViewed.Title</a>
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <div style="width: 32px; height: 32px; border-radius: 8px; background: var(--primary-gradient); display: flex; align-items: center; justify-content: center; font-weight: 900; color: #fff; font-size: 0.8rem;">@topViewed.User?.FullName.Substring(0,1)</div>
-                            <span style="font-weight: 600; color: var(--text-secondary);">@topViewed.User?.FullName</span>
-                        </div>
-                        <span class="badge-tag" style="background: rgba(59, 130, 246, 0.1); color: var(--accent-blue); border: 1px solid rgba(59, 130, 246, 0.2);">
-                            <i class="fa-solid fa-bolt"></i> @topViewed.ViewCount
-                        </span>
+                <div class="glass-card summary-card">
+                    <a asp-controller="Post" asp-action="Details" asp-route-id="@topViewed.Id" class="summary-link">@topViewed.Title</a>
+                    <div class="summary-footer">
+                        <span class="table-note">@topViewed.User?.FullName</span>
+                        <span class="badge-tag"><i class="fa-regular fa-eye"></i> @topViewed.ViewCount</span>
                     </div>
                 </div>
             }
         </div>
     </div>
 
-    @* Navigation Cards *@
-    <div class="glass-panel" style="padding: 3rem;">
-        <h3 style="font-size: 1rem; font-weight: 900; color: #fff; margin-bottom: 2rem; text-transform: uppercase; letter-spacing: 2px;">Lối tắt quản trị</h3>
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem;">
-            <a asp-action="Users" class="glass-card" style="padding: 2.5rem 1.5rem; text-align: center; text-decoration: none; position: relative; overflow: hidden;">
-                <i class="fa-solid fa-user-gear mb-3" style="font-size: 2.5rem; color: var(--accent-blue);"></i>
-                <div style="font-weight: 800; color: #fff; font-size: 1.1rem; margin-bottom: 4px;">Hội viên</div>
-                <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Quản lý tài khoản</div>
+    <div class="surface admin-card">
+        <div class="panel-label">Loi tat</div>
+        <h2 class="section-heading" style="margin-bottom: 16px;">Dieu huong quan tri</h2>
+
+        <div class="admin-shortcuts">
+            <a asp-action="Users" class="glass-card admin-shortcut">
+                <div class="admin-shortcut-icon" style="color: var(--accent-blue);"><i class="fa-solid fa-user-gear"></i></div>
+                <div class="admin-shortcut-title">Hoi vien</div>
+                <div class="admin-shortcut-meta">Quan ly tai khoan</div>
             </a>
-            <a asp-action="Posts" class="glass-card" style="padding: 2.5rem 1.5rem; text-align: center; text-decoration: none;">
-                <i class="fa-solid fa-newspaper mb-3" style="font-size: 2.5rem; color: var(--accent-purple);"></i>
-                <div style="font-weight: 800; color: #fff; font-size: 1.1rem; margin-bottom: 4px;">Nội dung</div>
-                <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Kiểm duyệt thảo luận</div>
+
+            <a asp-action="Posts" class="glass-card admin-shortcut">
+                <div class="admin-shortcut-icon" style="color: var(--accent-purple);"><i class="fa-solid fa-newspaper"></i></div>
+                <div class="admin-shortcut-title">Noi dung</div>
+                <div class="admin-shortcut-meta">Kiem duyet chu de</div>
             </a>
-            <a asp-action="Categories" class="glass-card" style="padding: 2.5rem 1.5rem; text-align: center; text-decoration: none;">
-                <i class="fa-solid fa-tags mb-3" style="font-size: 2.5rem; color: var(--accent-pink);"></i>
-                <div style="font-weight: 800; color: #fff; font-size: 1.1rem; margin-bottom: 4px;">Chuyên mục</div>
-                <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Cấu trúc diễn đàn</div>
+
+            <a asp-action="Categories" class="glass-card admin-shortcut">
+                <div class="admin-shortcut-icon" style="color: var(--accent-pink);"><i class="fa-solid fa-tags"></i></div>
+                <div class="admin-shortcut-title">Chuyen muc</div>
+                <div class="admin-shortcut-meta">Sap xep cau truc</div>
             </a>
-            <a asp-action="Reports" class="glass-card" style="padding: 2.5rem 1.5rem; text-align: center; text-decoration: none; border-color: rgba(236, 72, 153, 0.3);">
-                <i class="fa-solid fa-shield-virus mb-3" style="font-size: 2.5rem; color: var(--accent-pink);"></i>
-                <div style="font-weight: 800; color: #fff; font-size: 1.1rem; margin-bottom: 4px;">An toàn</div>
-                <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Xử lý tố cáo</div>
+
+            <a asp-action="Reports" class="glass-card admin-shortcut">
+                <div class="admin-shortcut-icon" style="color: var(--accent-pink);"><i class="fa-solid fa-shield-halved"></i></div>
+                <div class="admin-shortcut-title">Bao cao</div>
+                <div class="admin-shortcut-meta">Xu ly vi pham</div>
             </a>
         </div>
     </div>

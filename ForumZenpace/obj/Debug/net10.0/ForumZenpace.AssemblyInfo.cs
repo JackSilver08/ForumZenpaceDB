@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ForumZenpace")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e7300fe11a933cfaf63cbd936b06a648cc565070")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+20cdea4c1bac25018cf40d2bdfbe72370d511f01")]
 [assembly: System.Reflection.AssemblyProductAttribute("ForumZenpace")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ForumZenpace")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -1,58 +1,53 @@
 @model ForumZenpace.Models.PostViewModel
 @{
-    ViewData["Title"] = "Chỉnh Sửa Bài Viết";
+    ViewData["Title"] = "Chinh sua chu de";
 }
 
-<div class="glass-panel animated-entry" style="max-width: 950px; margin: 3rem auto; padding: 4.5rem; position: relative; overflow: hidden;">
-    @* Static Background Accents *@
-    <div style="position: absolute; top: -150px; right: -150px; width: 400px; height: 400px; background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%); filter: blur(50px); pointer-events: none;"></div>
-    <div style="position: absolute; bottom: -150px; left: -150px; width: 400px; height: 400px; background: radial-gradient(circle, rgba(236, 72, 153, 0.1) 0%, transparent 70%); filter: blur(50px); pointer-events: none;"></div>
+<div class="editor-shell animated-entry">
+    <div class="surface editor-card">
+        <div class="editor-header">
+            <div>
+                <h1 class="editor-title">Chinh sua chu de</h1>
+                <p class="editor-subtitle">Khung sua bai viet giu cung metric voi trang tao moi de tra nghiem viet bai nhat quan hon.</p>
+            </div>
 
-    <div style="position: relative; z-index: 1;">
-        <div style="margin-bottom: 4rem;">
-            <div style="display: flex; align-items: flex-end; justify-content: space-between;">
-                <div>
-                    <h2 style="font-size: 2.75rem; font-weight: 950; letter-spacing: -1.5px; margin-bottom: 1rem; line-height: 1.1;">Hiệu chỉnh thảo luận</h2>
-                    <p style="color: var(--text-secondary); font-size: 1.15rem; font-weight: 500;">Hoàn thiện nội dung để lan tỏa giá trị tốt nhất đến cộng đồng</p>
-                </div>
-                <div style="width: 80px; height: 80px; background: var(--primary-gradient); border-radius: 24px; display: flex; align-items: center; justify-content: center; transform: rotate(5deg); box-shadow: 0 15px 30px rgba(139, 92, 246, 0.3);">
-                    <i class="fa-solid fa-file-pen" style="font-size: 2.25rem; color: #fff;"></i>
-                </div>
+            <div class="editor-mark">
+                <i class="fa-solid fa-file-pen"></i>
             </div>
         </div>
-        
-        <form asp-action="Edit" method="post" style="display: flex; flex-direction: column; gap: 2.5rem;">
+
+        <form asp-action="Edit" method="post" class="editor-form">
             <input type="hidden" name="id" value="@ViewBag.PostId" />
-            <div asp-validation-summary="ModelOnly" class="text-danger mb-4" style="font-size: 0.9rem; font-weight: 700;"></div>
-            
-            <div style="display: flex; flex-direction: column; gap: 1rem;">
-                <label asp-for="Title" style="font-size: 0.85rem; font-weight: 800; color: #fff; text-transform: uppercase; letter-spacing: 2px;">Tiêu đề bài viết</label>
-                <input asp-for="Title" class="form-control" style="font-size: 1.5rem; font-weight: 800; padding: 1.5rem; border-radius: 18px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);" />
-                <span asp-validation-for="Title" class="text-danger" style="font-size: 0.8rem; font-weight: 600;"></span>
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="field">
+                <label asp-for="Title" class="field-label">Tieu de</label>
+                <input asp-for="Title" class="form-control editor-title-input" placeholder="Tieu de bai viet" />
+                <span asp-validation-for="Title" class="text-danger"></span>
             </div>
-            
-            <div style="display: flex; flex-direction: column; gap: 1rem;">
-                <label asp-for="CategoryId" style="font-size: 0.85rem; font-weight: 800; color: #fff; text-transform: uppercase; letter-spacing: 2px;">Chuyên mục phân loại</label>
-                <select asp-for="CategoryId" class="form-control" asp-items="ViewBag.Categories" style="padding: 1.15rem; border-radius: 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); cursor: pointer; font-weight: 600; appearance: none;">
-                    <option value="">-- Lựa chọn không gian chuyên môn phù hợp --</option>
+
+            <div class="field">
+                <label asp-for="CategoryId" class="field-label">Chuyen muc</label>
+                <select asp-for="CategoryId" class="form-control" asp-items="ViewBag.Categories">
+                    <option value="">-- Chon chuyen muc phu hop --</option>
                 </select>
-                <span asp-validation-for="CategoryId" class="text-danger" style="font-size: 0.8rem; font-weight: 600;"></span>
+                <span asp-validation-for="CategoryId" class="text-danger"></span>
             </div>
-            
-            <div style="display: flex; flex-direction: column; gap: 1rem;">
-                <label asp-for="Content" style="font-size: 0.85rem; font-weight: 800; color: #fff; text-transform: uppercase; letter-spacing: 2px;">Nội dung chi tiết</label>
-                <div style="position: relative;">
-                    <textarea asp-for="Content" class="form-control" rows="14" style="font-family: inherit; line-height: 1.7; padding: 1.75rem; border-radius: 20px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); resize: none;"></textarea>
-                    <div style="position: absolute; bottom: 1rem; right: 1.5rem; display: flex; align-items: center; gap: 8px; font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">
-                        <i class="fa-solid fa-clock-rotate-left"></i> Lưu bản nháp tự động
+
+            <div class="field">
+                <label asp-for="Content" class="field-label">Noi dung</label>
+                <div class="input-icon" style="position: relative;">
+                    <textarea asp-for="Content" class="form-control editor-textarea" rows="14" placeholder="Cap nhat bai viet voi noi dung chinh xac va de doc hon."></textarea>
+                    <div class="editor-helper">
+                        <i class="fa-solid fa-clock-rotate-left"></i> Nen gom y thanh cac doan ngan
                     </div>
                 </div>
-                <span asp-validation-for="Content" class="text-danger" style="font-size: 0.8rem; font-weight: 600;"></span>
+                <span asp-validation-for="Content" class="text-danger"></span>
             </div>
-            
-            <div style="display: flex; gap: 2rem; justify-content: flex-end; align-items: center; margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 3rem;">
-                <a asp-action="Details" asp-route-id="@ViewBag.PostId" style="color: var(--text-muted); text-decoration: none; font-weight: 700; transition: color 0.3s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--text-muted)'">Hủy bỏ thay đổi</a>
-                <button type="submit" class="btn btn-primary" style="padding: 1.25rem 4rem; border-radius: 18px; font-weight: 900; font-size: 1.15rem; box-shadow: 0 15px 30px rgba(59, 130, 246, 0.4); border: none; cursor: pointer;">Lưu các cập nhật</button>
+
+            <div class="editor-footer">
+                <a asp-action="Details" asp-route-id="@ViewBag.PostId" class="btn btn-text">Huy thay doi</a>
+                <button type="submit" class="btn btn-primary">Luu cap nhat</button>
             </div>
         </form>
     </div>

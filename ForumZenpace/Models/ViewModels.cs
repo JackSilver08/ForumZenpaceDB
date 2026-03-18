@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using System.ComponentModel.DataAnnotations;
 
 namespace ForumZenpace.Models
@@ -58,6 +59,7 @@ namespace ForumZenpace.Models
         public string Email { get; set; }
 
         public string? Avatar { get; set; }
+        public IFormFile? AvatarFile { get; set; }
         
         // Expose username just for display
         public string? Username { get; set; }

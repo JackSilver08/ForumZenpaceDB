@@ -1,59 +1,59 @@
-<div class="animated-entry" style="padding-top: 1.5rem;">
-    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 3.5rem;">
+@model IEnumerable<ForumZenpace.Models.Category>
+
+<div class="admin-shell animated-entry">
+    <div class="admin-header">
         <div>
-            <h1 style="font-size: 2.25rem; font-weight: 900; margin-bottom: 0.5rem; letter-spacing: -1px;">Cấu trúc chuyên mục</h1>
-            <p style="color: var(--text-secondary);">Phân loại nội dung để tối ưu hóa trải nghiệm tìm kiếm</p>
+            <h1 class="admin-title">Quan ly chuyen muc</h1>
+            <p class="admin-subtitle">Bang danh muc va form tao moi duoc rut gon de thao tac nhanh hon.</p>
         </div>
-        <a asp-action="Dashboard" class="btn btn-outline" style="padding: 0.75rem 1.5rem; border-radius: 12px; font-size: 0.8rem;">
-            <i class="fa-solid fa-arrow-left"></i> Quay lại
+
+        <a asp-action="Dashboard" class="btn btn-outline">
+            <i class="fa-solid fa-arrow-left"></i> Quay lai
         </a>
     </div>
 
-    <div style="display: grid; grid-template-columns: 1fr 400px; gap: 2.5rem;">
-        <!-- List -->
-        <div class="glass-panel" style="padding: 1.5rem;">
-            <div style="overflow-x: auto;">
-                <table class="table" style="width: 100%; border-collapse: separate; border-spacing: 0;">
+    <div class="admin-layout">
+        <div class="surface admin-table-shell">
+            <div class="scroll-x">
+                <table class="table">
                     <thead>
-                        <tr style="text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1);">
-                            <th style="padding: 1.5rem 1.25rem; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px;">Mã định danh</th>
-                            <th style="padding: 1.5rem 1.25rem; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px;">Tên danh mục</th>
-                            <th style="padding: 1.5rem 1.25rem; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px;">Số lượng bài</th>
+                        <tr>
+                            <th>Ma</th>
+                            <th>Ten danh muc</th>
+                            <th>So bai viet</th>
                         </tr>
                     </thead>
                     <tbody>
-                    @foreach (var cat in Model)
-                    {
-                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); transition: var(--transition-smooth);" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
-                            <td style="padding: 1.25rem; color: var(--text-muted); font-weight: 800; font-family: monospace;">#@cat.Id.ToString("D2")</td>
-                            <td style="padding: 1.25rem; font-weight: 700; color: #fff; font-size: 1.1rem;">@cat.Name</td>
-                            <td style="padding: 1.25rem;">
-                                <span style="font-weight: 800; color: var(--accent-purple); background: rgba(139, 92, 246, 0.1); padding: 0.4rem 0.8rem; border-radius: 8px;">@cat.Posts.Count</span>
-                            </td>
-                        </tr>
-                    }
+                        @foreach (var category in Model)
+                        {
+                            <tr>
+                                <td class="table-note">#@category.Id.ToString("D2")</td>
+                                <td><strong>@category.Name</strong></td>
+                                <td><span class="badge-tag">@category.Posts.Count bai</span></td>
+                            </tr>
+                        }
                     </tbody>
                 </table>
             </div>
         </div>
-        
-        <!-- Add new -->
-        <div style="display: flex; flex-direction: column; gap: 2rem;">
-            <div class="glass-panel" style="padding: 2.5rem; background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(139, 92, 246, 0.05));">
-                <h3 style="font-size: 1.1rem; font-weight: 800; color: #fff; margin-bottom: 2rem; display: flex; align-items: center; gap: 12px;">
-                    <i class="fa-solid fa-folder-plus" style="color: var(--accent-blue);"></i> Khởi tạo danh mục
-                </h3>
-                <form asp-action="AddCategory" method="post" style="display: flex; flex-direction: column; gap: 1.5rem;">
-                    <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-                        <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">Tên gọi chuyên mục</label>
-                        <input type="text" name="name" class="form-control" required placeholder="Nhập tên danh mục..." style="border-radius: 12px;" />
+
+        <div class="admin-sidecard">
+            <div class="surface">
+                <div class="panel-label">Them moi</div>
+                <h2 class="section-heading" style="margin-bottom: 16px;">Tao chuyen muc</h2>
+
+                <form asp-action="AddCategory" method="post" class="stack-md">
+                    <div class="field">
+                        <label class="field-label">Ten danh muc</label>
+                        <input type="text" name="name" class="form-control" required placeholder="Nhap ten danh muc..." />
                     </div>
-                    <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem; border-radius: 12px; font-weight: 800;">Hoàn tất thêm mới</button>
+
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Them danh muc</button>
                 </form>
             </div>
-            
-            <div class="glass-panel" style="padding: 1.5rem; border-style: dashed; border-color: rgba(255,255,255,0.1); background: transparent;">
-                <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;"><strong>Lưu ý:</strong> Nên đặt tên danh mục ngắn gọn, súc tích và bao quát được chủ đề thảo luận.</p>
+
+            <div class="admin-note">
+                Nen dat ten ngan, ro rang va phan biet tot giua cac nhom thao luan.
             </div>
         </div>
     </div>

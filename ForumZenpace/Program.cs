@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.Extensions.FileProviders;
 using ForumZenpace.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -22,6 +23,10 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     });
 
 var app = builder.Build();
+var webRootPath = app.Environment.WebRootPath ?? Path.Combine(app.Environment.ContentRootPath, "wwwroot");
+var uploadsRootPath = Path.Combine(webRootPath, "uploads");
+
+Directory.CreateDirectory(Path.Combine(uploadsRootPath, "avatars"));
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -31,6 +36,11 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(uploadsRootPath),
+    RequestPath = "/uploads"
+});
 app.UseRouting();
 
 app.UseAuthentication();

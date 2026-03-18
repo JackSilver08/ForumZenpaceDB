@@ -1,80 +1,113 @@
 @model ForumZenpace.Models.ProfileViewModel
 @{
-    ViewData["Title"] = "Hồ Sơ Của Tôi";
+    ViewData["Title"] = "Ho so cua toi";
+    var avatarInitial = string.IsNullOrWhiteSpace(Model.Username)
+        ? "U"
+        : Model.Username.Substring(0, 1).ToUpperInvariant();
+    var hasAvatar = !string.IsNullOrWhiteSpace(Model.Avatar);
 }
 
-<div class="glass-panel animated-entry" style="max-width: 800px; margin: 5rem auto; padding: 4rem; position: relative; overflow: hidden;">
-    @* Decorative Blobs for Profile *@
-    <div style="position: absolute; top: -100px; right: -100px; width: 300px; height: 300px; background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%); filter: blur(40px); pointer-events: none;"></div>
-    <div style="position: absolute; bottom: -100px; left: -100px; width: 300px; height: 300px; background: radial-gradient(circle, rgba(236, 72, 153, 0.1) 0%, transparent 70%); filter: blur(40px); pointer-events: none;"></div>
-
-    <div style="position: relative; z-index: 1;">
-        <div style="text-align: center; margin-bottom: 4rem;">
-            <h2 style="font-size: 2.5rem; font-weight: 900; letter-spacing: -1.5px; margin-bottom: 0.5rem;">Cài đặt hồ sơ</h2>
-            <p style="color: var(--text-secondary); font-size: 1.1rem;">Cập nhật danh tính cá nhân của bạn trên Zenpace</p>
+<div class="profile-shell animated-entry">
+    <div class="surface profile-card">
+        <div class="surface-header">
+            <div>
+                <h1 class="surface-title">Chinh sua ho so</h1>
+                <p class="surface-subtitle">Trang nay da duoc thu gon de form de quet hon, avatar nho gon hon va khong con o nhap URL anh.</p>
+            </div>
         </div>
-        
+
         @if (ViewBag.SuccessMessage != null)
         {
-            <div class="glass-card mb-5" style="padding: 1.25rem; background: rgba(16, 185, 129, 0.1); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.2); text-align: center; border-radius: 12px; font-weight: 700;">
-                <i class="fa-solid fa-circle-check" style="margin-right: 8px;"></i> @ViewBag.SuccessMessage
+            <div class="glass-card mb-5" style="padding: 12px; color: var(--accent-green); border-color: rgba(73, 199, 146, 0.16); background: rgba(73, 199, 146, 0.08);">
+                <i class="fa-solid fa-circle-check"></i> @ViewBag.SuccessMessage
             </div>
         }
 
-        <form asp-action="Update" method="post">
-            <div asp-validation-summary="ModelOnly" class="text-danger mb-4" style="font-size: 0.85rem; font-weight: 600;"></div>
-            
-            <div style="display: grid; grid-template-columns: 200px 1fr; gap: 4rem; align-items: start;">
-                <div style="text-align: center;">
-                    <div style="position: relative; width: 180px; height: 180px; margin: 0 auto; border-radius: 24px; padding: 6px; background: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0.05)); border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 40px rgba(0,0,0,0.3);">
-                        <div style="width: 100%; height: 100%; border-radius: 20px; overflow: hidden; background: #111;">
-                            @if (string.IsNullOrEmpty(Model.Avatar))
-                            {
-                                <div style="width: 100%; height: 100%; background: var(--primary-gradient); display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 4rem; color: #fff; text-shadow: 0 5px 15px rgba(0,0,0,0.2);">
-                                    @Model.Username.Substring(0, 1).ToUpper()
-                                </div>
-                            }
-                            else
-                            {
-                                <img src="@Model.Avatar" style="width: 100%; height: 100%; object-fit: cover;" alt="Avatar" />
-                            }
+        <form asp-action="Update" method="post" enctype="multipart/form-data" class="stack-lg">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="profile-grid">
+                <div class="profile-avatar-wrap">
+                    <div class="profile-avatar-frame">
+                        <div class="profile-avatar-panel">
+                            <div id="avatarFallback" class="profile-avatar-fallback" style="display: @(hasAvatar ? "none" : "flex");">
+                                @avatarInitial
+                            </div>
+                            <img id="avatarPreview" class="profile-avatar-image" src="@Model.Avatar" alt="Avatar" style="display: @(hasAvatar ? "block" : "none");" />
                         </div>
-                        <div style="position: absolute; bottom: -12px; right: -12px; width: 44px; height: 44px; background: #fff; border-radius: 14px; display: flex; align-items: center; justify-content: center; color: #000; box-shadow: 0 10px 20px rgba(0,0,0,0.4); cursor: pointer; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);" onmouseover="this.style.transform='scale(1.1) rotate(5deg)'" onmouseout="this.style.transform='scale(1) rotate(0deg)'">
+
+                        <input asp-for="AvatarFile" id="avatarUpload" type="file" accept=".jpg,.jpeg,.png,.gif,.webp" hidden />
+                        <label for="avatarUpload" class="profile-avatar-trigger" title="Tai anh avatar">
                             <i class="fa-solid fa-camera"></i>
-                        </div>
+                        </label>
                     </div>
-                    <div style="margin-top: 2rem;">
-                        <span style="font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px;">@@@Model.Username</span>
+
+                    <div class="profile-username">@@@Model.Username</div>
+
+                    <div class="profile-upload-note">
+                        <p id="avatarFileName" class="field-hint">
+                            @(hasAvatar ? "Avatar hien tai dang duoc su dung." : "Chua co avatar. Bam icon camera de chon anh.")
+                        </p>
+                        <span asp-validation-for="AvatarFile" class="text-danger"></span>
+                        <p class="field-hint">Chap nhan JPG, PNG, GIF, WEBP. Gioi han 5MB.</p>
                     </div>
                 </div>
 
-                <div style="display: flex; flex-direction: column; gap: 2rem;">
-                    <div style="display: grid; grid-template-columns: 1fr; gap: 2rem;">
-                        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-                            <label asp-for="FullName" style="font-size: 0.8rem; font-weight: 800; color: #fff; text-transform: uppercase; letter-spacing: 1.5px;">Họ tên đầy đủ</label>
-                            <input asp-for="FullName" class="form-control" placeholder="Tên hiển thị của bạn..." style="padding: 1rem; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px;" />
-                            <span asp-validation-for="FullName" class="text-danger" style="font-size: 0.75rem; font-weight: 600;"></span>
-                        </div>
-                        
-                        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-                            <label asp-for="Email" style="font-size: 0.8rem; font-weight: 800; color: #fff; text-transform: uppercase; letter-spacing: 1.5px;">Địa chỉ Email</label>
-                            <input asp-for="Email" class="form-control" type="email" placeholder="example@zenpace.com" style="padding: 1rem; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px;" />
-                            <span asp-validation-for="Email" class="text-danger" style="font-size: 0.75rem; font-weight: 600;"></span>
-                        </div>
-                        
-                        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-                            <label asp-for="Avatar" style="font-size: 0.8rem; font-weight: 800; color: #fff; text-transform: uppercase; letter-spacing: 1.5px;">Đường dẫn Avatar (URL)</label>
-                            <input asp-for="Avatar" class="form-control" placeholder="https://image-hosting.com/avatar.jpg" style="padding: 1rem; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px;" />
-                            <span asp-validation-for="Avatar" class="text-danger" style="font-size: 0.75rem; font-weight: 600;"></span>
-                        </div>
+                <div class="stack-md">
+                    <div class="field">
+                        <label asp-for="FullName" class="field-label">Ho ten day du</label>
+                        <input asp-for="FullName" class="form-control" placeholder="Ten hien thi cua ban" />
+                        <span asp-validation-for="FullName" class="text-danger"></span>
                     </div>
-                    
-                    <div style="margin-top: 1rem; display: flex; flex-direction: column; gap: 1rem;">
-                        <button type="submit" class="btn btn-primary" style="padding: 1.25rem; border-radius: 16px; font-weight: 900; font-size: 1.1rem; box-shadow: 0 15px 30px rgba(59, 130, 246, 0.3);">Lưu thay đổi hồ sơ</button>
-                        <p style="text-align: center; color: var(--text-muted); font-size: 0.8rem; font-weight: 600;">Thông tin sẽ được cập nhật ngay lập tức sau khi lưu.</p>
+
+                    <div class="field">
+                        <label asp-for="Email" class="field-label">Dia chi email</label>
+                        <input asp-for="Email" class="form-control" type="email" placeholder="example@zenpace.com" />
+                        <span asp-validation-for="Email" class="text-danger"></span>
                     </div>
                 </div>
+            </div>
+
+            <div class="editor-footer">
+                <p class="field-hint">Thong tin duoc luu ngay sau khi ban nhan cap nhat.</p>
+                <button type="submit" class="btn btn-primary">Cap nhat ho so</button>
             </div>
         </form>
     </div>
 </div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const fileInput = document.getElementById('avatarUpload');
+            const preview = document.getElementById('avatarPreview');
+            const fallback = document.getElementById('avatarFallback');
+            const fileName = document.getElementById('avatarFileName');
+
+            if (!fileInput || !preview || !fallback || !fileName) {
+                return;
+            }
+
+            fileInput.addEventListener('change', (event) => {
+                const input = event.target;
+                const file = input.files && input.files[0];
+
+                if (!file) {
+                    return;
+                }
+
+                fileName.textContent = `Da chon: ${file.name}`;
+
+                const reader = new FileReader();
+                reader.onload = (loadEvent) => {
+                    preview.src = loadEvent.target?.result ?? '';
+                    preview.style.display = 'block';
+                    fallback.style.display = 'none';
+                };
+
+                reader.readAsDataURL(file);
+            });
+        })();
+    </script>
+}

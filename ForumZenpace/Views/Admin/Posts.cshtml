@@ -1,70 +1,70 @@
 @model IEnumerable<ForumZenpace.Models.Post>
 @{
-    ViewData["Title"] = "Quản Lý Bài Viết";
+    ViewData["Title"] = "Quan ly bai viet";
 }
 
-<div class="animated-entry" style="padding-top: 1.5rem;">
-    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 3rem;">
+<div class="admin-shell animated-entry">
+    <div class="admin-header">
         <div>
-            <h1 style="font-size: 2.25rem; font-weight: 900; margin-bottom: 0.5rem; letter-spacing: -1px;">Nội dung thảo luận</h1>
-            <p style="color: var(--text-secondary);">Kiểm duyệt và quản lý toàn bộ bài viết trên hệ thống</p>
+            <h1 class="admin-title">Noi dung thao luan</h1>
+            <p class="admin-subtitle">Bang bai viet da duoc toi uu lai padding, kich thuoc chu va action de dat mat do thong tin hop ly hon.</p>
         </div>
-        <a asp-action="Dashboard" class="btn btn-outline" style="padding: 0.75rem 1.5rem; border-radius: 12px; font-size: 0.8rem;">
-            <i class="fa-solid fa-arrow-left"></i> Quay lại
+
+        <a asp-action="Dashboard" class="btn btn-outline">
+            <i class="fa-solid fa-arrow-left"></i> Quay lai
         </a>
     </div>
 
-    <div class="glass-panel" style="padding: 1.5rem;">
-        <div style="overflow-x: auto;">
-            <table class="table" style="width: 100%; border-collapse: separate; border-spacing: 0;">
+    <div class="surface admin-table-shell">
+        <div class="scroll-x">
+            <table class="table">
                 <thead>
-                    <tr style="text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1);">
-                        <th style="padding: 1.5rem 1.25rem; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px;">Tiêu đề bài viết</th>
-                        <th style="padding: 1.5rem 1.25rem; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px;">Tác giả</th>
-                        <th style="padding: 1.5rem 1.25rem; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px;">Chuyên mục</th>
-                        <th style="padding: 1.5rem 1.25rem; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px;">Trạng thái</th>
-                        <th style="padding: 1.5rem 1.25rem; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px;">Ngày đăng</th>
-                        <th style="padding: 1.25rem; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px;">Lượt xem</th>
-                        <th style="padding: 1.5rem 1.25rem; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px;">Hành động</th>
+                    <tr>
+                        <th>Tieu de</th>
+                        <th>Tac gia</th>
+                        <th>Chuyen muc</th>
+                        <th>Trang thai</th>
+                        <th>Ngay dang</th>
+                        <th>Luot xem</th>
+                        <th>Hanh dong</th>
                     </tr>
                 </thead>
                 <tbody>
-                @foreach (var post in Model.OrderByDescending(p => p.CreatedAt))
-                {
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); transition: var(--transition-smooth);" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
-                        <td style="padding: 1.25rem;">
-                            <a asp-controller="Post" asp-action="Details" asp-route-id="@post.Id" target="_blank" style="color: #fff; font-weight: 700; text-decoration: none; font-size: 1rem; display: block; max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">@post.Title</a>
-                        </td>
-                        <td style="padding: 1.25rem; color: var(--text-secondary); font-weight: 500;">@post.User.FullName</td>
-                        <td style="padding: 1.25rem;">
-                            <span class="badge-tag" style="background: rgba(59, 130, 246, 0.1); color: var(--accent-blue); border: 1px solid rgba(59, 130, 246, 0.2); font-size: 0.65rem;">@post.Category.Name</span>
-                        </td>
-                        <td style="padding: 1.25rem;">
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <span style="width: 8px; height: 8px; border-radius: 50%; background: @(post.Status == "Active" ? "#10B981" : "#EF4444");"></span>
-                                <span style="font-size: 0.85rem; font-weight: 600; color: @(post.Status == "Active" ? "#10B981" : "#EF4444");">@(post.Status == "Active" ? "Công khai" : "Đã ẩn")</span>
-                            </div>
-                        </td>
-                        <td style="padding: 1.25rem; color: var(--text-muted); font-size: 0.85rem;">@post.CreatedAt.ToString("MMM dd, yyyy")</td>
-                        <td style="padding: 1.25rem; color: var(--text-secondary); font-weight: 700;">@post.ViewCount</td>
-                        <td style="padding: 1.25rem;">
-                            <div style="display: flex; gap: 10px;">
-                                <form asp-action="TogglePostStatus" method="post" class="inline-form">
-                                    <input type="hidden" name="id" value="@post.Id" />
-                                    <button type="submit" class="btn btn-outline" style="padding: 0.4rem 0.8rem; border-radius: 8px; font-size: 0.7rem; font-weight: 800; border-color: @(post.Status == "Active" ? "rgba(236, 72, 153, 0.3)" : "rgba(139, 92, 246, 0.3)"); color: @(post.Status == "Active" ? "var(--accent-pink)" : "var(--accent-purple)");">
-                                        @(post.Status == "Active" ? "Ẩn bài" : "Khôi phục")
-                                    </button>
-                                </form>
-                                <form asp-action="DeletePost" method="post" class="inline-form" onsubmit="return confirm('Hành động này không thể hoàn tác. Xóa vĩnh viễn thảo luận này?');">
-                                    <input type="hidden" name="id" value="@post.Id" />
-                                    <button type="submit" class="btn btn-outline" style="padding: 0.4rem 0.6rem; border-radius: 8px; color: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.05);">
-                                        <i class="fa-solid fa-trash-can"></i>
-                                    </button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                }
+                    @foreach (var post in Model.OrderByDescending(p => p.CreatedAt))
+                    {
+                        <tr>
+                            <td>
+                                <a asp-controller="Post" asp-action="Details" asp-route-id="@post.Id" target="_blank" class="table-link">@post.Title</a>
+                            </td>
+                            <td>@post.User.FullName</td>
+                            <td><span class="badge-tag">@post.Category.Name</span></td>
+                            <td>
+                                <span class="status-pill @(post.Status == "Active" ? "is-live" : "is-muted")">
+                                    <span class="dot" style="background: currentColor;"></span>
+                                    @(post.Status == "Active" ? "Cong khai" : "Da an")
+                                </span>
+                            </td>
+                            <td class="table-note">@post.CreatedAt.ToString("dd MMM yyyy")</td>
+                            <td>@post.ViewCount</td>
+                            <td>
+                                <div class="admin-actions">
+                                    <form asp-action="TogglePostStatus" method="post" class="inline-form">
+                                        <input type="hidden" name="id" value="@post.Id" />
+                                        <button type="submit" class="btn btn-outline">
+                                            @(post.Status == "Active" ? "An bai" : "Khoi phuc")
+                                        </button>
+                                    </form>
+
+                                    <form asp-action="DeletePost" method="post" class="inline-form" onsubmit="return confirm('Ban co chac chan muon xoa bai viet nay?');">
+                                        <input type="hidden" name="id" value="@post.Id" />
+                                        <button type="submit" class="btn btn-danger-soft">
+                                            <i class="fa-solid fa-trash-can"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
                 </tbody>
             </table>
         </div>
