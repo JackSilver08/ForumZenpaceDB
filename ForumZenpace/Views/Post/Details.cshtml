@@ -3,8 +3,10 @@
 @{
     ViewData["Title"] = Model.Title;
     var topLevelComments = ViewBag.TopLevelComments as List<ForumZenpace.Models.Comment> ?? new List<ForumZenpace.Models.Comment>();
-    var currentUserInitial = User.Identity?.IsAuthenticated == true && !string.IsNullOrWhiteSpace(User.Identity?.Name)
-        ? User.Identity.Name.Substring(0, 1).ToUpperInvariant()
+    int? currentUserId = ViewBag.UserId == null ? null : (int?)ViewBag.UserId;
+    var isAuthenticated = User.Identity?.IsAuthenticated == true;
+    var currentUserInitial = isAuthenticated && !string.IsNullOrWhiteSpace(User.Identity?.Name)
+        ? User.Identity!.Name!.Substring(0, 1).ToUpperInvariant()
         : "U";
 }
 
@@ -60,7 +62,7 @@
         </div>
     </div>
 
-    <div id="reportBox" class="surface" style="display: none;">
+    <div id="reportBox" class="surface detail-report-box" hidden>
         <form asp-action="Report" method="post" class="stack-md ajax-postback">
             <input type="hidden" name="postId" value="@Model.Id" />
 
@@ -69,9 +71,11 @@
                 <p class="muted" style="margin-top: 6px;">Mo ta ly do de quan tri vien co them boi canh khi xu ly.</p>
             </div>
 
-            <div class="reply-form">
+            <div class="report-form-row">
                 <input type="text" name="reason" class="form-control" placeholder="Nhap ly do bao cao..." required />
-                <button type="submit" class="btn btn-primary">Gui bao cao</button>
+                <div style="display: flex; justify-content: flex-end;">
+                    <button type="submit" class="btn btn-primary">Gui bao cao</button>
+                </div>
             </div>
         </form>
     </div>
@@ -84,18 +88,18 @@
             </div>
         </div>
 
-        @if (User.Identity?.IsAuthenticated == true)
+        @if (isAuthenticated)
         {
-            <form asp-action="AddComment" method="post" class="comment-form ajax-postback" style="margin-bottom: 24px;">
+            <form asp-action="AddComment" method="post" class="comment-form comment-composer ajax-postback">
                 <input type="hidden" name="PostId" value="@Model.Id" />
                 <input type="hidden" name="ParentId" value="" />
 
                 <div class="comment-entry">
-                    <div class="avatar">@currentUserInitial</div>
+                    <div class="avatar thread-avatar">@currentUserInitial</div>
 
-                    <div class="stack-sm" style="flex: 1;">
-                        <textarea name="Content" class="form-control" rows="4" placeholder="Dong gop y kien cua ban..." required></textarea>
-                        <div style="display: flex; justify-content: flex-end;">
+                    <div class="comment-composer-panel">
+                        <textarea name="Content" class="form-control comment-composer-input" rows="3" placeholder="Dong gop y kien cua ban..." required></textarea>
+                        <div class="comment-composer-actions">
                             <button type="submit" class="btn btn-primary">Gui binh luan</button>
                         </div>
                     </div>
@@ -104,7 +108,7 @@
         }
         else
         {
-            <div class="glass-card" style="padding: 16px 18px; margin-bottom: 24px;">
+            <div class="comment-login-prompt">
                 <p class="muted">
                     Ban can
                     <a asp-controller="Auth" asp-action="Login" style="color: var(--accent-blue); font-weight: 800;">dang nhap</a>
@@ -114,83 +118,26 @@
         }
 
         <div class="comment-list">
-            @foreach (var comment in topLevelComments)
+            @if (topLevelComments.Any())
             {
-                <div class="glass-card comment-item comment-wrapper">
-                    <div class="comment-head">
-                        <div class="comment-author">
-                            <div class="avatar">@comment.User.FullName.Substring(0, 1).ToUpper()</div>
-                            <div>
-                                <div class="comment-author-name">@comment.User.FullName</div>
-                                <div class="comment-author-date">@comment.CreatedAt.ToString("dd MMM, HH:mm")</div>
-                            </div>
-                        </div>
-
-                        @if (User.Identity?.IsAuthenticated == true && ViewBag.UserId == comment.UserId)
-                        {
-                            <form asp-action="DeleteComment" method="post" class="inline-form ajax-postback">
-                                <input type="hidden" name="id" value="@comment.Id" />
-                                <button type="submit" class="btn btn-text" title="Xoa binh luan">
-                                    <i class="fa-solid fa-trash-can"></i>
-                                </button>
-                            </form>
-                        }
-                    </div>
-
-                    <div class="comment-body">@comment.Content</div>
-
-                    @if (User.Identity?.IsAuthenticated == true)
+                @foreach (var comment in topLevelComments)
+                {
+                    var threadItem = new CommentThreadItemViewModel
                     {
-                        <div class="comment-actions">
-                            <button type="button" class="btn btn-text" onclick="showReplyBox(@comment.Id)">
-                                <i class="fa-solid fa-reply"></i> Phan hoi
-                            </button>
-                        </div>
+                        Comment = comment,
+                        Level = 0,
+                        PostId = Model.Id,
+                        CurrentUserId = currentUserId,
+                        IsAuthenticated = isAuthenticated
+                    };
 
-                        <div id="replyBox-@comment.Id" class="reply-box">
-                            <form asp-action="AddComment" method="post" class="reply-form ajax-postback">
-                                <input type="hidden" name="PostId" value="@Model.Id" />
-                                <input type="hidden" name="ParentId" value="@comment.Id" />
-                                <input type="text" name="Content" class="form-control" placeholder="Viet phan hoi..." required />
-                                <div class="detail-action-group">
-                                    <button type="submit" class="btn btn-primary">Gui</button>
-                                    <button type="button" class="btn btn-text" onclick="showReplyBox(@comment.Id)">Huy</button>
-                                </div>
-                            </form>
-                        </div>
-                    }
-
-                    @if (Model.Comments.Any(c => c.ParentId == comment.Id))
-                    {
-                        <div class="reply-list">
-                            @foreach (var reply in Model.Comments.Where(c => c.ParentId == comment.Id).OrderBy(c => c.CreatedAt))
-                            {
-                                <div class="glass-card reply-item">
-                                    <div class="comment-head" style="margin-bottom: 10px;">
-                                        <div class="comment-author">
-                                            <div class="avatar" style="width: 32px; height: 32px; border-radius: 10px;">@reply.User.FullName.Substring(0, 1).ToUpper()</div>
-                                            <div>
-                                                <div class="comment-author-name">@reply.User.FullName</div>
-                                                <div class="comment-author-date">@reply.CreatedAt.ToString("dd MMM, HH:mm")</div>
-                                            </div>
-                                        </div>
-
-                                        @if (User.Identity?.IsAuthenticated == true && ViewBag.UserId == reply.UserId)
-                                        {
-                                            <form asp-action="DeleteComment" method="post" class="inline-form ajax-postback">
-                                                <input type="hidden" name="id" value="@reply.Id" />
-                                                <button type="submit" class="btn btn-text" title="Xoa phan hoi">
-                                                    <i class="fa-solid fa-trash-can"></i>
-                                                </button>
-                                            </form>
-                                        }
-                                    </div>
-
-                                    <div class="comment-body">@reply.Content</div>
-                                </div>
-                            }
-                        </div>
-                    }
+                    <partial name="_CommentThreadItem" model="threadItem" />
+                }
+            }
+            else
+            {
+                <div class="comment-empty-state">
+                    Chua co binh luan nao. Hay mo dau chuoi thao luan dau tien.
                 </div>
             }
         </div>
@@ -199,13 +146,38 @@
 
 @section Scripts {
     <script>
-        function showReplyBox(id) {
+        function toggleReplyBox(id) {
             const box = document.getElementById(`replyBox-${id}`);
             if (!box) {
                 return;
             }
 
-            box.style.display = box.style.display === 'block' ? 'none' : 'block';
+            const isOpen = box.classList.toggle('is-open');
+            if (isOpen) {
+                const input = box.querySelector('textarea, input');
+                if (input instanceof HTMLElement) {
+                    input.focus();
+                }
+            }
+        }
+
+        function toggleReplies(id, button) {
+            const replies = document.getElementById(`threadReplies-${id}`);
+            if (!replies || !(button instanceof HTMLElement)) {
+                return;
+            }
+
+            const isCollapsed = !replies.hasAttribute('hidden');
+            if (isCollapsed) {
+                replies.setAttribute('hidden', 'hidden');
+                button.classList.add('is-collapsed');
+                button.setAttribute('aria-expanded', 'false');
+                return;
+            }
+
+            replies.removeAttribute('hidden');
+            button.classList.remove('is-collapsed');
+            button.setAttribute('aria-expanded', 'true');
         }
 
         function toggleReport() {
@@ -214,7 +186,17 @@
                 return;
             }
 
-            box.style.display = box.style.display === 'block' ? 'none' : 'block';
+            const isHidden = box.hasAttribute('hidden');
+            if (isHidden) {
+                box.removeAttribute('hidden');
+                const input = box.querySelector('input, textarea');
+                if (input instanceof HTMLElement) {
+                    input.focus();
+                }
+                return;
+            }
+
+            box.setAttribute('hidden', 'hidden');
         }
 
         document.addEventListener('submit', async (event) => {
@@ -252,7 +234,7 @@
                 if (form.action.includes('Report')) {
                     alert(data.message || 'Da gui bao cao.');
                     form.reset();
-                    toggleReport();
+                    document.getElementById('reportBox')?.setAttribute('hidden', 'hidden');
                     return;
                 }
 

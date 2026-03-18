@@ -1,10 +1,6 @@
 @{
     var currentUserName = User.Identity?.Name ?? "User";
     var currentUserInitial = currentUserName.Substring(0, 1).ToUpperInvariant();
-    var controllerName = ViewContext.RouteData.Values["controller"]?.ToString();
-    var actionName = ViewContext.RouteData.Values["action"]?.ToString();
-    var isHomeIndex = string.Equals(controllerName, "Home", StringComparison.OrdinalIgnoreCase)
-        && string.Equals(actionName, "Index", StringComparison.OrdinalIgnoreCase);
 }
 <!DOCTYPE html>
 <html lang="vi">
@@ -22,28 +18,9 @@
     <header class="site-header">
         <div class="page-shell">
             <div class="navbar glass-panel animated-entry">
-                <a class="logo" asp-controller="Home" asp-action="Index">
-                    <span class="logo-mark">
-                        <i class="fa-solid fa-diamond"></i>
-                    </span>
-                    <span>Zenpace</span>
+                <a class="logo" asp-controller="Home" asp-action="Index" aria-label="Zenpace">
+                    <img class="logo-image" src="~/assets/Zenpacelogo.png" alt="Zenpace" />
                 </a>
-
-                @if (!isHomeIndex)
-                {
-                    <nav class="nav-links" aria-label="Primary">
-                        <a asp-controller="Home" asp-action="Index">Kham pha</a>
-                        @if (User.Identity?.IsAuthenticated == true)
-                        {
-                            <a asp-controller="Notification" asp-action="Index">Thong bao</a>
-                        }
-                        else
-                        {
-                            <a asp-controller="Auth" asp-action="Login">Dang nhap</a>
-                        }
-                        <a asp-controller="Home" asp-action="Privacy">Quy dinh</a>
-                    </nav>
-                }
 
                 <div class="header-actions">
                     @if (User.Identity?.IsAuthenticated == true)
@@ -59,8 +36,8 @@
 
                         @if (User.IsInRole("Admin"))
                         {
-                            <a asp-controller="Admin" asp-action="Dashboard" class="btn btn-outline icon-btn" title="Quan tri">
-                                <i class="fa-solid fa-shield-halved"></i>
+                            <a asp-controller="Admin" asp-action="Dashboard" class="btn btn-outline icon-btn" title="Quan tri" aria-label="Quan tri">
+                                <i class="fa-solid fa-gear"></i>
                             </a>
                         }
 

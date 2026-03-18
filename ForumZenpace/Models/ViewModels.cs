@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Http;
+using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace ForumZenpace.Models
@@ -50,18 +52,45 @@ namespace ForumZenpace.Models
         public int? ParentId { get; set; }
     }
 
+    public class CommentThreadItemViewModel
+    {
+        [Required]
+        public Comment Comment { get; set; } = null!;
+
+        public int PostId { get; set; }
+        public int Level { get; set; }
+        public int? CurrentUserId { get; set; }
+        public bool IsAuthenticated { get; set; }
+    }
+
     public class ProfileViewModel
     {
         [Required, MaxLength(100)]
-        public string FullName { get; set; }
+        public string FullName { get; set; } = string.Empty;
 
         [Required, EmailAddress, MaxLength(100)]
-        public string Email { get; set; }
+        public string Email { get; set; } = string.Empty;
 
         public string? Avatar { get; set; }
         public IFormFile? AvatarFile { get; set; }
         
         // Expose username just for display
         public string? Username { get; set; }
+        public DateTime JoinedAt { get; set; }
+        public int PostCount { get; set; }
+        public int TotalViewCount { get; set; }
+        public int TotalCommentCount { get; set; }
+        public IReadOnlyList<ProfilePostSummaryViewModel> Posts { get; set; } = Array.Empty<ProfilePostSummaryViewModel>();
+    }
+
+    public class ProfilePostSummaryViewModel
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string Excerpt { get; set; } = string.Empty;
+        public string CategoryName { get; set; } = string.Empty;
+        public DateTime CreatedAt { get; set; }
+        public int CommentCount { get; set; }
+        public int ViewCount { get; set; }
     }
 }

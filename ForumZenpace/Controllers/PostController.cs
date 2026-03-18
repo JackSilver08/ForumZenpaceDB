@@ -141,8 +141,7 @@ namespace ForumZenpace.Controllers
 
             ViewBag.UserId = userId;
             
-            // Build tree hierarchy for comments
-            var topLevelComments = post.Comments.Where(c => c.ParentId == null).OrderBy(c => c.CreatedAt).ToList();
+            var topLevelComments = BuildCommentTree(post.Comments);
             ViewBag.TopLevelComments = topLevelComments;
 
             return View(post);
@@ -273,9 +272,8 @@ namespace ForumZenpace.Controllers
             if (comment != null)
             {
                 var postId = comment.PostId;
-                // Deleting parent comment should also delete replies. We handle cascade via code since DB restrict.
-                var replies = await _context.Comments.Where(c => c.ParentId == comment.Id).ToListAsync();
-                _context.Comments.RemoveRange(replies);
+                var commentBranch = await GetCommentBranchAsync(comment);
+                _context.Comments.RemoveRange(commentBranch);
                 _context.Comments.Remove(comment);
                 await _context.SaveChangesAsync();
                 
@@ -289,6 +287,64 @@ namespace ForumZenpace.Controllers
                 return Json(new { success = false, message = "Comment not found or unauthorized." });
 
             return RedirectToAction("Index", "Home");
+        }
+
+        private static List<Comment> BuildCommentTree(IEnumerable<Comment> comments)
+        {
+            var orderedComments = comments
+                .OrderBy(c => c.CreatedAt)
+                .ToList();
+
+            var commentLookup = orderedComments.ToDictionary(c => c.Id);
+            foreach (var comment in orderedComments)
+            {
+                comment.Replies = new List<Comment>();
+            }
+
+            var topLevelComments = new List<Comment>();
+            foreach (var comment in orderedComments)
+            {
+                if (comment.ParentId.HasValue && commentLookup.TryGetValue(comment.ParentId.Value, out var parentComment))
+                {
+                    parentComment.Replies.Add(comment);
+                    continue;
+                }
+
+                topLevelComments.Add(comment);
+            }
+
+            return topLevelComments;
+        }
+
+        private async Task<List<Comment>> GetCommentBranchAsync(Comment rootComment)
+        {
+            var postComments = await _context.Comments
+                .Where(c => c.PostId == rootComment.PostId)
+                .ToListAsync();
+
+            var childrenLookup = postComments
+                .Where(c => c.ParentId.HasValue)
+                .ToLookup(c => c.ParentId!.Value);
+
+            var idsToDelete = new HashSet<int>();
+            var pendingCommentIds = new Queue<int>();
+            pendingCommentIds.Enqueue(rootComment.Id);
+
+            while (pendingCommentIds.Count > 0)
+            {
+                var currentId = pendingCommentIds.Dequeue();
+                foreach (var childComment in childrenLookup[currentId])
+                {
+                    if (idsToDelete.Add(childComment.Id))
+                    {
+                        pendingCommentIds.Enqueue(childComment.Id);
+                    }
+                }
+            }
+
+            return postComments
+                .Where(c => idsToDelete.Contains(c.Id))
+                .ToList();
         }
     }
 }

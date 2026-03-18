@@ -79,6 +79,14 @@
         <div class="glass-panel sidebar-panel">
             <div class="panel-label">Danh muc</div>
 
+            <a asp-action="Index"
+               asp-route-sortOrder="@sortRoute"
+               asp-route-searchString="@searchRoute"
+               class="sidebar-link @(!currentCategory.HasValue ? "active" : "")">
+                <i class="fa-solid fa-layer-group"></i>
+                <span>Tat ca</span>
+            </a>
+
             @foreach (var category in categories)
             {
                 <a asp-action="Index"

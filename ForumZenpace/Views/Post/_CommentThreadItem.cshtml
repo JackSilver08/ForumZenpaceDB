@@ -1,0 +1,107 @@
+@model ForumZenpace.Models.CommentThreadItemViewModel
+@{
+    var comment = Model.Comment;
+    var authorName = string.IsNullOrWhiteSpace(comment.User?.FullName) ? "Unknown user" : comment.User.FullName;
+    var authorInitial = authorName.Substring(0, 1).ToUpperInvariant();
+    var hasReplies = comment.Replies.Any();
+    var replyCount = comment.Replies.Count;
+    var isOwner = Model.CurrentUserId == comment.UserId;
+    var replyBoxId = $"replyBox-{comment.Id}";
+    var childrenId = $"threadReplies-{comment.Id}";
+}
+
+<article class="thread-node" data-comment-id="@comment.Id" data-level="@Model.Level">
+    <div class="thread-comment">
+        <div class="avatar thread-avatar">
+            @if (!string.IsNullOrWhiteSpace(comment.User?.Avatar))
+            {
+                <img src="@comment.User.Avatar" alt="@authorName" />
+            }
+            else
+            {
+                <span>@authorInitial</span>
+            }
+        </div>
+
+        <div class="thread-main">
+            <div class="thread-bubble">
+                <div class="thread-meta-row">
+                    <div class="thread-meta">
+                        <span class="comment-author-name">@authorName</span>
+                        <span class="thread-meta-separator"></span>
+                        <time class="comment-author-date" datetime="@comment.CreatedAt.ToString("O")">@comment.CreatedAt.ToString("dd MMM, HH:mm")</time>
+                    </div>
+
+                    @if (isOwner)
+                    {
+                        <form asp-action="DeleteComment" method="post" class="inline-form ajax-postback">
+                            <input type="hidden" name="id" value="@comment.Id" />
+                            <button type="submit" class="comment-utility" title="Xoa binh luan" aria-label="Xoa binh luan">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </form>
+                    }
+                </div>
+
+                <div class="comment-body">@comment.Content</div>
+            </div>
+
+            <div class="thread-actions">
+                @if (Model.IsAuthenticated)
+                {
+                    <button type="button" class="comment-action" onclick="toggleReplyBox(@comment.Id)">
+                        <i class="fa-solid fa-reply"></i>
+                        <span>Phan hoi</span>
+                    </button>
+                }
+
+                <button type="button" class="comment-action comment-action-disabled" disabled aria-disabled="true" title="Tinh nang like comment chua duoc ket noi">
+                    <i class="fa-regular fa-heart"></i>
+                    <span>Thich</span>
+                </button>
+
+                @if (hasReplies)
+                {
+                    <button type="button" class="comment-action thread-toggle" aria-expanded="true" onclick="toggleReplies(@comment.Id, this)">
+                        <i class="fa-solid fa-chevron-down"></i>
+                        <span>@replyCount phan hoi</span>
+                    </button>
+                }
+            </div>
+
+            @if (Model.IsAuthenticated)
+            {
+                <div id="@replyBoxId" class="reply-box thread-reply-box">
+                    <form asp-action="AddComment" method="post" class="reply-form thread-reply-form ajax-postback">
+                        <input type="hidden" name="PostId" value="@Model.PostId" />
+                        <input type="hidden" name="ParentId" value="@comment.Id" />
+                        <textarea name="Content" class="form-control thread-reply-input" rows="3" placeholder="Viet phan hoi..." required></textarea>
+                        <div class="reply-form-actions">
+                            <button type="submit" class="btn btn-primary">Gui</button>
+                            <button type="button" class="btn btn-text" onclick="toggleReplyBox(@comment.Id)">Huy</button>
+                        </div>
+                    </form>
+                </div>
+            }
+
+            @if (hasReplies)
+            {
+                <div id="@childrenId" class="thread-children">
+                    @foreach (var reply in comment.Replies.OrderBy(c => c.CreatedAt))
+                    {
+                        var childItem = new CommentThreadItemViewModel
+                        {
+                            Comment = reply,
+                            Level = Model.Level + 1,
+                            PostId = Model.PostId,
+                            CurrentUserId = Model.CurrentUserId,
+                            IsAuthenticated = Model.IsAuthenticated
+                        };
+
+                        <partial name="_CommentThreadItem" model="childItem" />
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</article>

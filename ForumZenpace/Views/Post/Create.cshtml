@@ -27,9 +27,12 @@
 
             <div class="field">
                 <label asp-for="CategoryId" class="field-label">Chuyen muc</label>
-                <select asp-for="CategoryId" class="form-control" asp-items="ViewBag.Categories">
-                    <option value="">-- Chon chuyen muc phu hop --</option>
-                </select>
+                <div class="select-shell">
+                    <select asp-for="CategoryId" class="form-control category-select" asp-items="ViewBag.Categories">
+                        <option value="">Chon chuyen muc phu hop</option>
+                    </select>
+                </div>
+                <div class="field-hint">Chon dung khu vuc de bai viet hien thi ro rang hon va de nguoi doc tim thay nhanh hon.</div>
                 <span asp-validation-for="CategoryId" class="text-danger"></span>
             </div>
 

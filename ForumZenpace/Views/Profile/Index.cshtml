@@ -1,76 +1,226 @@
+@using System.Linq
 @model ForumZenpace.Models.ProfileViewModel
 @{
     ViewData["Title"] = "Ho so cua toi";
-    var avatarInitial = string.IsNullOrWhiteSpace(Model.Username)
-        ? "U"
-        : Model.Username.Substring(0, 1).ToUpperInvariant();
+    var displayName = string.IsNullOrWhiteSpace(Model.FullName)
+        ? (Model.Username ?? "User")
+        : Model.FullName;
+    var avatarSeed = string.IsNullOrWhiteSpace(displayName) ? "U" : displayName;
+    var avatarInitial = avatarSeed.Substring(0, 1).ToUpperInvariant();
     var hasAvatar = !string.IsNullOrWhiteSpace(Model.Avatar);
+    var hasPosts = Model.Posts.Any();
+    var hasValidationErrors = ViewData.ModelState.ErrorCount > 0;
 }
 
 <div class="profile-shell animated-entry">
-    <div class="surface profile-card">
-        <div class="surface-header">
-            <div>
-                <h1 class="surface-title">Chinh sua ho so</h1>
-                <p class="surface-subtitle">Trang nay da duoc thu gon de form de quet hon, avatar nho gon hon va khong con o nhap URL anh.</p>
-            </div>
-        </div>
-
-        @if (ViewBag.SuccessMessage != null)
-        {
-            <div class="glass-card mb-5" style="padding: 12px; color: var(--accent-green); border-color: rgba(73, 199, 146, 0.16); background: rgba(73, 199, 146, 0.08);">
-                <i class="fa-solid fa-circle-check"></i> @ViewBag.SuccessMessage
-            </div>
-        }
-
-        <form asp-action="Update" method="post" enctype="multipart/form-data" class="stack-lg">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-
-            <div class="profile-grid">
-                <div class="profile-avatar-wrap">
+    <div class="profile-layout">
+        <aside class="profile-sidebar">
+            <section class="surface profile-summary-card">
+                <div class="profile-summary-top">
                     <div class="profile-avatar-frame">
                         <div class="profile-avatar-panel">
-                            <div id="avatarFallback" class="profile-avatar-fallback" style="display: @(hasAvatar ? "none" : "flex");">
+                            <div class="profile-avatar-fallback" style="display: @(hasAvatar ? "none" : "flex");">
                                 @avatarInitial
                             </div>
-                            <img id="avatarPreview" class="profile-avatar-image" src="@Model.Avatar" alt="Avatar" style="display: @(hasAvatar ? "block" : "none");" />
+                            <img class="profile-avatar-image" src="@Model.Avatar" alt="@displayName" style="display: @(hasAvatar ? "block" : "none");" />
                         </div>
 
-                        <input asp-for="AvatarFile" id="avatarUpload" type="file" accept=".jpg,.jpeg,.png,.gif,.webp" hidden />
-                        <label for="avatarUpload" class="profile-avatar-trigger" title="Tai anh avatar">
-                            <i class="fa-solid fa-camera"></i>
-                        </label>
-                    </div>
-
-                    <div class="profile-username">@@@Model.Username</div>
-
-                    <div class="profile-upload-note">
-                        <p id="avatarFileName" class="field-hint">
-                            @(hasAvatar ? "Avatar hien tai dang duoc su dung." : "Chua co avatar. Bam icon camera de chon anh.")
-                        </p>
-                        <span asp-validation-for="AvatarFile" class="text-danger"></span>
-                        <p class="field-hint">Chap nhan JPG, PNG, GIF, WEBP. Gioi han 5MB.</p>
+                        <button type="button"
+                                class="profile-avatar-trigger"
+                                title="Chinh sua ho so"
+                                aria-label="Chinh sua ho so"
+                                aria-haspopup="dialog"
+                                aria-controls="profileEditModal"
+                                onclick="openProfileModal()">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
                     </div>
                 </div>
 
-                <div class="stack-md">
-                    <div class="field">
-                        <label asp-for="FullName" class="field-label">Ho ten day du</label>
-                        <input asp-for="FullName" class="form-control" placeholder="Ten hien thi cua ban" />
-                        <span asp-validation-for="FullName" class="text-danger"></span>
+                <div class="profile-identity">
+                    <h1 class="profile-display-name">@displayName</h1>
+                    <div class="profile-handle">@@@Model.Username</div>
+                    <div class="profile-contact">@Model.Email</div>
+                </div>
+
+                <div class="profile-summary-stats">
+                    <div class="profile-stat-chip">
+                        <span class="profile-stat-label">Chu de</span>
+                        <strong class="profile-stat-value">@Model.PostCount</strong>
+                    </div>
+                    <div class="profile-stat-chip">
+                        <span class="profile-stat-label">Binh luan</span>
+                        <strong class="profile-stat-value">@Model.TotalCommentCount</strong>
+                    </div>
+                    <div class="profile-stat-chip">
+                        <span class="profile-stat-label">Luot xem</span>
+                        <strong class="profile-stat-value">@Model.TotalViewCount</strong>
+                    </div>
+                </div>
+
+                <div class="profile-summary-meta">
+                    <span><i class="fa-regular fa-calendar"></i> Tham gia @Model.JoinedAt.ToString("MM/yyyy")</span>
+                    <span><i class="fa-regular fa-image"></i> @(hasAvatar ? "Avatar dang hoat dong" : "Chua co avatar")</span>
+                </div>
+
+                <div class="profile-upload-note">
+                    <p class="field-hint">
+                        Nhan icon but chi de doi avatar va cap nhat thong tin co ban.
+                    </p>
+                </div>
+
+                @if (ViewBag.SuccessMessage != null)
+                {
+                    <div class="profile-inline-alert">
+                        <i class="fa-solid fa-circle-check"></i>
+                        <span>@ViewBag.SuccessMessage</span>
+                    </div>
+                }
+            </section>
+        </aside>
+
+        <section class="profile-main">
+            <div class="surface profile-content-card">
+                <div class="profile-content-header">
+                    <div>
+                        <div class="panel-label">Noi dung cua ban</div>
+                        <h2 class="section-heading">Bai viet da dang</h2>
+                        <p class="surface-subtitle">Cac chu de cong khai duoc sap xep theo thoi gian moi nhat.</p>
                     </div>
 
-                    <div class="field">
-                        <label asp-for="Email" class="field-label">Dia chi email</label>
-                        <input asp-for="Email" class="form-control" type="email" placeholder="example@zenpace.com" />
-                        <span asp-validation-for="Email" class="text-danger"></span>
+                    <div class="profile-tabs" role="tablist" aria-label="Dieu huong ho so">
+                        <button type="button" class="profile-tab is-active" aria-selected="true">
+                            Posts
+                            <span class="profile-tab-count">@Model.PostCount</span>
+                        </button>
+                        <button type="button" class="profile-tab" aria-selected="false" disabled>Comments</button>
+                        <button type="button" class="profile-tab" aria-selected="false" disabled>Saved</button>
                     </div>
+                </div>
+
+                @if (hasPosts)
+                {
+                    <div class="profile-post-list">
+                        @foreach (var post in Model.Posts)
+                        {
+                            <a asp-controller="Post" asp-action="Details" asp-route-id="@post.Id" class="glass-card profile-post-link">
+                                <div class="profile-post-head">
+                                    <div class="profile-post-meta">
+                                        @if (!string.IsNullOrWhiteSpace(post.CategoryName))
+                                        {
+                                            <span class="category-badge">@post.CategoryName</span>
+                                        }
+                                        <span>@post.CreatedAt.ToString("dd MMM yyyy")</span>
+                                    </div>
+
+                                    <span class="profile-post-open" aria-hidden="true">
+                                        <i class="fa-solid fa-arrow-right"></i>
+                                    </span>
+                                </div>
+
+                                <div class="profile-post-title">@post.Title</div>
+
+                                @if (!string.IsNullOrWhiteSpace(post.Excerpt))
+                                {
+                                    <p class="profile-post-excerpt">@post.Excerpt</p>
+                                }
+
+                                <div class="profile-post-footer">
+                                    <div class="profile-post-metrics">
+                                        <span class="metric comments">
+                                            <i class="fa-regular fa-comment-dots"></i>
+                                            <span>@post.CommentCount binh luan</span>
+                                        </span>
+                                        <span class="metric">
+                                            <i class="fa-regular fa-eye"></i>
+                                            <span>@post.ViewCount luot xem</span>
+                                        </span>
+                                    </div>
+
+                                    <span class="profile-post-cta">Mo chu de</span>
+                                </div>
+                            </a>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="profile-empty-state">
+                        <div class="empty-icon">
+                            <i class="fa-regular fa-message"></i>
+                        </div>
+                        <h3 class="section-heading">Chua co chu de nao</h3>
+                        <p class="muted">Trang nay se tro thanh khu vuc chinh de theo doi bai viet cua ban sau khi ban dang chu de dau tien.</p>
+                        <div>
+                            <a asp-controller="Post" asp-action="Create" class="btn btn-primary">Tao chu de moi</a>
+                        </div>
+                    </div>
+                }
+            </div>
+        </section>
+    </div>
+</div>
+
+<div id="profileEditModal"
+     class="profile-modal"
+     data-open-on-load="@(hasValidationErrors ? "true" : "false")"
+     hidden
+     aria-hidden="true">
+    <div class="profile-modal-backdrop" onclick="closeProfileModal()"></div>
+
+    <div class="surface profile-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="profileEditTitle">
+        <div class="profile-modal-header">
+            <div>
+                <div class="panel-label">Chinh sua ho so</div>
+                <h2 id="profileEditTitle" class="section-heading">Avatar va thong tin co ban</h2>
+            </div>
+
+            <button type="button" class="profile-modal-close" aria-label="Dong popup" onclick="closeProfileModal()">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <form asp-action="Update" method="post" enctype="multipart/form-data" class="profile-modal-form">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="profile-modal-avatar-row">
+                <div class="profile-avatar-frame profile-modal-avatar-frame">
+                    <div class="profile-avatar-panel">
+                        <div id="modalAvatarFallback" class="profile-avatar-fallback" style="display: @(hasAvatar ? "none" : "flex");">
+                            @avatarInitial
+                        </div>
+                        <img id="modalAvatarPreview" class="profile-avatar-image" src="@Model.Avatar" alt="@displayName" style="display: @(hasAvatar ? "block" : "none");" />
+                    </div>
+                </div>
+
+                <div class="profile-modal-avatar-tools">
+                    <input asp-for="AvatarFile" id="avatarUpload" type="file" accept=".jpg,.jpeg,.png,.gif,.webp" hidden />
+                    <label for="avatarUpload" class="btn btn-outline">Chon avatar</label>
+                    <p id="avatarFileName" class="field-hint">
+                        @(hasAvatar ? "Anh dai dien hien tai dang duoc su dung." : "Chua co avatar. Chon anh moi de cap nhat.")
+                    </p>
+                    <span asp-validation-for="AvatarFile" class="text-danger"></span>
+                    <p class="field-hint">Chap nhan JPG, PNG, GIF, WEBP. Gioi han toi da 5MB.</p>
                 </div>
             </div>
 
-            <div class="editor-footer">
-                <p class="field-hint">Thong tin duoc luu ngay sau khi ban nhan cap nhat.</p>
-                <button type="submit" class="btn btn-primary">Cap nhat ho so</button>
+            <div class="stack-sm">
+                <div class="field">
+                    <label asp-for="FullName" class="field-label">Ten hien thi</label>
+                    <input asp-for="FullName" class="form-control" placeholder="Ten hien thi cua ban" />
+                    <span asp-validation-for="FullName" class="text-danger"></span>
+                </div>
+
+                <div class="field">
+                    <label asp-for="Email" class="field-label">Dia chi email</label>
+                    <input asp-for="Email" class="form-control" type="email" placeholder="example@zenpace.com" />
+                    <span asp-validation-for="Email" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="profile-modal-footer">
+                <button type="button" class="btn btn-text" onclick="closeProfileModal()">Huy</button>
+                <button type="submit" class="btn btn-primary">Luu thay doi</button>
             </div>
         </form>
     </div>
@@ -80,14 +230,49 @@
     <partial name="_ValidationScriptsPartial" />
     <script>
         (() => {
+            const modal = document.getElementById('profileEditModal');
             const fileInput = document.getElementById('avatarUpload');
-            const preview = document.getElementById('avatarPreview');
-            const fallback = document.getElementById('avatarFallback');
+            const preview = document.getElementById('modalAvatarPreview');
+            const fallback = document.getElementById('modalAvatarFallback');
             const fileName = document.getElementById('avatarFileName');
+            const firstField = document.querySelector('#profileEditModal input[name="FullName"]');
 
-            if (!fileInput || !preview || !fallback || !fileName) {
+            function openProfileModal() {
+                if (!modal) {
+                    return;
+                }
+
+                modal.hidden = false;
+                modal.setAttribute('aria-hidden', 'false');
+                document.body.classList.add('profile-modal-open');
+
+                if (firstField instanceof HTMLElement) {
+                    window.requestAnimationFrame(() => firstField.focus());
+                }
+            }
+
+            function closeProfileModal() {
+                if (!modal) {
+                    return;
+                }
+
+                modal.hidden = true;
+                modal.setAttribute('aria-hidden', 'true');
+                document.body.classList.remove('profile-modal-open');
+            }
+
+            window.openProfileModal = openProfileModal;
+            window.closeProfileModal = closeProfileModal;
+
+            if (!modal || !fileInput || !preview || !fallback || !fileName) {
                 return;
             }
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && !modal.hidden) {
+                    closeProfileModal();
+                }
+            });
 
             fileInput.addEventListener('change', (event) => {
                 const input = event.target;
@@ -108,6 +293,10 @@
 
                 reader.readAsDataURL(file);
             });
+
+            if (modal.dataset.openOnLoad === 'true') {
+                openProfileModal();
+            }
         })();
     </script>
 }

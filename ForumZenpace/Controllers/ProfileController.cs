@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using ForumZenpace.Models;
 
@@ -37,15 +38,7 @@ namespace ForumZenpace.Controllers
             
             if (user == null) return NotFound();
 
-            var model = new ProfileViewModel
-            {
-                FullName = user.FullName,
-                Email = user.Email,
-                Avatar = user.Avatar,
-                Username = user.Username
-            };
-            
-            return View(model);
+            return View(await BuildProfileViewModelAsync(user));
         }
 
         [HttpPost]
@@ -63,9 +56,7 @@ namespace ForumZenpace.Controllers
 
             if (!ModelState.IsValid)
             {
-                model.Username = user.Username;
-                model.Avatar = user.Avatar;
-                return View("Index", model);
+                return View("Index", await BuildProfileViewModelAsync(user, model));
             }
 
             user.FullName = model.FullName.Trim();
@@ -79,10 +70,7 @@ namespace ForumZenpace.Controllers
             await _context.SaveChangesAsync();
 
             ViewBag.SuccessMessage = "Cap nhat ho so thanh cong.";
-            model.Username = user.Username;
-            model.Avatar = user.Avatar;
-
-            return View("Index", model);
+            return View("Index", await BuildProfileViewModelAsync(user));
         }
 
         private void ValidateAvatarFile(IFormFile? avatarFile)
@@ -131,6 +119,51 @@ namespace ForumZenpace.Controllers
             return int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId)
                 ? userId
                 : null;
+        }
+
+        private async Task<ProfileViewModel> BuildProfileViewModelAsync(User user, ProfileViewModel? source = null)
+        {
+            var posts = await _context.Posts
+                .Where(p => p.UserId == user.Id && p.Status == "Active")
+                .Include(p => p.Category)
+                .Include(p => p.Comments)
+                .OrderByDescending(p => p.CreatedAt)
+                .ToListAsync();
+
+            return new ProfileViewModel
+            {
+                FullName = source?.FullName ?? user.FullName,
+                Email = source?.Email ?? user.Email,
+                Avatar = user.Avatar,
+                Username = user.Username,
+                JoinedAt = user.CreatedAt,
+                PostCount = posts.Count,
+                TotalViewCount = posts.Sum(p => p.ViewCount),
+                TotalCommentCount = posts.Sum(p => p.Comments.Count),
+                Posts = posts.Select(p => new ProfilePostSummaryViewModel
+                {
+                    Id = p.Id,
+                    Title = p.Title,
+                    Excerpt = CreateExcerpt(p.Content),
+                    CategoryName = p.Category?.Name ?? string.Empty,
+                    CreatedAt = p.CreatedAt,
+                    CommentCount = p.Comments.Count,
+                    ViewCount = p.ViewCount
+                }).ToList()
+            };
+        }
+
+        private static string CreateExcerpt(string? content)
+        {
+            if (string.IsNullOrWhiteSpace(content))
+            {
+                return string.Empty;
+            }
+
+            const int previewLength = 148;
+            return content.Length <= previewLength
+                ? content
+                : $"{content[..previewLength].TrimEnd()}...";
         }
     }
 }
