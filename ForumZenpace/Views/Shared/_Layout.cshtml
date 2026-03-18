@@ -1,0 +1,65 @@
+@using System.Security.Claims
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - ForumZenpace</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <header class="navbar">
+        <div class="container navbar-inner">
+            <a class="logo" asp-area="" asp-controller="Home" asp-action="Index">
+                <i class="fa-solid fa-bolt text-primary"></i> Zenpace
+            </a>
+            <nav class="nav-links">
+                <a asp-controller="Home" asp-action="Index">Home</a>
+                <a asp-controller="Home" asp-action="Categories">Topics</a>
+                @if (User.Identity.IsAuthenticated)
+                {
+                    <a asp-controller="Post" asp-action="Create" class="btn btn-primary"><i class="fa-solid fa-pen"></i> New Post</a>
+                    
+                    <div class="user-menu">
+                        <a asp-controller="Notification" asp-action="Index" class="btn btn-text" style="padding: 0 0.5rem;" title="Notifications">
+                            <i class="fa-solid fa-bell"></i>
+                        </a>
+                        <a asp-controller="Profile" asp-action="Index" class="user-greeting">Hi, @User.Identity.Name</a>
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <a asp-controller="Admin" asp-action="Dashboard" class="btn btn-outline"><i class="fa-solid fa-gauge"></i> Admin</a>
+                        }
+                        <form asp-controller="Auth" asp-action="Logout" method="post" class="inline-form">
+                            <button type="submit" class="btn btn-text"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+                        </form>
+                    </div>
+                }
+                else
+                {
+                    <a asp-controller="Auth" asp-action="Login" class="btn btn-outline">Log in</a>
+                    <a asp-controller="Auth" asp-action="Register" class="btn btn-primary">Sign up</a>
+                }
+            </nav>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="container animated-entry">
+            @RenderBody()
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; @DateTime.Now.Year - ForumZenpace. Crafted with passion.</p>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

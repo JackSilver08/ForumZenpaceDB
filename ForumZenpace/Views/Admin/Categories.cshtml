@@ -1,0 +1,43 @@
+@model IEnumerable<ForumZenpace.Models.Category>
+@{
+    ViewData["Title"] = "Manage Categories";
+}
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <h1><a asp-action="Dashboard" style="color: var(--text-muted);"><i class="fa-solid fa-arrow-left"></i></a> Manage Categories</h1>
+</div>
+
+<div class="grid grid-cols-2">
+    <!-- List -->
+    <div class="card" style="padding: 0;">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Category ID</th>
+                    <th>Name</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var cat in Model)
+            {
+                <tr>
+                    <td>#@cat.Id</td>
+                    <td>@cat.Name</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Add new -->
+    <div class="card" style="height: fit-content;">
+        <h3>Add Category</h3>
+        <form asp-action="AddCategory" method="post" style="margin-top: 1rem;">
+            <div class="form-group">
+                <label class="form-label">Category Name</label>
+                <input type="text" name="name" class="form-control" required />
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Add Category</button>
+        </form>
+    </div>
+</div>

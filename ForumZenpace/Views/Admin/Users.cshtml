@@ -1,0 +1,50 @@
+@model IEnumerable<ForumZenpace.Models.User>
+@{
+    ViewData["Title"] = "Manage Users";
+}
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <h1><a asp-action="Dashboard" style="color: var(--text-muted);"><i class="fa-solid fa-arrow-left"></i></a> Manage Users</h1>
+</div>
+
+<div class="card" style="overflow-x: auto; padding: 0;">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Username</th>
+                <th>Full Name</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Joined Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var user in Model)
+        {
+            <tr>
+                <td>@user.Username</td>
+                <td>@user.FullName</td>
+                <td><span class="badge @(user.Role.Name == "Admin" ? "bg-danger" : "bg-success")">@user.Role.Name</span></td>
+                <td>
+                    <span class="badge @(user.IsActive ? "bg-success" : "bg-danger")">
+                        @(user.IsActive ? "Active" : "Locked")
+                    </span>
+                </td>
+                <td>@user.CreatedAt.ToString("MMM dd, yyyy")</td>
+                <td>
+                    @if (user.Role.Name != "Admin")
+                    {
+                        <form asp-action="ToggleUserStatus" method="post" style="display: inline;">
+                            <input type="hidden" name="id" value="@user.Id" />
+                            <button type="submit" class="btn btn-sm btn-outline" style="padding: 2px 8px; font-size: 0.8rem;">
+                                @(user.IsActive ? "Lock User" : "Unlock User")
+                            </button>
+                        </form>
+                    }
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

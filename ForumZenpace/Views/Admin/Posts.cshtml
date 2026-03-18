@@ -1,0 +1,55 @@
+@model IEnumerable<ForumZenpace.Models.Post>
+@{
+    ViewData["Title"] = "Manage Posts";
+}
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <h1><a asp-action="Dashboard" style="color: var(--text-muted);"><i class="fa-solid fa-arrow-left"></i></a> Manage Posts</h1>
+</div>
+
+<div class="card" style="overflow-x: auto; padding: 0;">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Author</th>
+                <th>Category</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th>Views</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var post in Model.OrderByDescending(p => p.CreatedAt))
+        {
+            <tr>
+                <td><a asp-controller="Post" asp-action="Details" asp-route-id="@post.Id" target="_blank">@post.Title</a></td>
+                <td>@post.User.FullName</td>
+                <td><span class="badge bg-success">@post.Category.Name</span></td>
+                <td>
+                    <span class="badge @(post.Status == "Active" ? "bg-success" : "bg-danger")">
+                        @post.Status
+                    </span>
+                </td>
+                <td>@post.CreatedAt.ToString("MMM dd")</td>
+                <td>@post.ViewCount</td>
+                <td>
+                    <form asp-action="TogglePostStatus" method="post" class="inline-form">
+                        <input type="hidden" name="id" value="@post.Id" />
+                        <button type="submit" class="btn btn-sm btn-outline" style="padding: 2px 8px; font-size: 0.8rem;">
+                            @(post.Status == "Active" ? "Hide" : "Show")
+                        </button>
+                    </form>
+                    <form asp-action="DeletePost" method="post" class="inline-form" onsubmit="return confirm('Are you sure you want to completely delete this post?');">
+                        <input type="hidden" name="id" value="@post.Id" />
+                        <button type="submit" class="btn btn-sm btn-danger" style="padding: 2px 8px; font-size: 0.8rem;">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </form>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

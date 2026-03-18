@@ -1,0 +1,47 @@
+@model IEnumerable<ForumZenpace.Models.Report>
+@{
+    ViewData["Title"] = "Review Reports";
+}
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <h1><a asp-action="Dashboard" style="color: var(--text-muted);"><i class="fa-solid fa-arrow-left"></i></a> Review Reports</h1>
+</div>
+
+<div class="card" style="overflow-x: auto; padding: 0;">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Post</th>
+                <th>Reported By</th>
+                <th>Reason</th>
+                <th>Date</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var r in Model)
+        {
+            <tr>
+                <td><a asp-controller="Post" asp-action="Details" asp-route-id="@r.PostId" target="_blank">@r.Post?.Title</a></td>
+                <td>@r.User?.FullName</td>
+                <td style="color: var(--accent);">@r.Reason</td>
+                <td>@r.CreatedAt.ToString("MMM dd HH:mm")</td>
+                <td>
+                    <form asp-action="DeletePost" method="post" class="inline-form" onsubmit="return confirm('Delete this post due to report?');">
+                        <input type="hidden" name="id" value="@r.PostId" />
+                        <button type="submit" class="btn btn-sm btn-danger" style="padding: 2px 8px; font-size: 0.8rem;">
+                            Delete Post
+                        </button>
+                    </form>
+                    <form asp-action="TogglePostStatus" method="post" class="inline-form">
+                        <input type="hidden" name="id" value="@r.PostId" />
+                        <button type="submit" class="btn btn-sm btn-outline" style="padding: 2px 8px; font-size: 0.8rem;">
+                            Toggle Hide
+                        </button>
+                    </form>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

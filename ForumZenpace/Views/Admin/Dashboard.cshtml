@@ -1,0 +1,62 @@
+@{
+    ViewData["Title"] = "Admin Dashboard";
+    var stats = ViewBag.Stats;
+    var topLiked = (ForumZenpace.Models.Post)stats.TopLiked;
+    var topViewed = (ForumZenpace.Models.Post)stats.TopViewed;
+}
+
+<h1><i class="fa-solid fa-gauge"></i> Admin Dashboard</h1>
+
+<div class="grid grid-cols-3 mb-4">
+    <div class="card" style="text-align: center;">
+        <i class="fa-solid fa-users fa-3x" style="color: var(--primary); margin-bottom: 1rem;"></i>
+        <h2>@stats.TotalUsers</h2>
+        <div class="text-muted">Total Users</div>
+    </div>
+    <div class="card" style="text-align: center;">
+        <i class="fa-solid fa-file-lines fa-3x" style="color: var(--success); margin-bottom: 1rem;"></i>
+        <h2>@stats.TotalPosts</h2>
+        <div class="text-muted">Total Posts</div>
+    </div>
+    <div class="card" style="text-align: center;">
+        <i class="fa-solid fa-flag fa-3x" style="color: var(--accent); margin-bottom: 1rem;"></i>
+        <h2>@stats.PendingReports</h2>
+        <div class="text-muted">Pending Reports</div>
+    </div>
+</div>
+
+<div class="grid grid-cols-2">
+    <div class="card">
+        <h3><i class="fa-solid fa-fire text-primary"></i> Top Post by Likes</h3>
+        @if (topLiked != null)
+        {
+            <h4><a asp-controller="Post" asp-action="Details" asp-route-id="@topLiked.Id">@topLiked.Title</a></h4>
+            <div class="text-muted" style="margin-top: 0.5rem;">
+                <i class="fa-regular fa-user"></i> @topLiked.User?.FullName &bull; 
+                <i class="fa-solid fa-thumbs-up" style="color: var(--primary);"></i> @topLiked.Likes?.Count
+            </div>
+        }
+    </div>
+    
+    <div class="card">
+        <h3><i class="fa-solid fa-eye text-primary"></i> Top Post by Views</h3>
+        @if (topViewed != null)
+        {
+            <h4><a asp-controller="Post" asp-action="Details" asp-route-id="@topViewed.Id">@topViewed.Title</a></h4>
+            <div class="text-muted" style="margin-top: 0.5rem;">
+                <i class="fa-regular fa-user"></i> @topViewed.User?.FullName &bull; 
+                <i class="fa-solid fa-eye" style="color: var(--success);"></i> @topViewed.ViewCount
+            </div>
+        }
+    </div>
+</div>
+
+<div class="card" style="margin-top: 2rem;">
+    <h3>Quick Management Links</h3>
+    <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+        <a asp-action="Users" class="btn btn-outline"><i class="fa-solid fa-users"></i> Manage Users</a>
+        <a asp-action="Posts" class="btn btn-outline"><i class="fa-solid fa-file-pen"></i> Manage Posts</a>
+        <a asp-action="Categories" class="btn btn-outline"><i class="fa-solid fa-tags"></i> Manage Categories</a>
+        <a asp-action="Reports" class="btn btn-outline"><i class="fa-solid fa-shield-halved"></i> Review Reports</a>
+    </div>
+</div>

@@ -1,0 +1,146 @@
+@model ForumZenpace.Models.Post
+@{
+    ViewData["Title"] = Model.Title;
+}
+
+<div class="card mb-4" style="padding: 2rem;">
+    <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; align-items: flex-start;">
+        <div style="flex: 1;">
+            <div class="post-meta mb-4">
+                <span class="badge bg-success">@Model.Category.Name</span>
+                <span><i class="fa-regular fa-user"></i> <strong>@Model.User.FullName</strong></span>
+                <span><i class="fa-regular fa-clock"></i> @Model.CreatedAt.ToString("MMM dd, yyyy HH:mm")</span>
+                <span><i class="fa-regular fa-eye"></i> @Model.ViewCount views</span>
+            </div>
+            <h1 style="font-size: 2rem; border-bottom: none; margin-bottom: 1rem; color: #fff;">@Model.Title</h1>
+            <div style="font-size: 1.1rem; line-height: 1.8; color: var(--text-main); white-space: pre-wrap; margin-bottom: 1rem;">@Model.Content</div>
+            
+            @if (User.Identity.IsAuthenticated && ViewBag.UserId == Model.UserId)
+            {
+                <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-sm btn-outline"><i class="fa-solid fa-pen"></i> Edit</a>
+                    <form asp-action="Delete" method="post" class="inline-form" onsubmit="return confirm('Delete this post?');">
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <button type="submit" class="btn btn-sm btn-danger"><i class="fa-solid fa-trash"></i> Delete</button>
+                    </form>
+                </div>
+            }
+        </div>
+    </div>
+    
+    <div style="border-top: 1px solid var(--border); padding-top: 1.5rem; display: flex; gap: 1rem; align-items: center;">
+        <form asp-action="ToggleLike" method="post" class="inline-form">
+            <input type="hidden" name="postId" value="@Model.Id" />
+            <button type="submit" class="btn @(ViewBag.HasLiked == true ? "btn-primary" : "btn-outline")">
+                <i class="fa-solid fa-thumbs-up"></i> 
+                @(ViewBag.HasLiked == true ? "Liked" : "Like") (@Model.Likes.Count)
+            </button>
+        </form>
+
+        <button class="btn btn-outline" onclick="toggleReport()"><i class="fa-solid fa-flag"></i> Report</button>
+    </div>
+</div>
+
+<div id="reportBox" class="card mb-4" style="display: none;">
+    <form asp-action="Report" method="post">
+        <input type="hidden" name="postId" value="@Model.Id" />
+        <h4 style="margin-bottom: 0.5rem; color: var(--accent);"><i class="fa-solid fa-flag"></i> Report this post</h4>
+        <input type="text" name="reason" class="form-control mb-4" placeholder="Why are you reporting this post?" required />
+        <button type="submit" class="btn btn-danger">Submit Report</button>
+    </form>
+</div>
+
+<div class="card">
+    <h3 style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem;">
+        Comments (@Model.Comments.Count)
+    </h3>
+    
+    @if (User.Identity.IsAuthenticated)
+    {
+        <form asp-action="AddComment" method="post" class="mb-4">
+            <input type="hidden" name="PostId" value="@Model.Id" />
+            <input type="hidden" name="ParentId" value="" />
+            <div class="form-group" style="display: flex; gap: 1rem; align-items: flex-start;">
+                <textarea name="Content" class="form-control" rows="3" placeholder="Add a comment..." required></textarea>
+                <button type="submit" class="btn btn-primary" style="height: 100%;"><i class="fa-solid fa-paper-plane"></i></button>
+            </div>
+        </form>
+    }
+    else
+    {
+        <div class="mb-4" style="padding: 1rem; background: var(--bg-hover); border-radius: var(--radius); text-align: center;">
+            <a asp-controller="Auth" asp-action="Login">Log in</a> to freely comment and participate!
+        </div>
+    }
+
+    <div>
+        @foreach (var comment in ViewBag.TopLevelComments as List<ForumZenpace.Models.Comment>)
+        {
+            <div class="mb-4" style="border-left: 2px solid var(--border); padding-left: 1rem;">
+                <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.9rem;">
+                    <i class="fa-solid fa-circle-user"></i> <strong>@comment.User.FullName</strong> 
+                    <span>&bull; @comment.CreatedAt.ToString("MMM dd HH:mm")</span>
+                </div>
+                <div style="margin-bottom: 0.5rem;">@comment.Content</div>
+                @if (User.Identity.IsAuthenticated)
+                {
+                    <div style="display: flex; gap: 1rem; align-items: center;">
+                        <button class="btn btn-text btn-sm" onclick="showReplyBox(@comment.Id)" style="padding: 0; font-size: 0.85rem;"><i class="fa-solid fa-reply"></i> Reply</button>
+                        @if (ViewBag.UserId == comment.UserId)
+                        {
+                            <form asp-action="DeleteComment" method="post" style="display:inline;" onsubmit="return confirm('Delete this comment?');">
+                                <input type="hidden" name="id" value="@comment.Id" />
+                                <button type="submit" class="btn btn-text btn-sm text-danger" style="padding: 0; font-size: 0.85rem;"><i class="fa-solid fa-trash"></i> Delete</button>
+                            </form>
+                        }
+                    </div>
+                    
+                    <div id="replyBox-@comment.Id" style="display: none; margin-top: 0.5rem;">
+                        <form asp-action="AddComment" method="post" style="display: flex; gap: 0.5rem;">
+                            <input type="hidden" name="PostId" value="@Model.Id" />
+                            <input type="hidden" name="ParentId" value="@comment.Id" />
+                            <input type="text" name="Content" class="form-control" placeholder="Write a reply..." required style="padding: 0.5rem;" />
+                            <button type="submit" class="btn btn-primary btn-sm" style="padding: 0.5rem 1rem;">Post</button>
+                        </form>
+                    </div>
+                }
+                
+                @if (Model.Comments.Any(c => c.ParentId == comment.Id))
+                {
+                    <div style="margin-top: 1rem; padding-left: 1rem;">
+                        @foreach (var reply in Model.Comments.Where(c => c.ParentId == comment.Id).OrderBy(c => c.CreatedAt))
+                        {
+                            <div class="mb-4" style="border-left: 2px solid var(--border); padding-left: 1rem;">
+                                <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.85rem;">
+                                    <i class="fa-solid fa-circle-user fa-sm"></i> <strong>@reply.User.FullName</strong> 
+                                    <span>&bull; @reply.CreatedAt.ToString("MMM dd HH:mm")</span>
+                                </div>
+                                <div>@reply.Content</div>
+                                @if (User.Identity.IsAuthenticated && ViewBag.UserId == reply.UserId)
+                                {
+                                    <form asp-action="DeleteComment" method="post" style="display:inline; margin-top: 0.5rem;" onsubmit="return confirm('Delete this comment?');">
+                                        <input type="hidden" name="id" value="@reply.Id" />
+                                        <button type="submit" class="btn btn-text btn-sm text-danger" style="padding: 0; font-size: 0.8rem;"><i class="fa-solid fa-trash"></i> Delete</button>
+                                    </form>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function showReplyBox(id) {
+            document.getElementById('replyBox-' + id).style.display = 'block';
+        }
+        function toggleReport() {
+            var box = document.getElementById('reportBox');
+            box.style.display = box.style.display === 'none' ? 'block' : 'none';
+        }
+        
+    </script>
+}
