@@ -141,6 +141,7 @@ C:\ForumZenpace\ForumZenpace\obj\Debug\net10.0\ForumZenpace.csproj.CoreCompileIn
 C:\ForumZenpace\ForumZenpace\obj\Debug\net10.0\ForumZenpace.MvcApplicationPartsAssemblyInfo.cache
 C:\ForumZenpace\ForumZenpace\obj\Debug\net10.0\ForumZenpace.RazorAssemblyInfo.cache
 C:\ForumZenpace\ForumZenpace\obj\Debug\net10.0\ForumZenpace.RazorAssemblyInfo.cs
+C:\ForumZenpace\ForumZenpace\obj\Debug\net10.0\ForumZenpace.sourcelink.json
 C:\ForumZenpace\ForumZenpace\obj\Debug\net10.0\rjimswa.dswa.cache.json
 C:\ForumZenpace\ForumZenpace\obj\Debug\net10.0\rjsmrazor.dswa.cache.json
 C:\ForumZenpace\ForumZenpace\obj\Debug\net10.0\rjsmcshtml.dswa.cache.json
@@ -221,4 +222,4 @@ C:\ForumZenpace\ForumZenpace\obj\Debug\net10.0\refint\ForumZenpace.dll
 C:\ForumZenpace\ForumZenpace\obj\Debug\net10.0\ForumZenpace.pdb
 C:\ForumZenpace\ForumZenpace\obj\Debug\net10.0\ForumZenpace.genruntimeconfig.cache
 C:\ForumZenpace\ForumZenpace\obj\Debug\net10.0\ref\ForumZenpace.dll
-C:\ForumZenpace\ForumZenpace\obj\Debug\net10.0\compressed\bu9xcnkk2q-{0}-lv9n59jvr4-lv9n59jvr4.gz
+C:\ForumZenpace\ForumZenpace\obj\Debug\net10.0\compressed\bu9xcnkk2q-{0}-p5muijpsz7-p5muijpsz7.gz

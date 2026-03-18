@@ -100,6 +100,14 @@ namespace ForumZenpace.Controllers
 
             if (post != null)
             {
+                var comments = await _context.Comments.Where(c => c.PostId == id).ToListAsync();
+                var likes = await _context.Likes.Where(l => l.PostId == id).ToListAsync();
+                var reports = await _context.Reports.Where(r => r.PostId == id).ToListAsync();
+
+                _context.Comments.RemoveRange(comments);
+                _context.Likes.RemoveRange(likes);
+                _context.Reports.RemoveRange(reports);
+
                 _context.Posts.Remove(post);
                 await _context.SaveChangesAsync();
             }
@@ -143,7 +151,12 @@ namespace ForumZenpace.Controllers
         [HttpPost]
         public async Task<IActionResult> AddComment(CommentViewModel model)
         {
-            if (string.IsNullOrWhiteSpace(model.Content)) return RedirectToAction("Details", new { id = model.PostId });
+            if (string.IsNullOrWhiteSpace(model.Content)) 
+            {
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                    return Json(new { success = false, message = "Comment content cannot be empty" });
+                return RedirectToAction("Details", new { id = model.PostId });
+            }
 
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
 
@@ -152,7 +165,8 @@ namespace ForumZenpace.Controllers
                 Content = model.Content,
                 PostId = model.PostId,
                 ParentId = model.ParentId,
-                UserId = userId
+                UserId = userId,
+                CreatedAt = DateTime.UtcNow
             };
 
             _context.Comments.Add(comment);
@@ -170,6 +184,19 @@ namespace ForumZenpace.Controllers
 
             await _context.SaveChangesAsync();
 
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                _context.Entry(comment).Reference(c => c.User).Load();
+                return Json(new { 
+                    success = true, 
+                    id = comment.Id,
+                    content = comment.Content,
+                    author = comment.User.FullName,
+                    date = comment.CreatedAt.ToString("MMM dd HH:mm"),
+                    parentId = comment.ParentId
+                });
+            }
+
             return RedirectToAction("Details", new { id = model.PostId });
         }
 
@@ -179,6 +206,7 @@ namespace ForumZenpace.Controllers
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
             
             var existingLike = await _context.Likes.FirstOrDefaultAsync(l => l.UserId == userId && l.PostId == postId);
+            bool isLiked = false;
 
             if (existingLike != null)
             {
@@ -187,6 +215,7 @@ namespace ForumZenpace.Controllers
             else
             {
                 _context.Likes.Add(new Like { UserId = userId, PostId = postId });
+                isLiked = true;
                 
                 var post = await _context.Posts.FindAsync(postId);
                 if (post.UserId != userId)
@@ -201,13 +230,24 @@ namespace ForumZenpace.Controllers
 
             await _context.SaveChangesAsync();
 
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                var likeCount = await _context.Likes.CountAsync(l => l.PostId == postId);
+                return Json(new { success = true, liked = isLiked, likeCount = likeCount });
+            }
+
             return RedirectToAction("Details", new { id = postId });
         }
         
         [HttpPost]
         public async Task<IActionResult> Report(int postId, string reason)
         {
-            if (string.IsNullOrWhiteSpace(reason)) return RedirectToAction("Details", new { id = postId });
+            if (string.IsNullOrWhiteSpace(reason)) 
+            {
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                    return Json(new { success = false, message = "Reason is required." });
+                return RedirectToAction("Details", new { id = postId });
+            }
             
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
             _context.Reports.Add(new Report
@@ -218,6 +258,9 @@ namespace ForumZenpace.Controllers
             });
             await _context.SaveChangesAsync();
             
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                return Json(new { success = true, message = "Report submitted successfully." });
+                
             return RedirectToAction("Details", new { id = postId, reportSuccess = true });
         }
 
@@ -236,8 +279,14 @@ namespace ForumZenpace.Controllers
                 _context.Comments.Remove(comment);
                 await _context.SaveChangesAsync();
                 
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                    return Json(new { success = true });
+                    
                 return RedirectToAction("Details", new { id = postId });
             }
+
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                return Json(new { success = false, message = "Comment not found or unauthorized." });
 
             return RedirectToAction("Index", "Home");
         }

@@ -1,61 +1,102 @@
-@using System.Security.Claims
+@{
+    var currentUserName = User.Identity?.Name ?? "User";
+    var currentUserInitial = currentUserName.Substring(0, 1).ToUpperInvariant();
+    var controllerName = ViewContext.RouteData.Values["controller"]?.ToString();
+    var actionName = ViewContext.RouteData.Values["action"]?.ToString();
+    var isHomeIndex = string.Equals(controllerName, "Home", StringComparison.OrdinalIgnoreCase)
+        && string.Equals(actionName, "Index", StringComparison.OrdinalIgnoreCase);
+}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - ForumZenpace</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body>
-    <header class="navbar">
-        <div class="container navbar-inner">
-            <a class="logo" asp-area="" asp-controller="Home" asp-action="Index">
-                <i class="fa-solid fa-bolt text-primary"></i> Zenpace
-            </a>
-            <nav class="nav-links">
-                <a asp-controller="Home" asp-action="Index">Home</a>
-                <a asp-controller="Home" asp-action="Categories">Topics</a>
-                @if (User.Identity.IsAuthenticated)
+    <header class="site-header">
+        <div class="page-shell">
+            <div class="navbar glass-panel animated-entry">
+                <a class="logo" asp-controller="Home" asp-action="Index">
+                    <span class="logo-mark">
+                        <i class="fa-solid fa-diamond"></i>
+                    </span>
+                    <span>Zenpace</span>
+                </a>
+
+                @if (!isHomeIndex)
                 {
-                    <a asp-controller="Post" asp-action="Create" class="btn btn-primary"><i class="fa-solid fa-pen"></i> New Post</a>
-                    
-                    <div class="user-menu">
-                        <a asp-controller="Notification" asp-action="Index" class="btn btn-text" style="padding: 0 0.5rem;" title="Notifications">
+                    <nav class="nav-links" aria-label="Primary">
+                        <a asp-controller="Home" asp-action="Index">Kham pha</a>
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            <a asp-controller="Notification" asp-action="Index">Thong bao</a>
+                        }
+                        else
+                        {
+                            <a asp-controller="Auth" asp-action="Login">Dang nhap</a>
+                        }
+                        <a asp-controller="Home" asp-action="Privacy">Quy dinh</a>
+                    </nav>
+                }
+
+                <div class="header-actions">
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <a asp-controller="Post" asp-action="Create" class="btn btn-primary">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>Chu de moi</span>
+                        </a>
+
+                        <a asp-controller="Notification" asp-action="Index" class="btn btn-outline icon-btn" title="Thong bao">
                             <i class="fa-solid fa-bell"></i>
                         </a>
-                        <a asp-controller="Profile" asp-action="Index" class="user-greeting">Hi, @User.Identity.Name</a>
+
                         @if (User.IsInRole("Admin"))
                         {
-                            <a asp-controller="Admin" asp-action="Dashboard" class="btn btn-outline"><i class="fa-solid fa-gauge"></i> Admin</a>
+                            <a asp-controller="Admin" asp-action="Dashboard" class="btn btn-outline icon-btn" title="Quan tri">
+                                <i class="fa-solid fa-shield-halved"></i>
+                            </a>
                         }
-                        <form asp-controller="Auth" asp-action="Logout" method="post" class="inline-form">
-                            <button type="submit" class="btn btn-text"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+
+                        <a asp-controller="Profile" asp-action="Index" class="user-badge">
+                            <span class="user-name">@currentUserName</span>
+                            <span class="avatar-badge">
+                                @currentUserInitial
+                            </span>
+                        </a>
+
+                        <form asp-controller="Auth" asp-action="Logout" method="post">
+                            <button type="submit" class="btn btn-text icon-btn" title="Dang xuat">
+                                <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                            </button>
                         </form>
-                    </div>
-                }
-                else
-                {
-                    <a asp-controller="Auth" asp-action="Login" class="btn btn-outline">Log in</a>
-                    <a asp-controller="Auth" asp-action="Register" class="btn btn-primary">Sign up</a>
-                }
-            </nav>
+                    }
+                    else
+                    {
+                        <a asp-controller="Auth" asp-action="Login" class="btn btn-text">Dang nhap</a>
+                        <a asp-controller="Auth" asp-action="Register" class="btn btn-primary">Tao tai khoan</a>
+                    }
+                </div>
+            </div>
         </div>
     </header>
 
     <main class="main-content">
-        <div class="container animated-entry">
+        <div class="page-shell">
             @RenderBody()
         </div>
     </main>
 
     <footer class="footer">
-        <div class="container">
-            <p>&copy; @DateTime.Now.Year - ForumZenpace. Crafted with passion.</p>
+        <div class="page-shell footer-shell">
+            <p>&copy; @DateTime.Now.Year Zenpace</p>
+            <p>Compact glass forum UI for focused discussion.</p>
         </div>
     </footer>
 

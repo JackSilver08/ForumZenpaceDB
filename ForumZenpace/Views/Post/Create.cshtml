@@ -1,37 +1,60 @@
 @model ForumZenpace.Models.PostViewModel
 @{
-    ViewData["Title"] = "New Post";
+    ViewData["Title"] = "Bài Viết Mới";
 }
 
-<div class="card" style="max-width: 800px; margin: 0 auto;">
-    <h2>Create New Discussion</h2>
-    
-    <form asp-action="Create" method="post">
-        <div asp-validation-summary="ModelOnly" class="text-danger mb-4"></div>
-        
-        <div class="form-group">
-            <label asp-for="Title" class="form-label">Post Title</label>
-            <input asp-for="Title" class="form-control" placeholder="What's on your mind?" />
-            <span asp-validation-for="Title" class="text-danger"></span>
+<div class="glass-panel animated-entry" style="max-width: 950px; margin: 3rem auto; padding: 4.5rem; position: relative; overflow: hidden;">
+    @* Dynamic Background Accents *@
+    <div style="position: absolute; top: -150px; left: -150px; width: 400px; height: 400px; background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%); filter: blur(50px); pointer-events: none;"></div>
+    <div style="position: absolute; bottom: -150px; right: -150px; width: 400px; height: 400px; background: radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, transparent 70%); filter: blur(50px); pointer-events: none;"></div>
+
+    <div style="position: relative; z-index: 1;">
+        <div style="margin-bottom: 4rem;">
+            <div style="display: flex; align-items: flex-end; justify-content: space-between;">
+                <div>
+                    <h2 style="font-size: 2.75rem; font-weight: 950; letter-spacing: -1.5px; margin-bottom: 1rem; line-height: 1.1;">Khởi tạo trí tuệ mới</h2>
+                    <p style="color: var(--text-secondary); font-size: 1.15rem; font-weight: 500;">Phát triển cộng đồng qua những ý tưởng đột phá của bạn</p>
+                </div>
+                <div style="width: 80px; height: 80px; background: var(--primary-gradient); border-radius: 24px; display: flex; align-items: center; justify-content: center; transform: rotate(-8deg); box-shadow: 0 15px 30px rgba(59, 130, 246, 0.3);">
+                    <i class="fa-solid fa-feather-pointed" style="font-size: 2.25rem; color: #fff;"></i>
+                </div>
+            </div>
         </div>
         
-        <div class="form-group">
-            <label asp-for="CategoryId" class="form-label">Category</label>
-            <select asp-for="CategoryId" class="form-control" asp-items="ViewBag.Categories">
-                <option value="">-- Select Category --</option>
-            </select>
-            <span asp-validation-for="CategoryId" class="text-danger"></span>
-        </div>
-        
-        <div class="form-group">
-            <label asp-for="Content" class="form-label">Body</label>
-            <textarea asp-for="Content" class="form-control" rows="8" placeholder="Share your thoughts..."></textarea>
-            <span asp-validation-for="Content" class="text-danger"></span>
-        </div>
-        
-        <div style="display: flex; gap: 1rem; justify-content: flex-end;">
-            <a asp-controller="Home" asp-action="Index" class="btn btn-outline">Cancel</a>
-            <button type="submit" class="btn btn-primary">Post Discussion</button>
-        </div>
-    </form>
+        <form asp-action="Create" method="post" style="display: flex; flex-direction: column; gap: 2.5rem;">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-4" style="font-size: 0.9rem; font-weight: 700;"></div>
+            
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                <label asp-for="Title" style="font-size: 0.85rem; font-weight: 800; color: #fff; text-transform: uppercase; letter-spacing: 2px;">Tiêu đề định danh thảo luận</label>
+                <input asp-for="Title" class="form-control" style="font-size: 1.5rem; font-weight: 800; padding: 1.5rem; border-radius: 18px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);" placeholder="Bạn muốn thảo luận về chủ đề gì hôm nay?" />
+                <span asp-validation-for="Title" class="text-danger" style="font-size: 0.8rem; font-weight: 600;"></span>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr; gap: 2.5rem;">
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    <label asp-for="CategoryId" style="font-size: 0.85rem; font-weight: 800; color: #fff; text-transform: uppercase; letter-spacing: 2px;">Phân loại chuyên môn</label>
+                    <select asp-for="CategoryId" class="form-control" asp-items="ViewBag.Categories" style="padding: 1.15rem; border-radius: 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); cursor: pointer; font-weight: 600; appearance: none;">
+                        <option value="">-- Lựa chọn không gian chuyên môn phù hợp --</option>
+                    </select>
+                    <span asp-validation-for="CategoryId" class="text-danger" style="font-size: 0.8rem; font-weight: 600;"></span>
+                </div>
+                
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    <label asp-for="Content" style="font-size: 0.85rem; font-weight: 800; color: #fff; text-transform: uppercase; letter-spacing: 2px;">Nội dung luận điểm chi tiết</label>
+                    <div style="position: relative;">
+                        <textarea asp-for="Content" class="form-control" rows="14" style="font-family: inherit; line-height: 1.7; padding: 1.75rem; border-radius: 20px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); resize: none;" placeholder="Bắt đầu nhập nội dung thảo luận chuyên sâu tại đây..."></textarea>
+                        <div style="position: absolute; bottom: 1rem; right: 1.5rem; display: flex; align-items: center; gap: 8px; font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">
+                            <i class="fa-solid fa-keyboard"></i> Hỗ trợ định dạng tự do
+                        </div>
+                    </div>
+                    <span asp-validation-for="Content" class="text-danger" style="font-size: 0.8rem; font-weight: 600;"></span>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 2rem; justify-content: flex-end; align-items: center; margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 3rem;">
+                <a asp-controller="Home" asp-action="Index" style="color: var(--text-muted); text-decoration: none; font-weight: 700; transition: color 0.3s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--text-muted)'">Hủy bỏ thao tác</a>
+                <button type="submit" class="btn btn-primary" style="padding: 1.25rem 4rem; border-radius: 18px; font-weight: 900; font-size: 1.15rem; box-shadow: 0 15px 30px rgba(59, 130, 246, 0.4); border: none; cursor: pointer;">Đăng tải ngay</button>
+            </div>
+        </form>
+    </div>
 </div>

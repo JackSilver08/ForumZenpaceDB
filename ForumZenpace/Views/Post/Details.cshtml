@@ -3,130 +3,196 @@
     ViewData["Title"] = Model.Title;
 }
 
-<div class="card mb-4" style="padding: 2rem;">
-    <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; align-items: flex-start;">
-        <div style="flex: 1;">
-            <div class="post-meta mb-4">
-                <span class="badge bg-success">@Model.Category.Name</span>
-                <span><i class="fa-regular fa-user"></i> <strong>@Model.User.FullName</strong></span>
-                <span><i class="fa-regular fa-clock"></i> @Model.CreatedAt.ToString("MMM dd, yyyy HH:mm")</span>
-                <span><i class="fa-regular fa-eye"></i> @Model.ViewCount views</span>
+<div class="glass-panel animated-entry" style="padding: 4.5rem; margin-bottom: 3.5rem; position: relative; overflow: hidden; border-radius: 32px;">
+    @* Decorative Background Accents *@
+    <div style="position: absolute; top: -100px; right: -100px; width: 400px; height: 400px; background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%); filter: blur(60px); pointer-events: none;"></div>
+    <div style="position: absolute; bottom: -100px; left: -100px; width: 300px; height: 300px; background: radial-gradient(circle, rgba(236, 72, 153, 0.08) 0%, transparent 70%); filter: blur(60px); pointer-events: none;"></div>
+
+    @* Floating Badge Icon *@
+    <div style="position: absolute; top: 3rem; right: 3rem; width: 90px; height: 90px; background: var(--primary-gradient); border-radius: 24px; transform: rotate(12deg); display: flex; align-items: center; justify-content: center; box-shadow: 0 15px 35px rgba(59, 130, 246, 0.3); border: 1px solid rgba(255,255,255,0.15);">
+        <i class="fa-solid fa-quote-left fa-2x" style="color: #fff; opacity: 0.9;"></i>
+    </div>
+
+    <div style="position: relative; z-index: 1;">
+        <div style="display: flex; align-items: center; gap: 1.5rem; margin-bottom: 3rem; flex-wrap: wrap;">
+            <span style="background: var(--accent-blue); color: #fff; padding: 0.5rem 1.25rem; border-radius: 12px; font-weight: 800; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3);">@Model.Category.Name</span>
+            <div style="display: flex; align-items: center; gap: 12px; color: var(--text-secondary); font-size: 0.9rem; font-weight: 600;">
+                <div style="width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; color: #fff;">
+                    <i class="fa-solid fa-user-tie fa-sm"></i>
+                </div>
+                <span style="color: #fff; font-weight: 800;">@Model.User.FullName</span>
+                <span style="opacity: 0.3;">|</span>
+                <span style="display: flex; align-items: center; gap: 6px;"><i class="fa-regular fa-calendar-check" style="color: var(--accent-purple);"></i> @Model.CreatedAt.ToString("dd MMM, yyyy")</span>
+                <span style="opacity: 0.3;">|</span>
+                <span style="display: flex; align-items: center; gap: 6px;"><i class="fa-regular fa-eye" style="color: var(--accent-pink);"></i> @Model.ViewCount Quan tâm</span>
             </div>
-            <h1 style="font-size: 2rem; border-bottom: none; margin-bottom: 1rem; color: #fff;">@Model.Title</h1>
-            <div style="font-size: 1.1rem; line-height: 1.8; color: var(--text-main); white-space: pre-wrap; margin-bottom: 1rem;">@Model.Content</div>
-            
+        </div>
+        
+        <h1 style="font-size: 4rem; font-weight: 950; line-height: 1.05; margin-bottom: 3.5rem; letter-spacing: -2.5px; background: linear-gradient(to bottom, #fff, #999); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.3));">@Model.Title</h1>
+        
+        <div style="font-size: 1.35rem; line-height: 1.85; color: rgba(255,255,255,0.85); white-space: pre-wrap; margin-bottom: 5rem; text-align: justify; font-weight: 400; padding: 2rem; background: rgba(255,255,255,0.02); border-radius: 20px; border: 1px solid rgba(255,255,255,0.05);">@Model.Content</div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 3.5rem;">
+            <div style="display: flex; gap: 1.5rem;">
+                <form asp-action="ToggleLike" method="post" class="inline-form">
+                    <input type="hidden" name="postId" value="@Model.Id" />
+                    <button type="submit" class="btn @(ViewBag.HasLiked == true ? "btn-primary" : "btn-outline")" style="padding: 1.15rem 3rem; border-radius: 16px; font-weight: 900; font-size: 1rem; transition: var(--transition-smooth); gap: 12px; @(ViewBag.HasLiked == true ? "box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4);" : "")">
+                        <i class="fa-solid fa-fire-flame-curved" style="font-size: 1.2rem;"></i> 
+                        @(ViewBag.HasLiked == true ? "Đã đề xuất" : "Đề xuất trí tuệ") (@Model.Likes.Count)
+                    </button>
+                </form>
+                <button class="btn btn-outline" onclick="toggleReport()" style="padding: 1.15rem 2.5rem; border-radius: 16px; font-weight: 800; color: var(--accent-pink); border-color: rgba(236, 72, 153, 0.2);">
+                    <i class="fa-solid fa-flag"></i> Báo cáo vi phạm
+                </button>
+            </div>
+
             @if (User.Identity.IsAuthenticated && ViewBag.UserId == Model.UserId)
             {
-                <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
-                    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-sm btn-outline"><i class="fa-solid fa-pen"></i> Edit</a>
-                    <form asp-action="Delete" method="post" class="inline-form" onsubmit="return confirm('Delete this post?');">
+                <div style="display: flex; gap: 1.5rem; align-items: center;">
+                    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline" style="padding: 0.8rem 1.75rem; border-radius: 14px; color: var(--accent-purple); border-color: rgba(139, 92, 246, 0.2); font-weight: 800; font-size: 0.85rem;">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Biên tập lại
+                    </a>
+                    <form asp-action="Delete" method="post" class="inline-form" onsubmit="return confirm('Bạn có chắc chắn muốn xóa vĩnh viễn thảo luận này?');">
                         <input type="hidden" name="id" value="@Model.Id" />
-                        <button type="submit" class="btn btn-sm btn-danger"><i class="fa-solid fa-trash"></i> Delete</button>
+                        <button type="submit" class="btn btn-text" style="color: rgba(255,255,255,0.15); transition: color 0.3s;" onmouseover="this.style.color='var(--accent-pink)'" onmouseout="this.style.color='rgba(255,255,255,0.15)'">
+                            <i class="fa-solid fa-trash-can fa-lg"></i>
+                        </button>
                     </form>
                 </div>
             }
         </div>
     </div>
-    
-    <div style="border-top: 1px solid var(--border); padding-top: 1.5rem; display: flex; gap: 1rem; align-items: center;">
-        <form asp-action="ToggleLike" method="post" class="inline-form">
-            <input type="hidden" name="postId" value="@Model.Id" />
-            <button type="submit" class="btn @(ViewBag.HasLiked == true ? "btn-primary" : "btn-outline")">
-                <i class="fa-solid fa-thumbs-up"></i> 
-                @(ViewBag.HasLiked == true ? "Liked" : "Like") (@Model.Likes.Count)
-            </button>
-        </form>
+</div>
 
-        <button class="btn btn-outline" onclick="toggleReport()"><i class="fa-solid fa-flag"></i> Report</button>
+<div id="reportBox" class="animated-entry" style="display: none; margin-bottom: 3.5rem;">
+    <div class="glass-panel" style="padding: 3rem; border-color: rgba(236, 72, 153, 0.3); border-width: 2px;">
+        <form asp-action="Report" method="post">
+            <input type="hidden" name="postId" value="@Model.Id" />
+            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 2rem;">
+                <div style="width: 50px; height: 50px; background: rgba(236, 72, 153, 0.1); border-radius: 14px; display: flex; align-items: center; justify-content: center; color: var(--accent-pink);">
+                     <i class="fa-solid fa-triangle-exclamation fa-lg"></i>
+                </div>
+                <div>
+                    <h4 style="margin: 0; color: #fff; font-weight: 900; font-size: 1.5rem;">Xác nhận báo cáo</h4>
+                    <p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">Hành động này sẽ gửi yêu cầu xem xét tới ban quản trị</p>
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr auto; gap: 1.5rem;">
+                <input type="text" name="reason" class="form-control" placeholder="Mô tả cụ thể hành vi vi phạm tiêu chuẩn cộng đồng..." required style="padding: 1.25rem; border-radius: 16px; background: rgba(255,255,255,0.03);" />
+                <button type="submit" class="btn btn-primary" style="background: var(--accent-pink); border: none; padding: 0 3rem; border-radius: 16px; font-weight: 900; font-size: 1rem; box-shadow: 0 10px 20px rgba(236, 72, 153, 0.3);">Gửi báo cáo ngay</button>
+            </div>
+        </form>
     </div>
 </div>
 
-<div id="reportBox" class="card mb-4" style="display: none;">
-    <form asp-action="Report" method="post">
-        <input type="hidden" name="postId" value="@Model.Id" />
-        <h4 style="margin-bottom: 0.5rem; color: var(--accent);"><i class="fa-solid fa-flag"></i> Report this post</h4>
-        <input type="text" name="reason" class="form-control mb-4" placeholder="Why are you reporting this post?" required />
-        <button type="submit" class="btn btn-danger">Submit Report</button>
-    </form>
-</div>
-
-<div class="card">
-    <h3 style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem;">
-        Comments (@Model.Comments.Count)
-    </h3>
+<div class="glass-panel" style="padding: 4.5rem; border-radius: 32px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4rem;">
+        <h3 style="font-size: 2rem; font-weight: 900; display: flex; align-items: center; gap: 20px;">
+            <i class="fa-solid fa-comments" style="color: var(--accent-purple);"></i> Luận điểm cộng đồng (@Model.Comments.Count)
+        </h3>
+    </div>
     
     @if (User.Identity.IsAuthenticated)
     {
-        <form asp-action="AddComment" method="post" class="mb-4">
+        <form asp-action="AddComment" method="post" style="margin-bottom: 5rem;">
             <input type="hidden" name="PostId" value="@Model.Id" />
             <input type="hidden" name="ParentId" value="" />
-            <div class="form-group" style="display: flex; gap: 1rem; align-items: flex-start;">
-                <textarea name="Content" class="form-control" rows="3" placeholder="Add a comment..." required></textarea>
-                <button type="submit" class="btn btn-primary" style="height: 100%;"><i class="fa-solid fa-paper-plane"></i></button>
+            <div style="display: flex; gap: 2.5rem; align-items: flex-start;">
+                <div style="width: 50px; height: 50px; border-radius: 14px; background: var(--primary-gradient); display: flex; align-items: center; justify-content: center; font-weight: 900; color: #fff; box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3);">
+                    @User.Identity.Name.Substring(0, 1).ToUpper()
+                </div>
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 1.5rem;">
+                    <textarea name="Content" class="form-control" rows="4" placeholder="Đóng góp luận điểm hoặc phản biện tích cực tại đây..." required style="min-height: 140px; font-size: 1.1rem; line-height: 1.7; padding: 1.5rem; border-radius: 20px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);"></textarea>
+                    <div style="display: flex; justify-content: flex-end;">
+                        <button type="submit" class="btn btn-primary" style="padding: 1.15rem 3.5rem; border-radius: 16px; font-weight: 900; font-size: 1rem; box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);">Gửi bình luận <i class="fa-solid fa-paper-plane" style="margin-left: 12px; font-size: 0.9rem;"></i></button>
+                    </div>
+                </div>
             </div>
         </form>
     }
     else
     {
-        <div class="mb-4" style="padding: 1rem; background: var(--bg-hover); border-radius: var(--radius); text-align: center;">
-            <a asp-controller="Auth" asp-action="Login">Log in</a> to freely comment and participate!
+        <div class="glass-card mb-5" style="padding: 4rem; border-style: dashed; text-align: center; background: rgba(255,255,255,0.01); border-radius: 20px;">
+            <i class="fa-solid fa-lock" style="font-size: 2rem; color: var(--text-muted); margin-bottom: 1.5rem;"></i>
+            <p style="color: var(--text-secondary); font-size: 1.15rem; font-weight: 500;">Hãy tham gia cộng đồng Zenpace để cùng thảo luận tri thức. <a asp-controller="Auth" asp-action="Login" style="color: var(--accent-blue); font-weight: 800; text-decoration: none; border-bottom: 2px solid rgba(59, 130, 246, 0.3);">Đăng nhập ngay</a></p>
         </div>
     }
 
-    <div>
+    <div class="comments-list" style="display: flex; flex-direction: column; gap: 4rem;">
         @foreach (var comment in ViewBag.TopLevelComments as List<ForumZenpace.Models.Comment>)
         {
-            <div class="mb-4" style="border-left: 2px solid var(--border); padding-left: 1rem;">
-                <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.9rem;">
-                    <i class="fa-solid fa-circle-user"></i> <strong>@comment.User.FullName</strong> 
-                    <span>&bull; @comment.CreatedAt.ToString("MMM dd HH:mm")</span>
-                </div>
-                <div style="margin-bottom: 0.5rem;">@comment.Content</div>
-                @if (User.Identity.IsAuthenticated)
-                {
-                    <div style="display: flex; gap: 1rem; align-items: center;">
-                        <button class="btn btn-text btn-sm" onclick="showReplyBox(@comment.Id)" style="padding: 0; font-size: 0.85rem;"><i class="fa-solid fa-reply"></i> Reply</button>
-                        @if (ViewBag.UserId == comment.UserId)
+            <div class="comment-wrapper">
+                <div class="glass-card" style="padding: 2.5rem; background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.08); border-radius: 24px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                        <div style="display: flex; align-items: center; gap: 18px;">
+                            <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(139, 92, 246, 0.1); color: var(--accent-purple); display: flex; align-items: center; justify-content: center; font-weight: 900; border: 1px solid rgba(139, 92, 246, 0.15); font-size: 1.25rem;">
+                                @comment.User.FullName.Substring(0, 1).ToUpper()
+                            </div>
+                            <div>
+                                <div style="font-weight: 900; font-size: 1.15rem; color: #fff; letter-spacing: -0.5px;">@comment.User.FullName</div>
+                                <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">@comment.CreatedAt.ToString("MMM dd, HH:mm")</div>
+                            </div>
+                        </div>
+                        @if (User.Identity.IsAuthenticated && ViewBag.UserId == comment.UserId)
                         {
-                            <form asp-action="DeleteComment" method="post" style="display:inline;" onsubmit="return confirm('Delete this comment?');">
+                            <form asp-action="DeleteComment" method="post" class="ajax-delete-comment">
                                 <input type="hidden" name="id" value="@comment.Id" />
-                                <button type="submit" class="btn btn-text btn-sm text-danger" style="padding: 0; font-size: 0.85rem;"><i class="fa-solid fa-trash"></i> Delete</button>
+                                <button type="submit" class="btn btn-text" style="color: rgba(255,255,255,0.15); transition: color 0.3s;" onmouseover="this.style.color='var(--accent-pink)'" onmouseout="this.style.color='rgba(255,255,255,0.15)'">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
                             </form>
                         }
                     </div>
                     
-                    <div id="replyBox-@comment.Id" style="display: none; margin-top: 0.5rem;">
-                        <form asp-action="AddComment" method="post" style="display: flex; gap: 0.5rem;">
-                            <input type="hidden" name="PostId" value="@Model.Id" />
-                            <input type="hidden" name="ParentId" value="@comment.Id" />
-                            <input type="text" name="Content" class="form-control" placeholder="Write a reply..." required style="padding: 0.5rem;" />
-                            <button type="submit" class="btn btn-primary btn-sm" style="padding: 0.5rem 1rem;">Post</button>
-                        </form>
-                    </div>
-                }
+                    <div style="color: rgba(255,255,255,0.8); font-size: 1.1rem; line-height: 1.75; margin-bottom: 2rem; font-weight: 400;">@comment.Content</div>
+                    
+                    @if (User.Identity.IsAuthenticated)
+                    {
+                        <div style="display: flex; gap: 1.5rem; align-items: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 1.5rem;">
+                            <button class="btn btn-text" onclick="showReplyBox(@comment.Id)" style="font-size: 0.85rem; font-weight: 900; color: var(--accent-blue); padding: 0.5rem 1rem; border-radius: 10px; background: rgba(59, 130, 246, 0.05);"><i class="fa-solid fa-reply"></i> Phản biện</button>
+                        </div>
+                        
+                        <div id="replyBox-@comment.Id" class="animated-entry" style="display: none; margin-top: 1.5rem; padding: 2rem; background: rgba(255,255,255,0.02); border-radius: 20px; border: 1px solid rgba(255,255,255,0.05);">
+                            <form asp-action="AddComment" method="post" style="display: grid; grid-template-columns: 1fr auto; gap: 1.5rem; align-items: center;">
+                                <input type="hidden" name="PostId" value="@Model.Id" />
+                                <input type="hidden" name="ParentId" value="@comment.Id" />
+                                <input type="text" name="Content" class="form-control" placeholder="Viết phản biện khách quan..." required style="padding: 1.15rem; border-radius: 14px; background: rgba(255,255,255,0.03);" />
+                                <div style="display: flex; gap: 1rem;">
+                                    <button type="submit" class="btn btn-primary" style="padding: 0 2rem; height: 50px; border-radius: 14px; font-weight: 900;">Gửi phản biện</button>
+                                    <button type="button" class="btn btn-text" onclick="showReplyBox(@comment.Id)" style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted);">Hủy</button>
+                                </div>
+                            </form>
+                        </div>
+                    }
+                </div>
                 
-                @if (Model.Comments.Any(c => c.ParentId == comment.Id))
-                {
-                    <div style="margin-top: 1rem; padding-left: 1rem;">
+                <div class="replies-container" style="margin-top: 1.5rem; margin-left: 4.5rem; display: flex; flex-direction: column; gap: 1.5rem;">
+                    @if (Model.Comments.Any(c => c.ParentId == comment.Id))
+                    {
                         @foreach (var reply in Model.Comments.Where(c => c.ParentId == comment.Id).OrderBy(c => c.CreatedAt))
                         {
-                            <div class="mb-4" style="border-left: 2px solid var(--border); padding-left: 1rem;">
-                                <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.85rem;">
-                                    <i class="fa-solid fa-circle-user fa-sm"></i> <strong>@reply.User.FullName</strong> 
-                                    <span>&bull; @reply.CreatedAt.ToString("MMM dd HH:mm")</span>
+                            <div class="glass-card" style="padding: 1.75rem 2rem; background: rgba(255,255,255,0.02); border-left: 4px solid var(--accent-blue); border-radius: 20px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+                                    <div style="display: flex; align-items: center; gap: 14px;">
+                                        <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(59, 130, 246, 0.1); color: var(--accent-blue); display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 0.85rem; border: 1px solid rgba(59, 130, 246, 0.15);">
+                                            @reply.User.FullName.Substring(0, 1).ToUpper()
+                                        </div>
+                                        <span style="font-weight: 800; font-size: 1rem; color: #fff; letter-spacing: -0.2px;">@reply.User.FullName</span>
+                                        <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">@reply.CreatedAt.ToString("MMM dd")</span>
+                                    </div>
+                                    @if (User.Identity.IsAuthenticated && ViewBag.UserId == reply.UserId)
+                                    {
+                                        <form asp-action="DeleteComment" method="post" class="ajax-delete-comment">
+                                            <input type="hidden" name="id" value="@reply.Id" />
+                                            <button type="submit" class="btn btn-text" style="color: rgba(255,255,255,0.1); padding: 0;"><i class="fa-solid fa-trash-can fa-sm"></i></button>
+                                        </form>
+                                    }
                                 </div>
-                                <div>@reply.Content</div>
-                                @if (User.Identity.IsAuthenticated && ViewBag.UserId == reply.UserId)
-                                {
-                                    <form asp-action="DeleteComment" method="post" style="display:inline; margin-top: 0.5rem;" onsubmit="return confirm('Delete this comment?');">
-                                        <input type="hidden" name="id" value="@reply.Id" />
-                                        <button type="submit" class="btn btn-text btn-sm text-danger" style="padding: 0; font-size: 0.8rem;"><i class="fa-solid fa-trash"></i> Delete</button>
-                                    </form>
-                                }
+                                <div style="font-size: 1.05rem; color: rgba(255,255,255,0.7); line-height: 1.65; font-weight: 400;">@reply.Content</div>
                             </div>
                         }
-                    </div>
-                }
+                    }
+                </div>
             </div>
         }
     </div>
@@ -135,12 +201,204 @@
 @section Scripts {
     <script>
         function showReplyBox(id) {
-            document.getElementById('replyBox-' + id).style.display = 'block';
+            const box = document.getElementById('replyBox-' + id);
+            box.style.display = box.style.display === 'none' ? 'block' : 'none';
         }
         function toggleReport() {
             var box = document.getElementById('reportBox');
             box.style.display = box.style.display === 'none' ? 'block' : 'none';
         }
-        
+
+        document.addEventListener('submit', async function(e) {
+            const form = e.target;
+            if (form.tagName === 'FORM' && form.getAttribute('action')) {
+                const action = form.getAttribute('action');
+                
+                // ToggleLike Workflow
+                if (action.includes('ToggleLike')) {
+                    e.preventDefault();
+                    const btn = form.querySelector('button');
+                    const originalContent = btn.innerHTML;
+                    btn.style.opacity = '0.7';
+                    btn.disabled = true;
+
+                    const res = await fetch(action, {
+                        method: 'POST',
+                        body: new FormData(form),
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.success) {
+                            if (data.liked) {
+                                btn.className = 'btn btn-primary';
+                                btn.style.boxShadow = '0 10px 25px rgba(59, 130, 246, 0.4)';
+                                btn.innerHTML = `<i class="fa-solid fa-fire-flame-curved" style="font-size: 1.2rem;"></i> Đã đề xuất (${data.likeCount})`;
+                            } else {
+                                btn.className = 'btn btn-outline';
+                                btn.style.boxShadow = 'none';
+                                btn.innerHTML = `<i class="fa-solid fa-fire-flame-curved" style="font-size: 1.2rem;"></i> Đề xuất trí tuệ (${data.likeCount})`;
+                            }
+                        }
+                    }
+                    btn.style.opacity = '1';
+                    btn.disabled = false;
+                }
+
+                // Report Workflow
+                if (action.includes('Report')) {
+                    e.preventDefault();
+                    const btn = form.querySelector('button[type="submit"]');
+                    const originalText = btn.innerText;
+                    btn.innerText = 'Đang truyền tin...';
+                    btn.disabled = true;
+
+                    const res = await fetch(action, {
+                        method: 'POST',
+                        body: new FormData(form),
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.success) {
+                            alert(data.message);
+                            toggleReport();
+                            form.reset();
+                        } else {
+                            alert(data.message || 'Lỗi truyền tin báo cáo.');
+                        }
+                    }
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                }
+
+                // DeleteComment Workflow
+                if (action.includes('DeleteComment')) {
+                    e.preventDefault();
+                    if (!confirm("Bạn muốn thu hồi luận điểm này vĩnh viễn?")) return;
+                    
+                    const btn = form.querySelector('button[type="submit"]');
+                    const originalHTML = btn.innerHTML;
+                    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+                    btn.disabled = true;
+
+                    const res = await fetch(action, {
+                        method: 'POST',
+                        body: new FormData(form),
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.success) {
+                            const wrapper = form.closest(action.includes('DeleteComment') && form.closest('.glass-card').parentElement.classList.contains('replies-container') ? '.glass-card' : '.comment-wrapper');
+                            wrapper.style.transition = 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                            wrapper.style.opacity = '0';
+                            wrapper.style.transform = 'scale(0.95) translateY(10px)';
+                            setTimeout(() => wrapper.remove(), 400);
+                        } else {
+                            alert(data.message || 'Lỗi thu hồi luận điểm.');
+                            btn.innerHTML = originalHTML;
+                            btn.disabled = false;
+                        }
+                    }
+                }
+
+                // AddComment Workflow
+                if (action.includes('AddComment')) {
+                    e.preventDefault();
+                    const btn = form.querySelector('button[type="submit"]');
+                    const originalContent = btn.innerHTML;
+                    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
+                    btn.disabled = true;
+
+                    const res = await fetch(action, {
+                        method: 'POST',
+                        body: new FormData(form),
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.success) {
+                            let html = '';
+                            if (data.parentId) {
+                                html = `
+                                    <div class="glass-card" style="padding: 1.75rem 2rem; background: rgba(255,255,255,0.02); border-left: 4px solid var(--accent-blue); border-radius: 20px; opacity: 0; transform: translateY(10px); transition: all 0.5s ease;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+                                            <div style="display: flex; align-items: center; gap: 14px;">
+                                                <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(59, 130, 246, 0.1); color: var(--accent-blue); display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 0.85rem; border: 1px solid rgba(59, 130, 246, 0.15);">
+                                                    ${data.author.substring(0, 1).toUpperCase()}
+                                                </div>
+                                                <span style="font-weight: 800; font-size: 1rem; color: #fff; letter-spacing: -0.2px;">${data.author}</span>
+                                                <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">${data.date}</span>
+                                            </div>
+                                            <form asp-action="DeleteComment" method="post" class="ajax-delete-comment">
+                                                <input type="hidden" name="id" value="${data.id}" />
+                                                <button type="submit" class="btn btn-text" style="color: rgba(255,255,255,0.1); padding: 0;"><i class="fa-solid fa-trash-can fa-sm"></i></button>
+                                            </form>
+                                        </div>
+                                        <div style="font-size: 1.05rem; color: rgba(255,255,255,0.7); line-height: 1.65; font-weight: 400;">${data.content}</div>
+                                    </div>
+                                `;
+                            } else {
+                                html = `
+                                    <div class="comment-wrapper" style="opacity: 0; transform: translateY(20px); transition: all 0.6s ease;">
+                                        <div class="glass-card" style="padding: 2.5rem; background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.08); border-radius: 24px;">
+                                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                                                <div style="display: flex; align-items: center; gap: 18px;">
+                                                    <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(139, 92, 246, 0.1); color: var(--accent-purple); display: flex; align-items: center; justify-content: center; font-weight: 900; border: 1px solid rgba(139, 92, 246, 0.15); font-size: 1.25rem;">
+                                                        ${data.author.substring(0, 1).toUpperCase()}
+                                                    </div>
+                                                    <div>
+                                                        <div style="font-weight: 900; font-size: 1.15rem; color: #fff; letter-spacing: -0.5px;">${data.author}</div>
+                                                        <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">${data.date}</div>
+                                                    </div>
+                                                </div>
+                                                <form asp-action="DeleteComment" method="post" class="ajax-delete-comment">
+                                                    <input type="hidden" name="id" value="${data.id}" />
+                                                    <button type="submit" class="btn btn-text" style="color: rgba(255,255,255,0.15); transition: color 0.3s;">
+                                                        <i class="fa-solid fa-trash-can"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                            <div style="color: rgba(255,255,255,0.8); font-size: 1.1rem; line-height: 1.75; margin-bottom: 2rem; font-weight: 400;">${data.content}</div>
+                                            <div style="display: flex; gap: 1.5rem; align-items: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 1.5rem;">
+                                                <button class="btn btn-text" onclick="showReplyBox(${data.id})" style="font-size: 0.85rem; font-weight: 900; color: var(--accent-blue); padding: 0.5rem 1rem; border-radius: 10px; background: rgba(59, 130, 246, 0.05);"><i class="fa-solid fa-reply"></i> Phản biện</button>
+                                            </div>
+                                            <div id="replyBox-${data.id}" class="animated-entry" style="display: none; margin-top: 1.5rem; padding: 2rem; background: rgba(255,255,255,0.02); border-radius: 20px; border: 1px solid rgba(255,255,255,0.05);">
+                                                <!-- Reply form will be here if handled naturally or page refresh -->
+                                            </div>
+                                        </div>
+                                        <div class="replies-container" style="margin-top: 1.5rem; margin-left: 4.5rem; display: flex; flex-direction: column; gap: 1.5rem;"></div>
+                                    </div>
+                                `;
+                            }
+                            
+                            let el;
+                            if (data.parentId) {
+                                const repliesContainer = form.closest('.comment-wrapper').querySelector('.replies-container');
+                                repliesContainer.insertAdjacentHTML('beforeend', html);
+                                el = repliesContainer.lastElementChild;
+                                form.closest('div[id^="replyBox-"]').style.display = 'none';
+                            } else {
+                                const commentsList = document.querySelector('.comments-list');
+                                commentsList.insertAdjacentHTML('afterbegin', html); // New top level comments at top
+                                el = commentsList.firstElementChild;
+                            }
+                            
+                            setTimeout(() => { 
+                                el.style.opacity = '1'; 
+                                el.style.transform = 'translateY(0)';
+                            }, 50);
+                            form.reset();
+                        } else {
+                            alert(data.message || 'Lỗi truyền luận điểm mới.');
+                        }
+                    }
+                    
+                    btn.innerHTML = originalContent;
+                    btn.disabled = false;
+                }
+            }
+        });
     </script>
 }

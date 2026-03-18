@@ -1,47 +1,63 @@
 @model IEnumerable<ForumZenpace.Models.Report>
 @{
-    ViewData["Title"] = "Review Reports";
+    ViewData["Title"] = "Kiểm Duyệt Báo Cáo Vi Phạm";
 }
 
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-    <h1><a asp-action="Dashboard" style="color: var(--text-muted);"><i class="fa-solid fa-arrow-left"></i></a> Review Reports</h1>
-</div>
+<div class="animated-entry" style="padding-top: 1.5rem;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 3.5rem;">
+        <div>
+            <h1 style="font-size: 2.25rem; font-weight: 900; margin-bottom: 0.5rem; letter-spacing: -1px;">Trung tâm an toàn</h1>
+            <p style="color: var(--text-secondary);">Phê duyệt và xử lý các báo cáo vi phạm tiêu chuẩn cộng đồng</p>
+        </div>
+        <a asp-action="Dashboard" class="btn btn-outline" style="padding: 0.75rem 1.5rem; border-radius: 12px; font-size: 0.8rem;">
+            <i class="fa-solid fa-arrow-left"></i> Quay lại
+        </a>
+    </div>
 
-<div class="card" style="overflow-x: auto; padding: 0;">
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Post</th>
-                <th>Reported By</th>
-                <th>Reason</th>
-                <th>Date</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody>
-        @foreach (var r in Model)
-        {
-            <tr>
-                <td><a asp-controller="Post" asp-action="Details" asp-route-id="@r.PostId" target="_blank">@r.Post?.Title</a></td>
-                <td>@r.User?.FullName</td>
-                <td style="color: var(--accent);">@r.Reason</td>
-                <td>@r.CreatedAt.ToString("MMM dd HH:mm")</td>
-                <td>
-                    <form asp-action="DeletePost" method="post" class="inline-form" onsubmit="return confirm('Delete this post due to report?');">
-                        <input type="hidden" name="id" value="@r.PostId" />
-                        <button type="submit" class="btn btn-sm btn-danger" style="padding: 2px 8px; font-size: 0.8rem;">
-                            Delete Post
-                        </button>
-                    </form>
-                    <form asp-action="TogglePostStatus" method="post" class="inline-form">
-                        <input type="hidden" name="id" value="@r.PostId" />
-                        <button type="submit" class="btn btn-sm btn-outline" style="padding: 2px 8px; font-size: 0.8rem;">
-                            Toggle Hide
-                        </button>
-                    </form>
-                </td>
-            </tr>
-        }
-        </tbody>
-    </table>
+    <div class="glass-panel" style="padding: 1.5rem;">
+        <div style="overflow-x: auto;">
+            <table class="table" style="width: 100%; border-collapse: separate; border-spacing: 0;">
+                <thead>
+                    <tr style="text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                        <th style="padding: 1.5rem 1.25rem; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px;">Nội dung bị tố cáo</th>
+                        <th style="padding: 1.5rem 1.25rem; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px;">Người gửi</th>
+                        <th style="padding: 1.5rem 1.25rem; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px;">Lý do chi tiết</th>
+                        <th style="padding: 1.5rem 1.25rem; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px;">Thời điểm</th>
+                        <th style="padding: 1.5rem 1.25rem; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px;">Xử lý nhanh</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var r in Model)
+                {
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); transition: var(--transition-smooth);" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
+                        <td style="padding: 1.25rem;">
+                            <a asp-controller="Post" asp-action="Details" asp-route-id="@r.PostId" target="_blank" style="color: #fff; font-weight: 700; text-decoration: none; font-size: 0.95rem; display: block; max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">@r.Post?.Title</a>
+                        </td>
+                        <td style="padding: 1.25rem; color: var(--text-secondary); font-weight: 500;">@r.User?.FullName</td>
+                        <td style="padding: 1.25rem;">
+                            <span style="color: var(--accent-pink); font-weight: 600; font-size: 0.9rem; background: rgba(236, 72, 153, 0.05); padding: 0.4rem 0.8rem; border-radius: 6px;">@r.Reason</span>
+                        </td>
+                        <td style="padding: 1.25rem; color: var(--text-muted); font-size: 0.85rem;">@r.CreatedAt.ToString("MMM dd, HH:mm")</td>
+                        <td style="padding: 1.25rem;">
+                            <div style="display: flex; gap: 10px;">
+                                <form asp-action="TogglePostStatus" method="post" class="inline-form">
+                                    <input type="hidden" name="id" value="@r.PostId" />
+                                    <button type="submit" class="btn btn-outline" style="padding: 0.4rem 0.8rem; border-radius: 8px; font-size: 0.7rem; font-weight: 800; border-color: @(r.Post?.Status == "Active" ? "rgba(236, 72, 153, 0.3)" : "rgba(139, 92, 246, 0.3)"); color: @(r.Post?.Status == "Active" ? "var(--accent-pink)" : "var(--accent-purple)");">
+                                        @(r.Post?.Status == "Active" ? "Ẩn nội dung" : "Khôi phục")
+                                    </button>
+                                </form>
+                                <form asp-action="DeletePost" method="post" class="inline-form" onsubmit="return confirm('Xóa vĩnh viễn nội dung này? Hành động này rất nghiêm trọng.');">
+                                    <input type="hidden" name="id" value="@r.PostId" />
+                                    <button type="submit" class="btn btn-outline" style="padding: 0.4rem 0.6rem; border-radius: 8px; color: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.05);">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>

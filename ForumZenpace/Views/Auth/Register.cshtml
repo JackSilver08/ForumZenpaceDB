@@ -1,51 +1,70 @@
 @model ForumZenpace.Models.RegisterViewModel
 @{
-    ViewData["Title"] = "Sign Up";
+    ViewData["Title"] = "Đăng Ký";
 }
 
-<div class="card form-container" style="max-width: 500px; margin: 0 auto;">
-    <h2 class="text-center">Create Account</h2>
-    
-    <form asp-action="Register" method="post">
-        <div asp-validation-summary="ModelOnly" class="text-danger mb-4"></div>
+<div class="glass-panel animated-entry" style="max-width: 600px; margin: 5rem auto; padding: 4rem; position: relative; overflow: hidden;">
+    @* Background Accents *@
+    <div style="position: absolute; top: -50px; right: -50px; width: 180px; height: 180px; background: var(--accent-purple); filter: blur(70px); opacity: 0.15; pointer-events: none;"></div>
+    <div style="position: absolute; bottom: -50px; left: -50px; width: 180px; height: 180px; background: var(--accent-blue); filter: blur(70px); opacity: 0.15; pointer-events: none;"></div>
+
+    <div style="position: relative; z-index: 1;">
+        <div style="text-align: center; margin-bottom: 3.5rem;">
+            <div style="width: 70px; height: 70px; margin: 0 auto 1.5rem; background: var(--primary-gradient); border-radius: 20px; display: flex; align-items: center; justify-content: center; transform: rotate(5deg); box-shadow: 0 10px 20px rgba(139, 92, 246, 0.3);">
+                <i class="fa-solid fa-user-plus" style="font-size: 2rem; color: #fff;"></i>
+            </div>
+            <h2 style="font-size: 2.25rem; font-weight: 900; letter-spacing: -1.5px; margin-bottom: 0.5rem; color: #fff;">Gia nhập cộng đồng</h2>
+            <p style="color: var(--text-secondary); font-size: 1rem; font-weight: 500;">Bắt đầu hành trình trí tuệ tại Zenpace</p>
+        </div>
         
-        <div class="grid grid-cols-2">
-            <div class="form-group">
-                <label asp-for="Username" class="form-label"></label>
-                <input asp-for="Username" class="form-control" />
-                <span asp-validation-for="Username" class="text-danger"></span>
+        <form asp-action="Register" method="post" style="display: flex; flex-direction: column; gap: 2rem;">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-2" style="font-size: 0.85rem; font-weight: 700; text-align: center;"></div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    <label asp-for="Username" style="font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px;">Tên tài khoản</label>
+                    <input asp-for="Username" class="form-control" placeholder="username..." style="padding: 1rem; border-radius: 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);" />
+                    <span asp-validation-for="Username" class="text-danger" style="font-size: 0.75rem; font-weight: 600;"></span>
+                </div>
+                
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    <label asp-for="FullName" style="font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px;">Họ và Tên</label>
+                    <input asp-for="FullName" class="form-control" placeholder="Họ tên của bạn" style="padding: 1rem; border-radius: 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);" />
+                    <span asp-validation-for="FullName" class="text-danger" style="font-size: 0.75rem; font-weight: 600;"></span>
+                </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <label asp-for="Email" style="font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px;">Địa chỉ Email</label>
+                <div style="position: relative;">
+                    <i class="fa-solid fa-envelope" style="position: absolute; left: 1.25rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.9rem;"></i>
+                    <input asp-for="Email" class="form-control" type="email" placeholder="example@zenpace.com" style="padding: 1.1rem 1.1rem 1.1rem 3rem; border-radius: 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);" />
+                </div>
+                <span asp-validation-for="Email" class="text-danger" style="font-size: 0.75rem; font-weight: 600;"></span>
             </div>
             
-            <div class="form-group">
-                <label asp-for="FullName" class="form-label">Full Name</label>
-                <input asp-for="FullName" class="form-control" />
-                <span asp-validation-for="FullName" class="text-danger"></span>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    <label asp-for="Password" style="font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px;">Mật mật</label>
+                    <input asp-for="Password" class="form-control" type="password" placeholder="••••••••" style="padding: 1rem; border-radius: 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);" />
+                    <span asp-validation-for="Password" class="text-danger" style="font-size: 0.75rem; font-weight: 600;"></span>
+                </div>
+                
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    <label asp-for="ConfirmPassword" style="font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px;">Xác nhận</label>
+                    <input asp-for="ConfirmPassword" class="form-control" type="password" placeholder="••••••••" style="padding: 1rem; border-radius: 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);" />
+                    <span asp-validation-for="ConfirmPassword" class="text-danger" style="font-size: 0.75rem; font-weight: 600;"></span>
+                </div>
             </div>
-        </div>
+            
+            <div style="margin-top: 1rem;">
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1.25rem; border-radius: 18px; font-weight: 900; font-size: 1.1rem; box-shadow: 0 15px 30px rgba(139, 92, 246, 0.3); letter-spacing: 0.5px;">Tạo tài khoản mới</button>
+            </div>
 
-        <div class="form-group">
-            <label asp-for="Email" class="form-label"></label>
-            <input asp-for="Email" class="form-control" type="email" />
-            <span asp-validation-for="Email" class="text-danger"></span>
-        </div>
-        
-        <div class="form-group">
-            <label asp-for="Password" class="form-label"></label>
-            <input asp-for="Password" class="form-control" />
-            <span asp-validation-for="Password" class="text-danger"></span>
-        </div>
-        
-        <div class="form-group">
-            <label asp-for="ConfirmPassword" class="form-label">Confirm Password</label>
-            <input asp-for="ConfirmPassword" class="form-control" />
-            <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
-        </div>
-        
-        <button type="submit" class="btn btn-primary" style="width: 100%;">Sign Up</button>
-
-        <div class="text-center mt-4">
-            <span class="text-muted">Already have an account?</span> 
-            <a asp-action="Login">Log in here</a>
-        </div>
-    </form>
+            <div class="text-center" style="margin-top: 1rem; font-size: 0.95rem;">
+                <span style="color: var(--text-muted); font-weight: 500;">Bạn đã có tài khoản?</span> 
+                <a asp-action="Login" style="color: var(--accent-purple); font-weight: 800; text-decoration: none; margin-left: 5px; transition: var(--transition-smooth);" onmouseover="this.style.color='var(--accent-pink)'" onmouseout="this.style.color='var(--accent-purple)'">Đăng nhập tại đây</a>
+            </div>
+        </form>
+    </div>
 </div>
