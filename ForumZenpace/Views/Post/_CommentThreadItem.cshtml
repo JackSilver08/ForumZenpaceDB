@@ -94,10 +94,25 @@
                     <form asp-action="AddComment" method="post" class="reply-form thread-reply-form ajax-postback">
                         <input type="hidden" name="PostId" value="@Model.PostId" />
                         <input type="hidden" name="ParentId" value="@comment.Id" />
-                        <textarea name="Content" class="form-control thread-reply-input" rows="3" placeholder="Viet phan hoi..." required></textarea>
-                        <div class="reply-form-actions">
-                            <button type="submit" class="btn btn-primary">Gui</button>
-                            <button type="button" class="btn btn-text" onclick="toggleReplyBox(@comment.Id)">Huy</button>
+                        <textarea name="Content" class="form-control thread-reply-input" rows="3" placeholder="Viet phan hoi..." data-emoji-input required></textarea>
+                        <div class="reply-form-actions comment-editor-footer">
+                            <button
+                                type="button"
+                                class="comment-emoji-trigger"
+                                data-emoji-trigger
+                                title="Dang tai emoji"
+                                aria-label="Chen emoji vao phan hoi"
+                                aria-haspopup="dialog"
+                                aria-expanded="false"
+                                disabled>
+                                <i class="fa-regular fa-face-smile"></i>
+                                <span>Emoji</span>
+                            </button>
+
+                            <div class="comment-editor-submit-group">
+                                <button type="submit" class="btn btn-primary">Gui</button>
+                                <button type="button" class="btn btn-text" onclick="toggleReplyBox(@comment.Id)">Huy</button>
+                            </div>
                         </div>
                     </form>
                 </div>

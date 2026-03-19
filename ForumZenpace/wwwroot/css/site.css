@@ -2235,6 +2235,86 @@ body.profile-modal-open {
     justify-content: flex-end;
 }
 
+.comment-editor-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+}
+
+.comment-editor-submit-group {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+}
+
+.comment-emoji-trigger {
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 0 12px;
+    border-radius: 10px;
+    border: 1px solid var(--panel-border);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-secondary);
+    font-size: 0.8125rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition:
+        transform var(--transition-fast),
+        background-color var(--transition-fast),
+        border-color var(--transition-fast),
+        color var(--transition-fast),
+        box-shadow var(--transition-fast);
+}
+
+.comment-emoji-trigger:hover:not(:disabled) {
+    transform: translateY(-1px);
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.07);
+    border-color: var(--panel-border-strong);
+}
+
+.comment-emoji-trigger.is-open {
+    color: #fff;
+    background: linear-gradient(135deg, rgba(119, 169, 255, 0.18), rgba(143, 141, 255, 0.16));
+    border-color: rgba(137, 153, 255, 0.32);
+    box-shadow: 0 10px 22px rgba(8, 12, 24, 0.2);
+}
+
+.comment-emoji-trigger:disabled {
+    cursor: wait;
+    opacity: 0.48;
+}
+
+.comment-emoji-popover {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 80;
+    width: min(360px, calc(100vw - 24px));
+    padding: 10px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(11, 16, 26, 0.96);
+    box-shadow: 0 18px 34px rgba(0, 0, 0, 0.34);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+}
+
+.comment-emoji-popover[hidden] {
+    display: none !important;
+}
+
+.comment-emoji-picker {
+    width: 100%;
+    height: min(58vh, 420px);
+}
+
 .report-form-row {
     display: grid;
     gap: var(--space-3);
@@ -2866,6 +2946,23 @@ body.profile-modal-open {
 
     .comment-card {
         padding: var(--space-4);
+    }
+
+    .comment-editor-footer {
+        align-items: stretch;
+    }
+
+    .comment-editor-submit-group {
+        width: 100%;
+        justify-content: flex-end;
+    }
+
+    .comment-emoji-trigger {
+        justify-content: center;
+    }
+
+    .comment-emoji-popover {
+        width: calc(100vw - 20px);
     }
 
     .comment-entry,

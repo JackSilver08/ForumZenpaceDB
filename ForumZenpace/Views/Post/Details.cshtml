@@ -98,9 +98,24 @@
                     <div class="avatar thread-avatar">@currentUserInitial</div>
 
                     <div class="comment-composer-panel">
-                        <textarea name="Content" class="form-control comment-composer-input" rows="3" placeholder="Dong gop y kien cua ban..." required></textarea>
-                        <div class="comment-composer-actions">
-                            <button type="submit" class="btn btn-primary">Gui binh luan</button>
+                        <textarea name="Content" class="form-control comment-composer-input" rows="3" placeholder="Dong gop y kien cua ban..." data-emoji-input required></textarea>
+                        <div class="comment-composer-actions comment-editor-footer">
+                            <button
+                                type="button"
+                                class="comment-emoji-trigger"
+                                data-emoji-trigger
+                                title="Dang tai emoji"
+                                aria-label="Chen emoji vao binh luan"
+                                aria-haspopup="dialog"
+                                aria-expanded="false"
+                                disabled>
+                                <i class="fa-regular fa-face-smile"></i>
+                                <span>Emoji</span>
+                            </button>
+
+                            <div class="comment-editor-submit-group">
+                                <button type="submit" class="btn btn-primary">Gui binh luan</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -140,6 +155,16 @@
                     Chua co binh luan nao. Hay mo dau chuoi thao luan dau tien.
                 </div>
             }
+        </div>
+
+        <div
+            class="comment-emoji-popover"
+            data-emoji-popover
+            role="dialog"
+            aria-label="Bang chon emoji"
+            aria-hidden="true"
+            hidden>
+            <emoji-picker class="comment-emoji-picker dark" data-emoji-picker></emoji-picker>
         </div>
     </div>
 </div>
@@ -247,4 +272,6 @@
             }
         });
     </script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@@1.29.0/index.js"></script>
+    <script src="~/js/comment-emoji.js" asp-append-version="true"></script>
 }
