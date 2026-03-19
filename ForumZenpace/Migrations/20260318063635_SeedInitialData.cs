@@ -13,44 +13,42 @@ namespace ForumZenpace.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.InsertData(
-                table: "Categories",
-                columns: new[] { "Id", "Name" },
-                values: new object[,]
-                {
-                    { 1, "Lập trình & Kỹ thuật" },
-                    { 2, "Thiết kế & Nghệ thuật" },
-                    { 3, "Đời sống & Khoa học" }
-                });
+            migrationBuilder.Sql(
+                """
+                IF NOT EXISTS (SELECT 1 FROM [Categories] WHERE [Id] = 1)
+                BEGIN
+                    INSERT INTO [Categories] ([Id], [Name]) VALUES (1, N'Lập trình & Kỹ thuật');
+                END
 
-            migrationBuilder.InsertData(
-                table: "Users",
-                columns: new[] { "Id", "Avatar", "CreatedAt", "Email", "FullName", "IsActive", "Password", "RoleId", "Username" },
-                values: new object[] { 1, null, new DateTime(2026, 3, 18, 6, 36, 35, 80, DateTimeKind.Utc).AddTicks(3815), "admin@zenpace.com", "Quản trị viên Zenpace", true, "AdminPassword123!", 1, "admin" });
+                IF NOT EXISTS (SELECT 1 FROM [Categories] WHERE [Id] = 2)
+                BEGIN
+                    INSERT INTO [Categories] ([Id], [Name]) VALUES (2, N'Thiết kế & Nghệ thuật');
+                END
+
+                IF NOT EXISTS (SELECT 1 FROM [Categories] WHERE [Id] = 3)
+                BEGIN
+                    INSERT INTO [Categories] ([Id], [Name]) VALUES (3, N'Đời sống & Khoa học');
+                END
+                """);
+
+            migrationBuilder.Sql(
+                """
+                IF NOT EXISTS (SELECT 1 FROM [Users] WHERE [Id] = 1)
+                BEGIN
+                    INSERT INTO [Users] ([Id], [Avatar], [CreatedAt], [Email], [FullName], [IsActive], [Password], [RoleId], [Username])
+                    VALUES (1, NULL, '2026-03-18T06:36:35.0803815Z', N'admin@zenpace.com', N'Quản trị viên Zenpace', 1, N'AdminPassword123!', 1, N'admin');
+                END
+                """);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DeleteData(
-                table: "Categories",
-                keyColumn: "Id",
-                keyValue: 1);
-
-            migrationBuilder.DeleteData(
-                table: "Categories",
-                keyColumn: "Id",
-                keyValue: 2);
-
-            migrationBuilder.DeleteData(
-                table: "Categories",
-                keyColumn: "Id",
-                keyValue: 3);
-
-            migrationBuilder.DeleteData(
-                table: "Users",
-                keyColumn: "Id",
-                keyValue: 1);
+            migrationBuilder.Sql(
+                """
+                DELETE FROM [Categories] WHERE [Id] IN (1, 2, 3);
+                DELETE FROM [Users] WHERE [Id] = 1;
+                """);
         }
     }
 }

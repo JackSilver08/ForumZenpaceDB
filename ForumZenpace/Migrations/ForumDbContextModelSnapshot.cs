@@ -92,6 +92,30 @@ namespace ForumZenpace.Migrations
                     b.ToTable("Comments");
                 });
 
+            modelBuilder.Entity("ForumZenpace.Models.CommentLike", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CommentId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CommentId");
+
+                    b.HasIndex("UserId", "CommentId")
+                        .IsUnique();
+
+                    b.ToTable("CommentLikes");
+                });
+
             modelBuilder.Entity("ForumZenpace.Models.Like", b =>
                 {
                     b.Property<int>("Id")
@@ -187,6 +211,58 @@ namespace ForumZenpace.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Posts");
+                });
+
+            modelBuilder.Entity("ForumZenpace.Models.PostImage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DraftToken")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("OriginalFileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<int?>("PostId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DraftToken");
+
+                    b.HasIndex("PostId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("PostImages");
                 });
 
             modelBuilder.Entity("ForumZenpace.Models.Report", b =>
@@ -336,6 +412,25 @@ namespace ForumZenpace.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("ForumZenpace.Models.CommentLike", b =>
+                {
+                    b.HasOne("ForumZenpace.Models.Comment", "Comment")
+                        .WithMany("CommentLikes")
+                        .HasForeignKey("CommentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ForumZenpace.Models.User", "User")
+                        .WithMany("CommentLikes")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Comment");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("ForumZenpace.Models.Like", b =>
                 {
                     b.HasOne("ForumZenpace.Models.Post", "Post")
@@ -385,6 +480,24 @@ namespace ForumZenpace.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("ForumZenpace.Models.PostImage", b =>
+                {
+                    b.HasOne("ForumZenpace.Models.Post", "Post")
+                        .WithMany("Images")
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("ForumZenpace.Models.User", "User")
+                        .WithMany("PostImages")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Post");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("ForumZenpace.Models.Report", b =>
                 {
                     b.HasOne("ForumZenpace.Models.Post", "Post")
@@ -422,12 +535,16 @@ namespace ForumZenpace.Migrations
 
             modelBuilder.Entity("ForumZenpace.Models.Comment", b =>
                 {
+                    b.Navigation("CommentLikes");
+
                     b.Navigation("Replies");
                 });
 
             modelBuilder.Entity("ForumZenpace.Models.Post", b =>
                 {
                     b.Navigation("Comments");
+
+                    b.Navigation("Images");
 
                     b.Navigation("Likes");
 
@@ -441,11 +558,15 @@ namespace ForumZenpace.Migrations
 
             modelBuilder.Entity("ForumZenpace.Models.User", b =>
                 {
+                    b.Navigation("CommentLikes");
+
                     b.Navigation("Comments");
 
                     b.Navigation("Likes");
 
                     b.Navigation("Notifications");
+
+                    b.Navigation("PostImages");
 
                     b.Navigation("Posts");
 

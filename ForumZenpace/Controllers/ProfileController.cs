@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using ForumZenpace.Formatting;
 using ForumZenpace.Models;
 
 namespace ForumZenpace.Controllers
@@ -144,26 +145,13 @@ namespace ForumZenpace.Controllers
                 {
                     Id = p.Id,
                     Title = p.Title,
-                    Excerpt = CreateExcerpt(p.Content),
+                    Excerpt = PostContentFormatter.ToExcerpt(p.Content, 148),
                     CategoryName = p.Category?.Name ?? string.Empty,
                     CreatedAt = p.CreatedAt,
                     CommentCount = p.Comments.Count,
                     ViewCount = p.ViewCount
                 }).ToList()
             };
-        }
-
-        private static string CreateExcerpt(string? content)
-        {
-            if (string.IsNullOrWhiteSpace(content))
-            {
-                return string.Empty;
-            }
-
-            const int previewLength = 148;
-            return content.Length <= previewLength
-                ? content
-                : $"{content[..previewLength].TrimEnd()}...";
         }
     }
 }

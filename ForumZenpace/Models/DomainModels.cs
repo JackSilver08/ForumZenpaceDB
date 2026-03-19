@@ -45,6 +45,8 @@ namespace ForumZenpace.Models
         public ICollection<Post> Posts { get; set; } = new List<Post>();
         public ICollection<Comment> Comments { get; set; } = new List<Comment>();
         public ICollection<Like> Likes { get; set; } = new List<Like>();
+        public ICollection<CommentLike> CommentLikes { get; set; } = new List<CommentLike>();
+        public ICollection<PostImage> PostImages { get; set; } = new List<PostImage>();
         public ICollection<Report> Reports { get; set; } = new List<Report>();
         public ICollection<Notification> Notifications { get; set; } = new List<Notification>();
     }
@@ -86,6 +88,7 @@ namespace ForumZenpace.Models
 
         public ICollection<Comment> Comments { get; set; } = new List<Comment>();
         public ICollection<Like> Likes { get; set; } = new List<Like>();
+        public ICollection<PostImage> Images { get; set; } = new List<PostImage>();
         public ICollection<Report> Reports { get; set; } = new List<Report>();
     }
 
@@ -111,6 +114,7 @@ namespace ForumZenpace.Models
         public Comment? ParentComment { get; set; }
         
         public ICollection<Comment> Replies { get; set; } = new List<Comment>();
+        public ICollection<CommentLike> CommentLikes { get; set; } = new List<CommentLike>();
     }
 
     public class Like
@@ -124,6 +128,49 @@ namespace ForumZenpace.Models
         public int PostId { get; set; }
         [ForeignKey("PostId")]
         public Post Post { get; set; }
+    }
+
+    public class CommentLike
+    {
+        public int Id { get; set; }
+
+        public int UserId { get; set; }
+        [ForeignKey("UserId")]
+        public User User { get; set; }
+
+        public int CommentId { get; set; }
+        [ForeignKey("CommentId")]
+        public Comment Comment { get; set; }
+    }
+
+    public class PostImage
+    {
+        public int Id { get; set; }
+
+        public int UserId { get; set; }
+        [ForeignKey("UserId")]
+        public User User { get; set; }
+
+        public int? PostId { get; set; }
+        [ForeignKey("PostId")]
+        public Post? Post { get; set; }
+
+        [MaxLength(64)]
+        public string? DraftToken { get; set; }
+
+        [Required, MaxLength(255)]
+        public string FileName { get; set; }
+
+        [Required, MaxLength(255)]
+        public string OriginalFileName { get; set; }
+
+        [Required, MaxLength(100)]
+        public string ContentType { get; set; }
+
+        [Required, MaxLength(255)]
+        public string ImageUrl { get; set; }
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 
     public class Report

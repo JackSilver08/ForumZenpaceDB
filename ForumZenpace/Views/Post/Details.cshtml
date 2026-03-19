@@ -27,7 +27,7 @@
             <h1 class="detail-title">@Model.Title</h1>
         </div>
 
-        <div class="detail-content">@Model.Content</div>
+        <div class="detail-content markdown-rendered">@Html.Raw(PostContentFormatter.ToHtml(Model.Content))</div>
 
         <div class="detail-actions">
             <div class="detail-action-group">

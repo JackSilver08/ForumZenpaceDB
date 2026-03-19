@@ -6,6 +6,8 @@
     var hasReplies = comment.Replies.Any();
     var replyCount = comment.Replies.Count;
     var isOwner = Model.CurrentUserId == comment.UserId;
+    var likeCount = comment.CommentLikes.Count;
+    var hasLiked = Model.CurrentUserId.HasValue && comment.CommentLikes.Any(cl => cl.UserId == Model.CurrentUserId.Value);
     var replyBoxId = $"replyBox-{comment.Id}";
     var childrenId = $"threadReplies-{comment.Id}";
 }
@@ -55,10 +57,27 @@
                     </button>
                 }
 
-                <button type="button" class="comment-action comment-action-disabled" disabled aria-disabled="true" title="Tinh nang like comment chua duoc ket noi">
-                    <i class="fa-regular fa-heart"></i>
-                    <span>Thich</span>
-                </button>
+                @if (Model.IsAuthenticated)
+                {
+                    <form asp-action="ToggleCommentLike" method="post" class="inline-form ajax-postback">
+                        <input type="hidden" name="commentId" value="@comment.Id" />
+                        <button
+                            type="submit"
+                            class="comment-action @(hasLiked ? "is-active" : string.Empty)"
+                            aria-pressed="@(hasLiked.ToString().ToLowerInvariant())"
+                            title="Tim binh luan">
+                            <i class="@(hasLiked ? "fa-solid" : "fa-regular") fa-heart"></i>
+                            <span>@(likeCount > 0 ? $"Thich ({likeCount})" : "Thich")</span>
+                        </button>
+                    </form>
+                }
+                else
+                {
+                    <button type="button" class="comment-action comment-action-disabled" disabled aria-disabled="true" title="Dang nhap de tim binh luan">
+                        <i class="fa-regular fa-heart"></i>
+                        <span>Thich</span>
+                    </button>
+                }
 
                 @if (hasReplies)
                 {

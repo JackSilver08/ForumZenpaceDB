@@ -27,6 +27,7 @@ var webRootPath = app.Environment.WebRootPath ?? Path.Combine(app.Environment.Co
 var uploadsRootPath = Path.Combine(webRootPath, "uploads");
 
 Directory.CreateDirectory(Path.Combine(uploadsRootPath, "avatars"));
+Directory.CreateDirectory(Path.Combine(uploadsRootPath, "posts"));
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -66,6 +67,7 @@ using (var scope = app.Services.CreateScope())
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
         logger.LogError(ex, "An error occurred while seeding the database.");
+        throw;
     }
 }
 

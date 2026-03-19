@@ -73,10 +73,16 @@ namespace ForumZenpace.Controllers
             var post = await _context.Posts.FindAsync(id);
             if (post != null)
             {
+                var commentIds = await _context.Comments
+                    .Where(c => c.PostId == id)
+                    .Select(c => c.Id)
+                    .ToListAsync();
                 var comments = await _context.Comments.Where(c => c.PostId == id).ToListAsync();
+                var commentLikes = await _context.CommentLikes.Where(cl => commentIds.Contains(cl.CommentId)).ToListAsync();
                 var likes = await _context.Likes.Where(l => l.PostId == id).ToListAsync();
                 var reports = await _context.Reports.Where(r => r.PostId == id).ToListAsync();
 
+                _context.CommentLikes.RemoveRange(commentLikes);
                 _context.Comments.RemoveRange(comments);
                 _context.Likes.RemoveRange(likes);
                 _context.Reports.RemoveRange(reports);

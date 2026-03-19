@@ -36,16 +36,7 @@
                 <span asp-validation-for="CategoryId" class="text-danger"></span>
             </div>
 
-            <div class="field">
-                <label asp-for="Content" class="field-label">Noi dung</label>
-                <div class="input-icon" style="position: relative;">
-                    <textarea asp-for="Content" class="form-control editor-textarea" rows="14" placeholder="Trinh bay van de, boi canh va cac y chinh mot cach gon rang."></textarea>
-                    <div class="editor-helper">
-                        <i class="fa-solid fa-keyboard"></i> Noi dung dai se de doc hon khi chia doan ngan
-                    </div>
-                </div>
-                <span asp-validation-for="Content" class="text-danger"></span>
-            </div>
+            <partial name="_MarkdownEditorField" model="Model" />
 
             <div class="editor-footer">
                 <a asp-controller="Home" asp-action="Index" class="btn btn-text">Quay lai bang tin</a>

@@ -34,6 +34,11 @@ namespace ForumZenpace.Models
 
     public class PostViewModel
     {
+        public int? PostId { get; set; }
+
+        [MaxLength(64)]
+        public string DraftToken { get; set; } = string.Empty;
+
         [Required, MaxLength(255)]
         public string Title { get; set; }
         
@@ -42,6 +47,17 @@ namespace ForumZenpace.Models
         
         [Required]
         public int CategoryId { get; set; }
+    }
+
+    public class PostImageUploadViewModel
+    {
+        public int? PostId { get; set; }
+
+        [MaxLength(64)]
+        public string? DraftToken { get; set; }
+
+        [Required]
+        public IFormFile Image { get; set; } = null!;
     }
 
     public class CommentViewModel
