@@ -2335,16 +2335,19 @@ kbd {
     display: grid;
     gap: 6px;
     justify-items: start;
+    justify-self: start;
+    width: fit-content;
     max-width: min(78%, 560px);
 }
 
 .profile-chat-message--own {
-    margin-left: auto;
     justify-items: end;
+    justify-self: end;
 }
 
 .profile-chat-bubble {
     padding: 12px 14px;
+    max-width: 100%;
     border-radius: 16px;
     border: 1px solid rgba(255, 255, 255, 0.06);
     background:
