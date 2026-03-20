@@ -747,7 +747,8 @@ select.form-control {
     min-width: 0;
     overflow-x: auto;
     overflow-y: hidden;
-    padding: 4px 2px 8px;
+    padding: 0 2px;
+    scrollbar-gutter: stable;
     scrollbar-width: thin;
     scrollbar-color: rgba(143, 141, 255, 0.32) transparent;
 }
@@ -789,7 +790,7 @@ select.form-control {
 
 .social-card--add {
     width: 100%;
-    min-height: var(--social-rail-card-height);
+    height: var(--social-rail-card-height);
     align-items: flex-start;
     justify-content: flex-end;
     flex-direction: column;
@@ -874,7 +875,7 @@ select.form-control {
 
 .social-card--friend,
 .social-card--empty {
-    min-height: var(--social-rail-card-height);
+    height: var(--social-rail-card-height);
 }
 
 .social-card--friend {
@@ -3756,17 +3757,17 @@ body.profile-modal-open {
     }
 
     .social-card--add {
-        min-height: 168px;
+        height: 168px;
     }
 
     .social-card--friend {
         width: 122px;
         min-width: 122px;
-        min-height: 168px;
     }
 
     .social-card--empty {
         min-width: 164px;
+        height: 168px;
     }
 
     .social-result-card {
@@ -3885,7 +3886,6 @@ body.profile-modal-open {
       .social-card--friend {
           width: 112px;
           min-width: 112px;
-          min-height: 156px;
           padding: 16px 10px 14px;
       }
 

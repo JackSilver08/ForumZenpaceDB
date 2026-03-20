@@ -142,7 +142,7 @@
                 </span>
                 <span class="social-avatar">${avatarMarkup}</span>
                 <span class="social-card-copy">
-                    <strong>${escapeHtml(friend.displayName)}</strong>
+                    <strong>@${escapeHtml(friend.username)}</strong>
                 </span>
             </a>`;
     };

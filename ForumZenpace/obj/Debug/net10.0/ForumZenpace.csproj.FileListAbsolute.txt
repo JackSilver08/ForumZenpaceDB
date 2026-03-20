@@ -270,5 +270,13 @@ C:\ForumZenpace\ForumZenpace\bin\Debug\net10.0\ForumZenpace.exe
 C:\ForumZenpace\ForumZenpace\obj\Debug\net10.0\compressed\ad1825se7j-{0}-y95q71mtdz-y95q71mtdz.gz
 C:\ForumZenpace\ForumZenpace\obj\Debug\net10.0\compressed\mfmng9wrex-{0}-hivrf7n1kf-hivrf7n1kf.gz
 C:\ForumZenpace\ForumZenpace\obj\Debug\net10.0\compressed\weuu8ehr6g-{0}-qa8nmqlt2l-qa8nmqlt2l.gz
-C:\ForumZenpace\ForumZenpace\obj\Debug\net10.0\compressed\gzww4hlc9w-{0}-2lf3l68fpr-2lf3l68fpr.gz
-C:\ForumZenpace\ForumZenpace\obj\Debug\net10.0\compressed\bu9xcnkk2q-{0}-mg3ppd7u4j-mg3ppd7u4j.gz
+C:\ForumZenpace\ForumZenpace\obj\Debug\net10.0\compressed\bu9xcnkk2q-{0}-8o3wr13cko-8o3wr13cko.gz
+C:\ForumZenpace\ForumZenpace\obj\Debug\net10.0\compressed\gzww4hlc9w-{0}-t086vl51u7-t086vl51u7.gz
+C:\ForumZenpace\build-verify-temp\appsettings.Development.json
+C:\ForumZenpace\build-verify-temp\appsettings.json
+C:\ForumZenpace\build-verify-temp\ForumZenpace.staticwebassets.runtime.json
+C:\ForumZenpace\build-verify-temp\ForumZenpace.staticwebassets.endpoints.json
+C:\ForumZenpace\build-verify-temp\ForumZenpace.deps.json
+C:\ForumZenpace\build-verify-temp\ForumZenpace.runtimeconfig.json
+C:\ForumZenpace\build-verify-temp\ForumZenpace.dll
+C:\ForumZenpace\build-verify-temp\ForumZenpace.pdb
