@@ -270,4 +270,5 @@ C:\ForumZenpace\ForumZenpace\bin\Debug\net10.0\ForumZenpace.exe
 C:\ForumZenpace\ForumZenpace\obj\Debug\net10.0\compressed\ad1825se7j-{0}-y95q71mtdz-y95q71mtdz.gz
 C:\ForumZenpace\ForumZenpace\obj\Debug\net10.0\compressed\mfmng9wrex-{0}-hivrf7n1kf-hivrf7n1kf.gz
 C:\ForumZenpace\ForumZenpace\obj\Debug\net10.0\compressed\weuu8ehr6g-{0}-qa8nmqlt2l-qa8nmqlt2l.gz
-C:\ForumZenpace\ForumZenpace\obj\Debug\net10.0\compressed\bu9xcnkk2q-{0}-ckokbpo2k8-ckokbpo2k8.gz
+C:\ForumZenpace\ForumZenpace\obj\Debug\net10.0\compressed\gzww4hlc9w-{0}-2lf3l68fpr-2lf3l68fpr.gz
+C:\ForumZenpace\ForumZenpace\obj\Debug\net10.0\compressed\bu9xcnkk2q-{0}-mg3ppd7u4j-mg3ppd7u4j.gz

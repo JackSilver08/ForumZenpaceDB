@@ -116,6 +116,80 @@
                                     ? "Cac chu de cong khai duoc sap xep theo thoi gian moi nhat."
                                     : "Cac bai viet cong khai cua thanh vien nay duoc sap xep theo thoi gian moi nhat."))
                         </p>
+
+                        @if (!Model.IsOwner && Model.IsAuthenticatedViewer)
+                        {
+                            <div class="profile-social-actions"
+                                 data-profile-social
+                                 data-target-user-id="@Model.ProfileUserId"
+                                 data-target-username="@Model.Username"
+                                 data-is-friend="@Model.IsFriend.ToString().ToLowerInvariant()"
+                                 data-has-outgoing-request="@Model.HasOutgoingFriendRequest.ToString().ToLowerInvariant()"
+                                 data-has-incoming-request="@Model.HasIncomingFriendRequest.ToString().ToLowerInvariant()"
+                                 data-message-blocked-by-viewer="@Model.IsMessageBlockedByViewer.ToString().ToLowerInvariant()"
+                                 data-message-blocked-by-other-user="@Model.IsMessageBlockedByOtherUser.ToString().ToLowerInvariant()">
+                                @if (Model.IsFriend)
+                                {
+                                    <button type="button" class="btn btn-outline" data-social-remove-friend>
+                                        <i class="fa-solid fa-user-minus"></i>
+                                        <span>Xoa ban</span>
+                                    </button>
+                                }
+                                else if (Model.HasOutgoingFriendRequest)
+                                {
+                                    <button type="button" class="btn btn-outline" disabled>
+                                        <i class="fa-solid fa-paper-plane"></i>
+                                        <span>Da gui loi moi</span>
+                                    </button>
+                                }
+                                else if (Model.HasIncomingFriendRequest)
+                                {
+                                    <a asp-controller="Notification" asp-action="Index" class="btn btn-primary">
+                                        <i class="fa-solid fa-bell"></i>
+                                        <span>Mo thong bao de chap nhan</span>
+                                    </a>
+                                }
+                                else
+                                {
+                                    <button type="button" class="btn btn-primary" data-social-send-request>
+                                        <i class="fa-solid fa-user-plus"></i>
+                                        <span>Ket ban</span>
+                                    </button>
+                                }
+
+                                <button type="button" class="btn btn-text" data-social-toggle-block>
+                                    <i class="fa-solid fa-ban"></i>
+                                    <span>@(Model.IsMessageBlockedByViewer ? "Bo chan tin nhan" : "Chan tin nhan")</span>
+                                </button>
+                            </div>
+
+                            <div class="field-hint" data-profile-social-status>
+                                @if (Model.IsFriend)
+                                {
+                                    <span>Hai ban dang la ban be tren Zenpace.</span>
+                                }
+                                else if (Model.HasOutgoingFriendRequest)
+                                {
+                                    <span>Ban da gui loi moi ket ban va dang cho phan hoi.</span>
+                                }
+                                else if (Model.HasIncomingFriendRequest)
+                                {
+                                    <span>Nguoi dung nay da gui loi moi ket ban cho ban. Hay vao thong bao de chap nhan.</span>
+                                }
+                                else if (Model.IsMessageBlockedByViewer)
+                                {
+                                    <span>Ban dang chan tin nhan tu nguoi dung nay.</span>
+                                }
+                                else if (Model.IsMessageBlockedByOtherUser)
+                                {
+                                    <span>Nguoi dung nay dang chan tin nhan voi ban.</span>
+                                }
+                                else
+                                {
+                                    <span>Ban co the ket ban, chat rieng hoac quan ly quyen nhan tin ngay tai day.</span>
+                                }
+                            </div>
+                        }
                     </div>
 
                     <div class="profile-tabs" aria-label="Dieu huong ho so">
@@ -235,13 +309,21 @@
                 }
                 else
                 {
-                    <div class="profile-chat-panel">
+                    <div class="profile-chat-panel"
+                         data-chat-panel
+                         data-current-user-id="@Model.ViewerUserId"
+                         data-target-user-id="@Model.ProfileUserId"
+                         data-target-username="@Model.Username"
+                         data-hub-url="@Url.Content("~/hubs/direct-messages")"
+                         data-chat-can-send="@Model.CanSendMessages.ToString().ToLowerInvariant()"
+                         data-chat-block-message="@Model.ChatAvailabilityMessage">
                         <div class="profile-chat-thread" data-chat-thread>
                             @if (Model.ChatMessages.Any())
                             {
                                 @foreach (var message in Model.ChatMessages)
                                 {
-                                    <article class="profile-chat-message @(message.IsOwnMessage ? "profile-chat-message--own" : string.Empty)">
+                                    <article class="profile-chat-message @(message.IsOwnMessage ? "profile-chat-message--own" : string.Empty)"
+                                             data-chat-message-id="@message.Id">
                                         <div class="profile-chat-bubble">
                                             <div class="profile-chat-text">@message.Content</div>
                                         </div>
@@ -264,6 +346,11 @@
                                 </div>
                             }
                         </div>
+
+                        @if (Model.IsConversationBlocked && !string.IsNullOrWhiteSpace(Model.ChatAvailabilityMessage))
+                        {
+                            <div class="profile-chat-banner is-error" data-chat-banner>@Model.ChatAvailabilityMessage</div>
+                        }
 
                         <form asp-action="SendMessage" method="post" class="profile-chat-composer" data-chat-form>
                             @Html.AntiForgeryToken()
@@ -397,7 +484,7 @@
         <partial name="_ValidationScriptsPartial" />
     }
 
-    @if (Model.CanSendMessages)
+    @if (Model.CanSendMessages && isChatTab)
     {
         <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@@1.29.0/index.js"></script>
         <script src="~/js/comment-emoji.js" asp-append-version="true"></script>
@@ -405,6 +492,7 @@
 
     <script>
         (() => {
+            const chatPanel = document.querySelector('[data-chat-panel]');
             const chatThread = document.querySelector('[data-chat-thread]');
             if (chatThread instanceof HTMLElement) {
                 chatThread.scrollTop = chatThread.scrollHeight;
@@ -414,23 +502,41 @@
             const chatInput = document.querySelector('[data-chat-input]');
             const chatSubmit = document.querySelector('[data-chat-submit]');
             const chatStatus = document.querySelector('[data-chat-status]');
-            const chatEmpty = document.querySelector('[data-chat-empty]');
+            let chatEmpty = document.querySelector('[data-chat-empty]');
             const chatTab = document.querySelector('[data-chat-tab]');
             let chatCount = document.querySelector('[data-chat-count]');
 
-            if (chatForm instanceof HTMLFormElement
+            if (chatPanel instanceof HTMLElement
+                && chatForm instanceof HTMLFormElement
                 && chatInput instanceof HTMLTextAreaElement
                 && chatSubmit instanceof HTMLButtonElement
                 && chatThread instanceof HTMLElement) {
-                const updateComposerState = () => {
-                    const hasContent = chatInput.value.trim().length > 0;
-                    chatSubmit.disabled = !hasContent;
-                    autoResizeTextarea();
-                };
+                const currentUserId = Number.parseInt(chatPanel.dataset.currentUserId || '', 10);
+                const targetUserId = Number.parseInt(chatPanel.dataset.targetUserId || '', 10);
+                const targetUsername = chatPanel.dataset.targetUsername || '';
+                const hubUrl = chatPanel.dataset.hubUrl || '';
+                const signalRClient = window.signalR;
+                const getCanSendMessages = () => chatPanel.dataset.chatCanSend === 'true';
+                const seenMessageIds = new Set(
+                    Array.from(chatThread.querySelectorAll('[data-chat-message-id]'))
+                        .map((element) => Number.parseInt(element.getAttribute('data-chat-message-id') || '', 10))
+                        .filter((messageId) => Number.isInteger(messageId) && messageId > 0)
+                );
+                let isSending = false;
+                let realtimeReady = false;
+                let connection = null;
 
                 const autoResizeTextarea = () => {
                     chatInput.style.height = 'auto';
                     chatInput.style.height = `${Math.min(chatInput.scrollHeight, 180)}px`;
+                };
+
+                const updateComposerState = () => {
+                    const canSendMessages = getCanSendMessages();
+                    const hasContent = chatInput.value.trim().length > 0;
+                    chatInput.disabled = !canSendMessages;
+                    chatSubmit.disabled = !canSendMessages || isSending || !hasContent;
+                    autoResizeTextarea();
                 };
 
                 const setStatus = (message, isError = false) => {
@@ -448,6 +554,14 @@
                     chatStatus.hidden = false;
                     chatStatus.textContent = message;
                     chatStatus.classList.toggle('is-error', isError);
+                };
+
+                const extractErrorMessage = (error, fallbackMessage) => {
+                    if (error && typeof error === 'object' && typeof error.message === 'string' && error.message.trim().length > 0) {
+                        return error.message.trim();
+                    }
+
+                    return fallbackMessage;
                 };
 
                 const ensureCountBadge = () => {
@@ -469,13 +583,28 @@
                 };
 
                 const appendMessage = (message) => {
-                    if (chatEmpty instanceof HTMLElement) {
-                        chatEmpty.remove();
+                    const messageId = Number.parseInt(`${message.id ?? ''}`, 10);
+                    if (Number.isInteger(messageId) && messageId > 0) {
+                        if (seenMessageIds.has(messageId)) {
+                            return;
+                        }
+
+                        seenMessageIds.add(messageId);
                     }
 
+                    if (chatEmpty instanceof HTMLElement) {
+                        chatEmpty.remove();
+                        chatEmpty = null;
+                    }
+
+                    const isOwnMessage = Number.parseInt(`${message.senderId ?? ''}`, 10) === currentUserId;
                     const article = document.createElement('article');
                     article.className = 'profile-chat-message';
-                    if (message.isOwnMessage) {
+                    if (Number.isInteger(messageId) && messageId > 0) {
+                        article.setAttribute('data-chat-message-id', `${messageId}`);
+                    }
+
+                    if (isOwnMessage) {
                         article.classList.add('profile-chat-message--own');
                     }
 
@@ -491,7 +620,7 @@
                     meta.className = 'profile-chat-meta';
 
                     const sender = document.createElement('span');
-                    sender.textContent = message.sender;
+                    sender.textContent = isOwnMessage ? 'Ban' : (message.senderDisplayName || 'Nguoi dung');
                     meta.appendChild(sender);
 
                     const dot = document.createElement('span');
@@ -499,7 +628,11 @@
                     meta.appendChild(dot);
 
                     const time = document.createElement('time');
-                    time.textContent = message.createdAt;
+                    if (typeof message.createdAtIso === 'string' && message.createdAtIso.length > 0) {
+                        time.dateTime = message.createdAtIso;
+                    }
+
+                    time.textContent = message.createdAtDisplay || '';
                     meta.appendChild(time);
 
                     article.appendChild(bubble);
@@ -512,10 +645,85 @@
                         const nextCount = Number.parseInt(badge.textContent || '0', 10) + 1;
                         badge.textContent = `${nextCount}`;
                     }
+
+                    if (!isOwnMessage && connection && realtimeReady) {
+                        connection.invoke('MarkConversationAsRead', targetUserId).catch(() => {});
+                    }
+                };
+
+                const sendViaHttp = async () => {
+                    const response = await fetch(chatForm.action, {
+                        method: 'POST',
+                        body: new FormData(chatForm),
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+
+                    const data = await response.json();
+                    if (!response.ok || !data.success || !data.message) {
+                        throw new Error(data.message || 'Khong the gui tin nhan luc nay.');
+                    }
+
+                    appendMessage(data.message);
+                };
+
+                const connectRealtime = async () => {
+                    if (!signalRClient
+                        || typeof signalRClient.HubConnectionBuilder !== 'function'
+                        || !Number.isInteger(currentUserId)
+                        || currentUserId <= 0
+                        || !Number.isInteger(targetUserId)
+                        || targetUserId <= 0
+                        || !hubUrl) {
+                        return;
+                    }
+
+                    connection = new signalRClient.HubConnectionBuilder()
+                        .withUrl(hubUrl)
+                        .withAutomaticReconnect()
+                        .build();
+
+                    connection.on('DirectMessageReceived', (message) => {
+                        appendMessage(message);
+                    });
+
+                    connection.onreconnecting(() => {
+                        realtimeReady = false;
+                        setStatus('Ket noi realtime dang duoc khoi phuc...');
+                    });
+
+                    connection.onreconnected(async () => {
+                        try {
+                            await connection.invoke('JoinConversation', targetUserId);
+                            realtimeReady = true;
+                            setStatus('');
+                        } catch {
+                            realtimeReady = false;
+                            setStatus('Realtime tam thoi gian doan. He thong se tiep tuc gui thuong.');
+                        }
+                    });
+
+                    connection.onclose(() => {
+                        realtimeReady = false;
+                        setStatus('Realtime tam thoi gian doan. He thong se tiep tuc gui thuong.');
+                    });
+
+                    try {
+                        await connection.start();
+                        await connection.invoke('JoinConversation', targetUserId);
+                        realtimeReady = true;
+                        setStatus('');
+                    } catch {
+                        realtimeReady = false;
+                        setStatus('Khong the ket noi realtime. He thong se tiep tuc gui thuong.');
+                    }
                 };
 
                 chatInput.addEventListener('input', updateComposerState);
                 chatInput.addEventListener('keydown', (event) => {
+                    if (!getCanSendMessages()) {
+                        return;
+                    }
+
                     if (event.key !== 'Enter' || event.shiftKey || event.isComposing) {
                         return;
                     }
@@ -532,40 +740,57 @@
                     event.preventDefault();
 
                     const content = chatInput.value.trim();
+                    if (!getCanSendMessages()) {
+                        setStatus(chatPanel.dataset.chatBlockMessage || 'Khong the gui tin nhan luc nay.', true);
+                        return;
+                    }
+
                     if (!content) {
                         setStatus('Noi dung tin nhan khong duoc de trong.', true);
                         return;
                     }
 
-                    chatSubmit.disabled = true;
+                    isSending = true;
+                    updateComposerState();
                     setStatus('');
 
                     try {
-                        const response = await fetch(chatForm.action, {
-                            method: 'POST',
-                            body: new FormData(chatForm),
-                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                        });
-
-                        const data = await response.json();
-                        if (!response.ok || !data.success || !data.message) {
-                            setStatus(data.message || 'Khong the gui tin nhan luc nay.', true);
-                            return;
+                        if (connection && realtimeReady) {
+                            await connection.invoke('SendDirectMessage', {
+                                targetUserId,
+                                username: targetUsername,
+                                content
+                            });
+                        } else {
+                            await sendViaHttp();
                         }
 
-                        appendMessage(data.message);
                         chatInput.value = '';
                         setStatus('');
                         updateComposerState();
                         chatInput.focus();
-                    } catch {
-                        setStatus('Khong the gui tin nhan luc nay.', true);
+                    } catch (error) {
+                        setStatus(extractErrorMessage(error, 'Khong the gui tin nhan luc nay.'), true);
                     } finally {
+                        isSending = false;
                         updateComposerState();
                     }
                 });
 
+                document.addEventListener('zenpace:chat-state-changed', () => {
+                    updateComposerState();
+                    if (!getCanSendMessages() && chatPanel.dataset.chatBlockMessage) {
+                        setStatus(chatPanel.dataset.chatBlockMessage, true);
+                    } else {
+                        setStatus('');
+                    }
+                });
+
                 updateComposerState();
+                if (!getCanSendMessages() && chatPanel.dataset.chatBlockMessage) {
+                    setStatus(chatPanel.dataset.chatBlockMessage, true);
+                }
+                connectRealtime();
             }
 
             const modal = document.getElementById('profileEditModal');

@@ -336,6 +336,30 @@ strong {
     margin: 0;
 }
 
+.notification-link {
+    position: relative;
+}
+
+.notification-badge {
+    position: absolute;
+    top: -6px;
+    right: -4px;
+    min-width: 18px;
+    height: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #ff5be1, #7cc3ff);
+    color: #fff;
+    font-size: 0.6875rem;
+    font-weight: 800;
+    box-shadow:
+        0 8px 18px rgba(84, 109, 255, 0.22),
+        0 0 16px rgba(241, 110, 224, 0.18);
+}
+
 .user-badge {
     display: inline-flex;
     align-items: center;
@@ -691,6 +715,379 @@ select.form-control {
 .home-toolbar-main {
     grid-column: 2;
     min-width: 0;
+}
+
+.home-toolbar-stack {
+    display: grid;
+    gap: var(--space-3);
+}
+
+.home-social-band {
+    --social-rail-card-height: 188px;
+    display: grid;
+    grid-template-columns: var(--forum-left-column) minmax(0, 1fr) var(--forum-right-column);
+    gap: var(--forum-column-gap);
+    align-items: end;
+    margin-bottom: var(--space-3);
+}
+
+.home-social-add {
+    grid-column: 1;
+}
+
+.home-social-rail {
+    grid-column: 2 / 4;
+    min-width: 0;
+}
+
+.social-friend-list {
+    display: flex;
+    align-items: stretch;
+    gap: var(--space-3);
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 4px 2px 8px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(143, 141, 255, 0.32) transparent;
+}
+
+.social-friend-list::-webkit-scrollbar {
+    height: 8px;
+}
+
+.social-friend-list::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: rgba(143, 141, 255, 0.28);
+}
+
+.social-friend-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.social-card {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-3);
+    border-radius: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+    transition:
+        transform var(--transition-fast),
+        border-color var(--transition-fast),
+        box-shadow var(--transition-fast);
+}
+
+.social-card:hover {
+    transform: translateY(-1px);
+    border-color: rgba(149, 135, 255, 0.28);
+    box-shadow:
+        var(--shadow-hover),
+        0 0 18px rgba(160, 85, 255, 0.08);
+}
+
+.social-card--add {
+    width: 100%;
+    min-height: var(--social-rail-card-height);
+    align-items: flex-start;
+    justify-content: flex-end;
+    flex-direction: column;
+    gap: 14px;
+    padding: 22px;
+    text-align: left;
+    background:
+        radial-gradient(circle at top left, rgba(255, 105, 227, 0.28), transparent 52%),
+        linear-gradient(160deg, rgba(88, 41, 157, 0.92), rgba(46, 29, 99, 0.94));
+    box-shadow:
+        0 22px 44px rgba(16, 10, 41, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.social-card--add::after {
+    content: "";
+    position: absolute;
+    inset: auto -38px -52px auto;
+    width: 118px;
+    height: 118px;
+    border-radius: 999px;
+    background: radial-gradient(circle, rgba(124, 195, 255, 0.36), transparent 72%);
+    pointer-events: none;
+}
+
+.social-card-copy {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+}
+
+.social-card-copy strong {
+    color: var(--text-primary);
+    font-size: 0.9375rem;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.social-card-copy span {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1.4;
+}
+
+.social-card--add .social-card-copy strong {
+    font-size: 1.0625rem;
+}
+
+.social-card--add .social-card-copy span {
+    max-width: 17rem;
+    color: rgba(228, 229, 255, 0.78);
+}
+
+.social-card-icon,
+.social-avatar,
+.social-result-avatar,
+.notice-avatar {
+    width: 48px;
+    height: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 16px;
+    flex-shrink: 0;
+    overflow: hidden;
+    background: linear-gradient(135deg, rgba(255, 82, 210, 0.16), rgba(121, 201, 255, 0.18));
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 800;
+}
+
+.social-card--add .social-card-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.18), rgba(145, 183, 255, 0.18));
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        0 10px 24px rgba(12, 16, 40, 0.2);
+}
+
+.social-card--friend,
+.social-card--empty {
+    min-height: var(--social-rail-card-height);
+}
+
+.social-card--friend {
+    width: 132px;
+    min-width: 132px;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding: 12px 12px 16px;
+    gap: 14px;
+    text-align: center;
+    background:
+        linear-gradient(180deg, rgba(85, 55, 144, 0.94), rgba(44, 29, 97, 0.94)),
+        rgba(255, 255, 255, 0.03);
+    box-shadow:
+        0 18px 32px rgba(9, 12, 28, 0.22),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.social-card--friend::after {
+    content: "";
+    position: absolute;
+    inset: auto 14px 0;
+    height: 3px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, rgba(255, 91, 225, 0.7), rgba(124, 195, 255, 0.7));
+    opacity: 0.72;
+}
+
+.social-card--friend .social-avatar {
+    width: 100%;
+    height: 112px;
+    border-radius: 24px;
+    box-shadow:
+        0 12px 22px rgba(10, 14, 34, 0.28),
+        0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.social-card--friend .social-card-copy {
+    width: 100%;
+    justify-items: center;
+}
+
+.social-card--friend .social-card-copy strong {
+    width: 100%;
+    font-size: 0.8rem;
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+}
+
+.social-card--friend .social-card-copy span {
+    display: none;
+}
+
+.social-card--friend[data-friend-state="blocked-by-viewer"] {
+    border-color: rgba(255, 121, 169, 0.3);
+}
+
+.social-card--friend[data-friend-state="blocked-by-other"] {
+    border-color: rgba(255, 198, 114, 0.24);
+}
+
+.social-card--empty {
+    min-width: 172px;
+    padding: 18px;
+    align-items: flex-start;
+    justify-content: flex-end;
+    background: rgba(31, 24, 62, 0.82);
+    border-style: dashed;
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+.social-card--empty .social-card-copy strong {
+    font-size: 0.875rem;
+}
+
+.social-card--empty .social-card-copy span {
+    font-size: 0.72rem;
+}
+
+.social-friend-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: rgba(15, 17, 36, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #ffd6df;
+    font-size: 0.75rem;
+    transition:
+        opacity var(--transition-fast),
+        transform var(--transition-fast);
+}
+
+.social-card--friend[data-friend-state="blocked-by-other"] .social-friend-badge {
+    color: #ffe3a7;
+}
+
+.social-friend-badge.is-hidden {
+    opacity: 0;
+    transform: scale(0.84);
+    pointer-events: none;
+}
+
+.social-avatar img,
+.social-result-avatar img,
+.notice-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.social-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    display: grid;
+    place-items: center;
+    padding: var(--space-4);
+}
+
+.social-modal[hidden] {
+    display: none;
+}
+
+.social-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(3, 7, 16, 0.68);
+    backdrop-filter: blur(14px);
+}
+
+.social-modal-dialog {
+    position: relative;
+    width: min(100%, 760px);
+    display: grid;
+    gap: var(--space-4);
+    z-index: 1;
+}
+
+.social-modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-4);
+}
+
+.social-search-shell {
+    display: grid;
+    gap: var(--space-2);
+}
+
+.social-search-row {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.social-search-row .form-control {
+    flex: 1;
+}
+
+.social-search-results {
+    display: grid;
+    gap: var(--space-3);
+}
+
+.social-result-card {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.social-result-copy {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+}
+
+.social-result-copy strong {
+    color: var(--text-primary);
+    font-size: 0.9375rem;
+    font-weight: 800;
+}
+
+.social-result-copy span,
+.social-result-copy small {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    line-height: 1.45;
+}
+
+.social-search-empty {
+    min-height: 160px;
+    display: grid;
+    place-items: center;
+    gap: var(--space-2);
+    padding: var(--space-5);
+    border-radius: 18px;
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+    text-align: center;
 }
 
 .forum-column {
@@ -2022,6 +2419,25 @@ kbd {
     color: #ffb2bf;
 }
 
+.profile-social-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+    margin-top: var(--space-3);
+}
+
+.profile-chat-banner {
+    margin: var(--space-3) 0 0;
+    padding: 10px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 178, 191, 0.22);
+    background: rgba(255, 178, 191, 0.08);
+    color: #ffd5dc;
+    font-size: 0.8125rem;
+    font-weight: 700;
+}
+
 body.profile-modal-open {
     overflow: hidden;
 }
@@ -2409,7 +2825,17 @@ body.profile-modal-open {
     background: rgba(141, 139, 255, 0.05);
 }
 
+.notice-head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
 .notice-content {
+    min-width: 0;
+}
+
+.notice-copy {
     min-width: 0;
 }
 
@@ -2447,6 +2873,21 @@ body.profile-modal-open {
         0 8px 18px rgba(84, 109, 255, 0.22),
         0 0 16px rgba(241, 110, 224, 0.18),
         0 0 24px rgba(121, 201, 255, 0.14);
+}
+
+.notice-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+    margin-left: auto;
+}
+
+.btn-sm {
+    min-height: 34px;
+    padding: 8px 14px;
+    border-radius: 12px;
+    font-size: 0.75rem;
 }
 
 .content-page {
@@ -3195,6 +3636,18 @@ body.profile-modal-open {
         grid-column: 1;
     }
 
+    .home-social-band {
+        grid-template-columns: minmax(0, 1fr) var(--forum-right-column);
+    }
+
+    .home-social-add {
+        grid-column: 1;
+    }
+
+    .home-social-rail {
+        grid-column: 1 / 3;
+    }
+
     .feed-header {
         flex-direction: column;
         align-items: flex-start;
@@ -3289,8 +3742,41 @@ body.profile-modal-open {
         grid-column: 1;
     }
 
+    .home-social-band {
+        grid-template-columns: 1fr;
+    }
+
+    .home-social-add,
+    .home-social-rail {
+        grid-column: 1;
+    }
+
     .home-toolbar .feed-controls {
         justify-content: flex-start;
+    }
+
+    .social-card--add {
+        min-height: 168px;
+    }
+
+    .social-card--friend {
+        width: 122px;
+        min-width: 122px;
+        min-height: 168px;
+    }
+
+    .social-card--empty {
+        min-width: 164px;
+    }
+
+    .social-result-card {
+        grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .social-result-action {
+        grid-column: 1 / -1;
+        width: 100%;
+        justify-content: center;
     }
 
     .forum-right {
@@ -3311,6 +3797,11 @@ body.profile-modal-open {
 
     .notice-item {
         align-items: flex-start;
+    }
+
+    .notice-actions {
+        width: 100%;
+        margin-left: 0;
     }
 }
 
@@ -3383,13 +3874,34 @@ body.profile-modal-open {
         width: 100%;
     }
 
-    .profile-modal-footer .btn {
-        flex: 1 1 auto;
-    }
+      .profile-modal-footer .btn {
+          flex: 1 1 auto;
+      }
 
-    .comment-card {
-        padding: var(--space-4);
-    }
+      .social-friend-list {
+          gap: var(--space-2);
+      }
+
+      .social-card--friend {
+          width: 112px;
+          min-width: 112px;
+          min-height: 156px;
+          padding: 16px 10px 14px;
+      }
+
+      .social-card--friend .social-avatar {
+          width: 100%;
+          height: 94px;
+          border-radius: 20px;
+      }
+
+      .social-card--friend .social-card-copy strong {
+          font-size: 0.76rem;
+      }
+
+      .comment-card {
+          padding: var(--space-4);
+      }
 
     .comment-editor-footer {
         align-items: stretch;

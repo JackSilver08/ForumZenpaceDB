@@ -1,12 +1,17 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.Extensions.FileProviders;
+using ForumZenpace.Hubs;
 using ForumZenpace.Models;
+using ForumZenpace.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddSignalR();
+builder.Services.AddScoped<DirectMessageService>();
+builder.Services.AddScoped<SocialService>();
 
 // Setup DbContext
 builder.Services.AddDbContext<ForumDbContext>(options =>
@@ -48,6 +53,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapStaticAssets();
+app.MapHub<DirectMessageHub>("/hubs/direct-messages");
+app.MapHub<SocialHub>("/hubs/social");
 
 app.MapControllerRoute(
     name: "default",

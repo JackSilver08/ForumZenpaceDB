@@ -1,10 +1,13 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using ForumZenpace.Hubs;
 using System.Security.Claims;
 using ForumZenpace.Formatting;
 using ForumZenpace.Models;
+using ForumZenpace.Services;
 
 namespace ForumZenpace.Controllers
 {
@@ -22,11 +25,22 @@ namespace ForumZenpace.Controllers
         private const long MaxAvatarSizeBytes = 5 * 1024 * 1024;
         private readonly ForumDbContext _context;
         private readonly IWebHostEnvironment _environment;
+        private readonly DirectMessageService _directMessageService;
+        private readonly SocialService _socialService;
+        private readonly IHubContext<DirectMessageHub> _hubContext;
 
-        public ProfileController(ForumDbContext context, IWebHostEnvironment environment)
+        public ProfileController(
+            ForumDbContext context,
+            IWebHostEnvironment environment,
+            DirectMessageService directMessageService,
+            SocialService socialService,
+            IHubContext<DirectMessageHub> hubContext)
         {
             _context = context;
             _environment = environment;
+            _directMessageService = directMessageService;
+            _socialService = socialService;
+            _hubContext = hubContext;
         }
 
         [HttpGet]
@@ -118,72 +132,32 @@ namespace ForumZenpace.Controllers
             }
 
             var username = model.Username?.Trim() ?? string.Empty;
-            var content = model.Content?.Trim() ?? string.Empty;
-            if (!ModelState.IsValid || string.IsNullOrWhiteSpace(content))
+            var result = await _directMessageService.SendMessageAsync(userId.Value, model);
+            if (!result.Success || result.Message is null)
             {
                 if (IsAjaxRequest())
                 {
-                    return Json(new { success = false, message = "Noi dung tin nhan khong duoc de trong." });
+                    return Json(new { success = false, message = result.ErrorMessage });
                 }
 
-                TempData["ErrorMessage"] = "Noi dung tin nhan khong duoc de trong.";
+                TempData["ErrorMessage"] = result.ErrorMessage;
                 return RedirectToAction(nameof(UserProfile), new { username, tab = "chat" });
             }
 
-            var targetUser = await _context.Users
-                .FirstOrDefaultAsync(u => u.Id == model.TargetUserId && u.Username == username && u.IsActive);
-
-            if (targetUser == null)
-            {
-                if (IsAjaxRequest())
-                {
-                    return Json(new { success = false, message = "Khong tim thay nguoi dung nhan tin." });
-                }
-
-                return NotFound();
-            }
-
-            if (targetUser.Id == userId.Value)
-            {
-                if (IsAjaxRequest())
-                {
-                    return Json(new { success = false, message = "Ban khong the tu nhan tin cho chinh minh." });
-                }
-
-                TempData["ErrorMessage"] = "Ban khong the tu nhan tin cho chinh minh.";
-                return RedirectToAction(nameof(Index));
-            }
-
-            var conversation = await GetOrCreateConversationAsync(userId.Value, targetUser.Id);
-            conversation.UpdatedAt = DateTime.UtcNow;
-
-            _context.DirectMessages.Add(new DirectMessage
-            {
-                ConversationId = conversation.Id,
-                SenderId = userId.Value,
-                Content = content,
-                CreatedAt = DateTime.UtcNow
-            });
-
-            await _context.SaveChangesAsync();
+            await _hubContext.Clients.Group(result.ConversationGroupName)
+                .SendAsync("DirectMessageReceived", result.Message);
 
             if (IsAjaxRequest())
             {
                 return Json(new
                 {
                     success = true,
-                    message = new
-                    {
-                        content,
-                        createdAt = DateTime.UtcNow.ToString("dd MMM, HH:mm"),
-                        sender = "Ban",
-                        isOwnMessage = true
-                    }
+                    message = result.Message
                 });
             }
 
-            TempData["SuccessMessage"] = $"Da gui tin nhan cho {targetUser.FullName}.";
-            return RedirectToAction(nameof(UserProfile), new { username = targetUser.Username, tab = "chat" });
+            TempData["SuccessMessage"] = $"Da gui tin nhan cho {result.TargetDisplayName}.";
+            return RedirectToAction(nameof(UserProfile), new { username = result.TargetUsername, tab = "chat" });
         }
 
         private void ValidateAvatarFile(IFormFile? avatarFile)
@@ -251,8 +225,10 @@ namespace ForumZenpace.Controllers
 
             IReadOnlyList<ProfileChatMessageViewModel> chatMessages = Array.Empty<ProfileChatMessageViewModel>();
             var chatMessageCount = 0;
+            var relationshipStatus = new RelationshipStatusViewModel();
             if (showChatTab && viewerUserId.HasValue)
             {
+                relationshipStatus = await _socialService.GetRelationshipStatusAsync(viewerUserId.Value, user.Id);
                 var conversation = await GetConversationQuery(viewerUserId.Value, user.Id)
                     .Include(c => c.Messages)
                         .ThenInclude(m => m.Sender)
@@ -302,11 +278,24 @@ namespace ForumZenpace.Controllers
                 Avatar = user.Avatar,
                 Username = user.Username,
                 ProfileUserId = user.Id,
+                ViewerUserId = viewerUserId,
                 IsOwner = isOwner,
                 IsAuthenticatedViewer = viewerUserId.HasValue,
                 ActiveTab = normalizedActiveTab,
                 ShowChatTab = showChatTab,
-                CanSendMessages = viewerUserId.HasValue && !isOwner,
+                CanSendMessages = viewerUserId.HasValue && !isOwner && !relationshipStatus.IsConversationBlocked,
+                IsFriend = relationshipStatus.IsFriend,
+                HasIncomingFriendRequest = relationshipStatus.HasIncomingFriendRequest,
+                HasOutgoingFriendRequest = relationshipStatus.HasOutgoingFriendRequest,
+                IncomingFriendRequestId = relationshipStatus.IncomingFriendRequestId,
+                IsMessageBlockedByViewer = relationshipStatus.IsMessageBlockedByViewer,
+                IsMessageBlockedByOtherUser = relationshipStatus.IsMessageBlockedByOtherUser,
+                IsConversationBlocked = relationshipStatus.IsConversationBlocked,
+                ChatAvailabilityMessage = relationshipStatus.IsMessageBlockedByViewer
+                    ? "Ban da chan tin nhan voi nguoi dung nay."
+                    : relationshipStatus.IsMessageBlockedByOtherUser
+                        ? "Nguoi dung nay da chan tin nhan voi ban."
+                        : string.Empty,
                 ChatMessageCount = chatMessageCount,
                 ChatMessages = chatMessages,
                 JoinedAt = user.CreatedAt,
@@ -330,28 +319,6 @@ namespace ForumZenpace.Controllers
         {
             var (userAId, userBId) = OrderConversationUsers(userId, targetUserId);
             return _context.DirectConversations.Where(conversation => conversation.UserAId == userAId && conversation.UserBId == userBId);
-        }
-
-        private async Task<DirectConversation> GetOrCreateConversationAsync(int userId, int targetUserId)
-        {
-            var (userAId, userBId) = OrderConversationUsers(userId, targetUserId);
-            var existingConversation = await GetConversationQuery(userId, targetUserId).FirstOrDefaultAsync();
-            if (existingConversation != null)
-            {
-                return existingConversation;
-            }
-
-            var conversation = new DirectConversation
-            {
-                UserAId = userAId,
-                UserBId = userBId,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
-
-            _context.DirectConversations.Add(conversation);
-            await _context.SaveChangesAsync();
-            return conversation;
         }
 
         private static (int UserAId, int UserBId) OrderConversationUsers(int firstUserId, int secondUserId)

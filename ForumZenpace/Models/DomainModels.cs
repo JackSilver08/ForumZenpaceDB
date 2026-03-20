@@ -49,9 +49,16 @@ namespace ForumZenpace.Models
         public ICollection<PostImage> PostImages { get; set; } = new List<PostImage>();
         public ICollection<Report> Reports { get; set; } = new List<Report>();
         public ICollection<Notification> Notifications { get; set; } = new List<Notification>();
+        public ICollection<Notification> ActorNotifications { get; set; } = new List<Notification>();
         public ICollection<DirectConversation> PrimaryDirectConversations { get; set; } = new List<DirectConversation>();
         public ICollection<DirectConversation> SecondaryDirectConversations { get; set; } = new List<DirectConversation>();
         public ICollection<DirectMessage> DirectMessages { get; set; } = new List<DirectMessage>();
+        public ICollection<FriendRequest> SentFriendRequests { get; set; } = new List<FriendRequest>();
+        public ICollection<FriendRequest> ReceivedFriendRequests { get; set; } = new List<FriendRequest>();
+        public ICollection<Friendship> PrimaryFriendships { get; set; } = new List<Friendship>();
+        public ICollection<Friendship> SecondaryFriendships { get; set; } = new List<Friendship>();
+        public ICollection<MessageBlock> SentMessageBlocks { get; set; } = new List<MessageBlock>();
+        public ICollection<MessageBlock> ReceivedMessageBlocks { get; set; } = new List<MessageBlock>();
     }
 
     public class Category
@@ -205,8 +212,68 @@ namespace ForumZenpace.Models
         [Required]
         public string Content { get; set; }
 
+        [Required, MaxLength(40)]
+        public string Type { get; set; } = NotificationTypes.General;
+
+        public int? ActorUserId { get; set; }
+        [ForeignKey("ActorUserId")]
+        public User? ActorUser { get; set; }
+
+        public int? FriendRequestId { get; set; }
+        [ForeignKey("FriendRequestId")]
+        public FriendRequest? FriendRequest { get; set; }
+
         public bool IsRead { get; set; } = false;
         
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    }
+
+    public class FriendRequest
+    {
+        public int Id { get; set; }
+
+        public int SenderId { get; set; }
+        [ForeignKey("SenderId")]
+        public User Sender { get; set; } = null!;
+
+        public int ReceiverId { get; set; }
+        [ForeignKey("ReceiverId")]
+        public User Receiver { get; set; } = null!;
+
+        [Required, MaxLength(20)]
+        public string Status { get; set; } = FriendRequestStatuses.Pending;
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime? RespondedAt { get; set; }
+    }
+
+    public class Friendship
+    {
+        public int Id { get; set; }
+
+        public int UserAId { get; set; }
+        [ForeignKey("UserAId")]
+        public User UserA { get; set; } = null!;
+
+        public int UserBId { get; set; }
+        [ForeignKey("UserBId")]
+        public User UserB { get; set; } = null!;
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    }
+
+    public class MessageBlock
+    {
+        public int Id { get; set; }
+
+        public int BlockerUserId { get; set; }
+        [ForeignKey("BlockerUserId")]
+        public User BlockerUser { get; set; } = null!;
+
+        public int BlockedUserId { get; set; }
+        [ForeignKey("BlockedUserId")]
+        public User BlockedUser { get; set; } = null!;
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 
@@ -245,5 +312,20 @@ namespace ForumZenpace.Models
 
         public bool IsRead { get; set; } = false;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    }
+
+    public static class FriendRequestStatuses
+    {
+        public const string Pending = "Pending";
+        public const string Accepted = "Accepted";
+        public const string Declined = "Declined";
+        public const string Cancelled = "Cancelled";
+    }
+
+    public static class NotificationTypes
+    {
+        public const string General = "General";
+        public const string FriendRequest = "FriendRequest";
+        public const string FriendAccepted = "FriendAccepted";
     }
 }

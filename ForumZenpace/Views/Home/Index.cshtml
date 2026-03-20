@@ -1,30 +1,28 @@
 @using System.Linq
 @using ForumZenpace.Models
-@model IEnumerable<Post>
+@model HomeIndexViewModel
 @{
     ViewData["Title"] = "Bang tin";
 
-    var posts = Model?.ToList() ?? new List<Post>();
-    var categories = (ViewData["Categories"] as IEnumerable<Category> ?? Enumerable.Empty<Category>()).ToList();
-    var currentSort = (Convert.ToString(ViewData["CurrentSort"]) ?? string.Empty).ToLowerInvariant();
-    var searchString = Convert.ToString(ViewData["SearchString"]);
-    var currentCategoryValue = ViewData["CurrentCategory"];
-    int? currentCategory = currentCategoryValue switch
-    {
-        int categoryId => categoryId,
-        string categoryText when int.TryParse(categoryText, out var parsedCategoryId) => parsedCategoryId,
-        _ => null
-    };
+    var posts = Model.Posts?.ToList() ?? new List<Post>();
+    var categories = Model.Categories?.ToList() ?? new List<Category>();
+    var friends = Model.Friends?.ToList() ?? new List<FriendSummaryViewModel>();
+    var currentSort = (Model.CurrentSort ?? string.Empty).ToLowerInvariant();
+    var searchString = Model.SearchString;
+    var currentCategory = Model.CurrentCategoryId;
     var sortRoute = string.IsNullOrEmpty(currentSort) ? null : currentSort;
     var searchRoute = string.IsNullOrWhiteSpace(searchString) ? null : searchString;
-    string GetInitials(string? name)
+    var canUseSocial = Model.CurrentUserId.HasValue;
+
+    string GetInitials(string? name, string? fallback = null)
     {
-        if (string.IsNullOrWhiteSpace(name))
+        var source = string.IsNullOrWhiteSpace(name) ? fallback : name;
+        if (string.IsNullOrWhiteSpace(source))
         {
             return "?";
         }
 
-        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var parts = source.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         if (parts.Length == 1)
         {
             return parts[0][0].ToString().ToUpperInvariant();
@@ -37,6 +35,86 @@
     {
         return PostContentFormatter.ToExcerpt(content, 180);
     }
+}
+
+@if (canUseSocial)
+{
+    <div class="home-social-band animated-entry">
+        <div class="home-social-add">
+            <button type="button" class="glass-panel social-card social-card--add" data-open-friend-modal>
+                <span class="social-card-icon">
+                    <i class="fa-solid fa-user-plus"></i>
+                </span>
+                <span class="social-card-copy">
+                    <strong>Them ban</strong>
+                    <span>Mo popup tim kiem va gui loi moi ket ban realtime</span>
+                </span>
+            </button>
+        </div>
+
+        <div class="home-social-rail">
+            <div class="social-friend-list" data-friend-list>
+                @if (friends.Any())
+                {
+                    @foreach (var friend in friends)
+                    {
+                        var friendState = friend.IsMessageBlockedByViewer
+                            ? "blocked-by-viewer"
+                            : friend.IsMessageBlockedByOtherUser
+                                ? "blocked-by-other"
+                                : "connected";
+
+                        var friendTitle = friend.IsMessageBlockedByViewer
+                            ? "Ban dang chan tin nhan voi nguoi nay."
+                            : friend.IsMessageBlockedByOtherUser
+                                ? "Nguoi nay dang chan tin nhan voi ban."
+                                : $"Trang ca nhan cua @{friend.Username}";
+
+                        <a asp-controller="Profile"
+                           asp-action="UserProfile"
+                           asp-route-username="@friend.Username"
+                           class="glass-panel social-card social-card--friend"
+                           data-friend-card
+                           data-friend-user-id="@friend.UserId"
+                           data-friend-username="@friend.Username"
+                           data-friend-state="@friendState"
+                           title="@friendTitle">
+                            <span class="social-friend-badge @(friendState == "connected" ? "is-hidden" : string.Empty)"
+                                  data-friend-status-badge
+                                  aria-hidden="true">
+                                <i class="fa-solid @(friendState == "blocked-by-viewer" ? "fa-ban" : "fa-shield-halved")"></i>
+                            </span>
+                            <span class="social-avatar">
+                                @if (!string.IsNullOrWhiteSpace(friend.AvatarUrl))
+                                {
+                                    <img src="@friend.AvatarUrl" alt="@friend.DisplayName" />
+                                }
+                                else
+                                {
+                                    <span>@GetInitials(friend.DisplayName, friend.Username)</span>
+                                }
+                            </span>
+                            <span class="social-card-copy">
+                                <strong>@friend.DisplayName</strong>
+                            </span>
+                        </a>
+                    }
+                }
+                else
+                {
+                    <div class="glass-panel social-card social-card--empty" data-friend-empty>
+                        <span class="social-card-icon">
+                            <i class="fa-regular fa-user"></i>
+                        </span>
+                        <span class="social-card-copy">
+                            <strong>Chua co ban</strong>
+                            <span>Bat dau ket noi tu o Them ban</span>
+                        </span>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
 }
 
 <div class="home-toolbar animated-entry">
@@ -68,6 +146,42 @@
         </div>
     </div>
 </div>
+
+@if (canUseSocial)
+{
+    <div class="social-modal" data-friend-modal hidden aria-hidden="true">
+        <div class="social-modal-backdrop" data-close-friend-modal></div>
+        <div class="surface social-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="friendModalTitle">
+            <div class="social-modal-header">
+                <div>
+                    <div class="panel-label">Ket noi</div>
+                    <h2 id="friendModalTitle" class="section-heading">Them ban moi</h2>
+                    <p class="surface-subtitle">Nhap ten, username hoac email de tim thanh vien va gui loi moi ket ban realtime.</p>
+                </div>
+                <button type="button" class="profile-modal-close" aria-label="Dong popup" data-close-friend-modal>
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="social-search-shell">
+                <label class="field-label" for="friendSearchBox">Tim nguoi dung</label>
+                <div class="social-search-row">
+                    <input id="friendSearchBox"
+                           type="text"
+                           class="form-control"
+                           placeholder="Nhap ten, username hoac email..."
+                           data-friend-search-input />
+                    <button type="button" class="btn btn-primary" data-friend-search-button>
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </button>
+                </div>
+                <div class="field-hint" data-friend-search-status>Hien thi goi y ket noi moi tu cong dong Zenpace.</div>
+            </div>
+
+            <div class="social-search-results" data-friend-search-results></div>
+        </div>
+    </div>
+}
 
 <div class="forum-page animated-entry">
     <aside class="forum-column forum-sidebar">
@@ -129,7 +243,7 @@
                                     }
                                     else
                                     {
-                                        <span>@GetInitials(post.User.FullName)</span>
+                                        <span>@GetInitials(post.User.FullName, post.User.Username)</span>
                                     }
                                 </div>
                             </a>

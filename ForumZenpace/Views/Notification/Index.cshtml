@@ -1,18 +1,17 @@
-@model IEnumerable<ForumZenpace.Models.Notification>
+@model ForumZenpace.Models.NotificationPageViewModel
 @{
     ViewData["Title"] = "Thong bao";
-    var unreadCount = Model.Count(n => !n.IsRead);
 }
 
-<div class="notice-shell animated-entry">
+<div class="notice-shell animated-entry" data-notification-page data-current-user-id="@Model.CurrentUserId">
     <div class="surface">
         <div class="surface-header">
             <div>
                 <h1 class="surface-title">Trung tam thong bao</h1>
-                <p class="surface-subtitle">Danh sach thong bao duoc nen gon hon de uu tien kha nang quet nhanh va xu ly nhieu muc lien tuc.</p>
+                <p class="surface-subtitle">Loi moi ket ban, chap nhan ket ban va cac cap nhat khac se duoc dong bo realtime tai day.</p>
             </div>
 
-            @if (unreadCount > 0)
+            @if (Model.UnreadCount > 0)
             {
                 <form asp-action="MarkAllAsRead" method="post">
                     <button type="submit" class="btn btn-outline">
@@ -22,40 +21,86 @@
             }
         </div>
 
-        @if (!Model.Any())
+        @if (!Model.Items.Any())
         {
             <div class="empty-state">
                 <div class="empty-icon">
                     <i class="fa-solid fa-bell-slash"></i>
                 </div>
                 <h2 class="section-heading">Chua co thong bao moi</h2>
-                <p class="muted">Khi co binh luan, phan hoi hoac thay doi quan trong, ban se thay tai day.</p>
+                <p class="muted">Khi co binh luan, loi moi ket ban hoac thay doi quan trong, ban se thay tai day.</p>
             </div>
         }
         else
         {
-            <div class="notice-list">
-                @foreach (var notification in Model)
+            <div class="notice-list" data-notification-list>
+                @foreach (var notification in Model.Items)
                 {
-                    <div class="glass-card notice-item @(notification.IsRead ? "" : "notice-item--unread")">
+                    var actorDisplayName = string.IsNullOrWhiteSpace(notification.ActorDisplayName)
+                        ? "Zenpace"
+                        : notification.ActorDisplayName;
+                    var actorInitial = actorDisplayName.Substring(0, 1).ToUpperInvariant();
+
+                    <div class="glass-card notice-item @(notification.IsRead ? "" : "notice-item--unread")"
+                         data-notification-item
+                         data-notification-id="@notification.Id"
+                         data-notification-type="@notification.Type"
+                         data-friend-request-id="@notification.FriendRequestId">
                         <div class="notice-content">
-                            <div class="notice-text">@notification.Content</div>
-                            <div class="notice-meta">
-                                <span><i class="fa-regular fa-clock"></i> @notification.CreatedAt.ToString("MMM dd, HH:mm")</span>
-                                <span class="dot"></span>
-                                <span>@(notification.IsRead ? "Da doc" : "Moi")</span>
+                            <div class="notice-head">
+                                <div class="notice-avatar">
+                                    @if (!string.IsNullOrWhiteSpace(notification.ActorAvatarUrl))
+                                    {
+                                        <img src="@notification.ActorAvatarUrl" alt="@actorDisplayName" />
+                                    }
+                                    else
+                                    {
+                                        <span>@actorInitial</span>
+                                    }
+                                </div>
+                                <div class="notice-copy">
+                                    <div class="notice-text">@notification.Content</div>
+                                    <div class="notice-meta">
+                                        <span><i class="fa-regular fa-clock"></i> @notification.CreatedAt.ToString("MMM dd, HH:mm")</span>
+                                        <span class="dot"></span>
+                                        <span data-notification-state>@(notification.IsRead ? "Da doc" : "Moi")</span>
+                                        @if (notification.CanAcceptFriendRequest)
+                                        {
+                                            <span class="dot"></span>
+                                            <span data-friend-request-state>Cho phan hoi</span>
+                                        }
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        @if (!notification.IsRead)
-                        {
-                            <form asp-action="MarkAsRead" method="post">
-                                <input type="hidden" name="id" value="@notification.Id" />
-                                <button type="submit" class="notice-action" title="Danh dau da doc">
-                                    <i class="fa-solid fa-check"></i>
+                        <div class="notice-actions">
+                            @if (notification.CanAcceptFriendRequest && notification.FriendRequestId.HasValue)
+                            {
+                                <button type="button"
+                                        class="btn btn-primary btn-sm"
+                                        data-notification-accept
+                                        data-friend-request-id="@notification.FriendRequestId.Value">
+                                    Chap nhan
                                 </button>
-                            </form>
-                        }
+                                <button type="button"
+                                        class="btn btn-text btn-sm"
+                                        data-notification-decline
+                                        data-friend-request-id="@notification.FriendRequestId.Value">
+                                    Tu choi
+                                </button>
+                            }
+
+                            @if (!notification.IsRead)
+                            {
+                                <form asp-action="MarkAsRead" method="post" data-mark-notification-read>
+                                    <input type="hidden" name="id" value="@notification.Id" />
+                                    <button type="submit" class="notice-action" title="Danh dau da doc">
+                                        <i class="fa-solid fa-check"></i>
+                                    </button>
+                                </form>
+                            }
+                        </div>
                     </div>
                 }
             </div>

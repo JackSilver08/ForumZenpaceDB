@@ -20,6 +20,9 @@ namespace ForumZenpace.Models
         public DbSet<PostImage> PostImages { get; set; }
         public DbSet<Report> Reports { get; set; }
         public DbSet<Notification> Notifications { get; set; }
+        public DbSet<FriendRequest> FriendRequests { get; set; }
+        public DbSet<Friendship> Friendships { get; set; }
+        public DbSet<MessageBlock> MessageBlocks { get; set; }
         public DbSet<DirectConversation> DirectConversations { get; set; }
         public DbSet<DirectMessage> DirectMessages { get; set; }
 
@@ -41,6 +44,17 @@ namespace ForumZenpace.Models
 
             modelBuilder.Entity<DirectConversation>()
                 .HasIndex(dc => new { dc.UserAId, dc.UserBId })
+                .IsUnique();
+
+            modelBuilder.Entity<Friendship>()
+                .HasIndex(friendship => new { friendship.UserAId, friendship.UserBId })
+                .IsUnique();
+
+            modelBuilder.Entity<FriendRequest>()
+                .HasIndex(friendRequest => new { friendRequest.ReceiverId, friendRequest.Status, friendRequest.CreatedAt });
+
+            modelBuilder.Entity<MessageBlock>()
+                .HasIndex(block => new { block.BlockerUserId, block.BlockedUserId })
                 .IsUnique();
 
             modelBuilder.Entity<DirectMessage>()
@@ -65,6 +79,50 @@ namespace ForumZenpace.Models
                 .HasOne(dm => dm.Sender)
                 .WithMany(u => u.DirectMessages)
                 .HasForeignKey(dm => dm.SenderId);
+
+            modelBuilder.Entity<Notification>()
+                .HasOne(notification => notification.ActorUser)
+                .WithMany(user => user.ActorNotifications)
+                .HasForeignKey(notification => notification.ActorUserId);
+
+            modelBuilder.Entity<Notification>()
+                .HasOne(notification => notification.FriendRequest)
+                .WithMany()
+                .HasForeignKey(notification => notification.FriendRequestId);
+
+            modelBuilder.Entity<Notification>()
+                .Property(notification => notification.Type)
+                .HasDefaultValue(NotificationTypes.General);
+
+            modelBuilder.Entity<FriendRequest>()
+                .HasOne(friendRequest => friendRequest.Sender)
+                .WithMany(user => user.SentFriendRequests)
+                .HasForeignKey(friendRequest => friendRequest.SenderId);
+
+            modelBuilder.Entity<FriendRequest>()
+                .HasOne(friendRequest => friendRequest.Receiver)
+                .WithMany(user => user.ReceivedFriendRequests)
+                .HasForeignKey(friendRequest => friendRequest.ReceiverId);
+
+            modelBuilder.Entity<Friendship>()
+                .HasOne(friendship => friendship.UserA)
+                .WithMany(user => user.PrimaryFriendships)
+                .HasForeignKey(friendship => friendship.UserAId);
+
+            modelBuilder.Entity<Friendship>()
+                .HasOne(friendship => friendship.UserB)
+                .WithMany(user => user.SecondaryFriendships)
+                .HasForeignKey(friendship => friendship.UserBId);
+
+            modelBuilder.Entity<MessageBlock>()
+                .HasOne(block => block.BlockerUser)
+                .WithMany(user => user.SentMessageBlocks)
+                .HasForeignKey(block => block.BlockerUserId);
+
+            modelBuilder.Entity<MessageBlock>()
+                .HasOne(block => block.BlockedUser)
+                .WithMany(user => user.ReceivedMessageBlocks)
+                .HasForeignKey(block => block.BlockedUserId);
 
             // Disable cascade delete globally or per specific relationship to avoid multiple cascade paths issue in SQL Server
             foreach (var relationship in modelBuilder.Model.GetEntityTypes().SelectMany(e => e.GetForeignKeys()))

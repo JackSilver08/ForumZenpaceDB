@@ -1,41 +1,37 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.SignalR;
 using System.Security.Claims;
-using ForumZenpace.Models;
+using ForumZenpace.Hubs;
+using ForumZenpace.Services;
 
 namespace ForumZenpace.Controllers
 {
     [Authorize]
     public class NotificationController : Controller
     {
-        private readonly ForumDbContext _context;
+        private readonly SocialService _socialService;
+        private readonly IHubContext<SocialHub> _hubContext;
 
-        public NotificationController(ForumDbContext context)
+        public NotificationController(SocialService socialService, IHubContext<SocialHub> hubContext)
         {
-            _context = context;
+            _socialService = socialService;
+            _hubContext = hubContext;
         }
 
         public async Task<IActionResult> Index()
         {
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            var notifications = await _context.Notifications
-                .Where(n => n.UserId == userId)
-                .OrderByDescending(n => n.CreatedAt)
-                .ToListAsync();
-
-            return View(notifications);
+            return View(await _socialService.GetNotificationPageAsync(userId));
         }
 
         [HttpPost]
         public async Task<IActionResult> MarkAsRead(int id)
         {
-            var notif = await _context.Notifications.FindAsync(id);
-            if (notif != null && notif.UserId == int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)))
-            {
-                notif.IsRead = true;
-                await _context.SaveChangesAsync();
-            }
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var unreadCount = await _socialService.MarkNotificationAsReadAsync(userId, id);
+            await _hubContext.Clients.Group(SocialChannel.GetUserGroupName(userId))
+                .SendAsync("NotificationCountChanged", new { unreadCount });
             return RedirectToAction(nameof(Index));
         }
         
@@ -43,9 +39,9 @@ namespace ForumZenpace.Controllers
         public async Task<IActionResult> MarkAllAsRead()
         {
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            var unread = await _context.Notifications.Where(n => n.UserId == userId && !n.IsRead).ToListAsync();
-            foreach (var n in unread) n.IsRead = true;
-            await _context.SaveChangesAsync();
+            var unreadCount = await _socialService.MarkAllNotificationsAsReadAsync(userId);
+            await _hubContext.Clients.Group(SocialChannel.GetUserGroupName(userId))
+                .SendAsync("NotificationCountChanged", new { unreadCount });
             return RedirectToAction(nameof(Index));
         }
     }
