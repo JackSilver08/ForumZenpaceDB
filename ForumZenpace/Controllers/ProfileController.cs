@@ -39,7 +39,35 @@ namespace ForumZenpace.Controllers
             
             if (user == null) return NotFound();
 
-            return View(await BuildProfileViewModelAsync(user));
+            ApplyFlashMessages();
+            return View(await BuildProfileViewModelAsync(user, userId.Value, "posts"));
+        }
+
+        [AllowAnonymous]
+        [HttpGet("Profile/user/{username}")]
+        public async Task<IActionResult> UserProfile(string username, string? tab = null)
+        {
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                return NotFound();
+            }
+
+            var profileUser = await _context.Users
+                .FirstOrDefaultAsync(u => u.Username == username.Trim() && u.IsActive);
+
+            if (profileUser == null)
+            {
+                return NotFound();
+            }
+
+            var viewerUserId = GetCurrentUserId();
+            if (viewerUserId.HasValue && viewerUserId.Value == profileUser.Id)
+            {
+                return RedirectToAction(nameof(Index));
+            }
+
+            ApplyFlashMessages();
+            return View("Index", await BuildProfileViewModelAsync(profileUser, viewerUserId, NormalizeProfileTab(tab)));
         }
 
         [HttpPost]
@@ -57,7 +85,7 @@ namespace ForumZenpace.Controllers
 
             if (!ModelState.IsValid)
             {
-                return View("Index", await BuildProfileViewModelAsync(user, model));
+                return View("Index", await BuildProfileViewModelAsync(user, userId.Value, "posts", model));
             }
 
             user.FullName = model.FullName.Trim();
@@ -71,7 +99,91 @@ namespace ForumZenpace.Controllers
             await _context.SaveChangesAsync();
 
             ViewBag.SuccessMessage = "Cap nhat ho so thanh cong.";
-            return View("Index", await BuildProfileViewModelAsync(user));
+            return View("Index", await BuildProfileViewModelAsync(user, userId.Value, "posts"));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SendMessage(SendDirectMessageViewModel model)
+        {
+            var userId = GetCurrentUserId();
+            if (userId is null)
+            {
+                if (IsAjaxRequest())
+                {
+                    return Unauthorized(new { success = false, message = "Ban can dang nhap de gui tin nhan." });
+                }
+
+                return Challenge();
+            }
+
+            var username = model.Username?.Trim() ?? string.Empty;
+            var content = model.Content?.Trim() ?? string.Empty;
+            if (!ModelState.IsValid || string.IsNullOrWhiteSpace(content))
+            {
+                if (IsAjaxRequest())
+                {
+                    return Json(new { success = false, message = "Noi dung tin nhan khong duoc de trong." });
+                }
+
+                TempData["ErrorMessage"] = "Noi dung tin nhan khong duoc de trong.";
+                return RedirectToAction(nameof(UserProfile), new { username, tab = "chat" });
+            }
+
+            var targetUser = await _context.Users
+                .FirstOrDefaultAsync(u => u.Id == model.TargetUserId && u.Username == username && u.IsActive);
+
+            if (targetUser == null)
+            {
+                if (IsAjaxRequest())
+                {
+                    return Json(new { success = false, message = "Khong tim thay nguoi dung nhan tin." });
+                }
+
+                return NotFound();
+            }
+
+            if (targetUser.Id == userId.Value)
+            {
+                if (IsAjaxRequest())
+                {
+                    return Json(new { success = false, message = "Ban khong the tu nhan tin cho chinh minh." });
+                }
+
+                TempData["ErrorMessage"] = "Ban khong the tu nhan tin cho chinh minh.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var conversation = await GetOrCreateConversationAsync(userId.Value, targetUser.Id);
+            conversation.UpdatedAt = DateTime.UtcNow;
+
+            _context.DirectMessages.Add(new DirectMessage
+            {
+                ConversationId = conversation.Id,
+                SenderId = userId.Value,
+                Content = content,
+                CreatedAt = DateTime.UtcNow
+            });
+
+            await _context.SaveChangesAsync();
+
+            if (IsAjaxRequest())
+            {
+                return Json(new
+                {
+                    success = true,
+                    message = new
+                    {
+                        content,
+                        createdAt = DateTime.UtcNow.ToString("dd MMM, HH:mm"),
+                        sender = "Ban",
+                        isOwnMessage = true
+                    }
+                });
+            }
+
+            TempData["SuccessMessage"] = $"Da gui tin nhan cho {targetUser.FullName}.";
+            return RedirectToAction(nameof(UserProfile), new { username = targetUser.Username, tab = "chat" });
         }
 
         private void ValidateAvatarFile(IFormFile? avatarFile)
@@ -122,8 +234,14 @@ namespace ForumZenpace.Controllers
                 : null;
         }
 
-        private async Task<ProfileViewModel> BuildProfileViewModelAsync(User user, ProfileViewModel? source = null)
+        private async Task<ProfileViewModel> BuildProfileViewModelAsync(User user, int? viewerUserId, string activeTab, ProfileViewModel? source = null)
         {
+            var isOwner = viewerUserId.HasValue && viewerUserId.Value == user.Id;
+            var showChatTab = !isOwner;
+            var normalizedActiveTab = showChatTab && string.Equals(activeTab, "chat", StringComparison.OrdinalIgnoreCase)
+                ? "chat"
+                : "posts";
+
             var posts = await _context.Posts
                 .Where(p => p.UserId == user.Id && p.Status == "Active")
                 .Include(p => p.Category)
@@ -131,12 +249,66 @@ namespace ForumZenpace.Controllers
                 .OrderByDescending(p => p.CreatedAt)
                 .ToListAsync();
 
+            IReadOnlyList<ProfileChatMessageViewModel> chatMessages = Array.Empty<ProfileChatMessageViewModel>();
+            var chatMessageCount = 0;
+            if (showChatTab && viewerUserId.HasValue)
+            {
+                var conversation = await GetConversationQuery(viewerUserId.Value, user.Id)
+                    .Include(c => c.Messages)
+                        .ThenInclude(m => m.Sender)
+                    .FirstOrDefaultAsync();
+
+                if (conversation != null)
+                {
+                    chatMessageCount = conversation.Messages.Count;
+
+                    if (normalizedActiveTab == "chat")
+                    {
+                        var unreadMessages = conversation.Messages
+                            .Where(message => message.SenderId != viewerUserId.Value && !message.IsRead)
+                            .ToList();
+
+                        if (unreadMessages.Count > 0)
+                        {
+                            foreach (var message in unreadMessages)
+                            {
+                                message.IsRead = true;
+                            }
+
+                            await _context.SaveChangesAsync();
+                        }
+
+                        chatMessages = conversation.Messages
+                            .OrderBy(message => message.CreatedAt)
+                            .Select(message => new ProfileChatMessageViewModel
+                            {
+                                Id = message.Id,
+                                Content = message.Content,
+                                CreatedAt = message.CreatedAt,
+                                IsOwnMessage = message.SenderId == viewerUserId.Value,
+                                SenderDisplayName = string.IsNullOrWhiteSpace(message.Sender.FullName)
+                                    ? message.Sender.Username
+                                    : message.Sender.FullName
+                            })
+                            .ToList();
+                    }
+                }
+            }
+
             return new ProfileViewModel
             {
                 FullName = source?.FullName ?? user.FullName,
                 Email = source?.Email ?? user.Email,
                 Avatar = user.Avatar,
                 Username = user.Username,
+                ProfileUserId = user.Id,
+                IsOwner = isOwner,
+                IsAuthenticatedViewer = viewerUserId.HasValue,
+                ActiveTab = normalizedActiveTab,
+                ShowChatTab = showChatTab,
+                CanSendMessages = viewerUserId.HasValue && !isOwner,
+                ChatMessageCount = chatMessageCount,
+                ChatMessages = chatMessages,
                 JoinedAt = user.CreatedAt,
                 PostCount = posts.Count,
                 TotalViewCount = posts.Sum(p => p.ViewCount),
@@ -152,6 +324,66 @@ namespace ForumZenpace.Controllers
                     ViewCount = p.ViewCount
                 }).ToList()
             };
+        }
+
+        private IQueryable<DirectConversation> GetConversationQuery(int userId, int targetUserId)
+        {
+            var (userAId, userBId) = OrderConversationUsers(userId, targetUserId);
+            return _context.DirectConversations.Where(conversation => conversation.UserAId == userAId && conversation.UserBId == userBId);
+        }
+
+        private async Task<DirectConversation> GetOrCreateConversationAsync(int userId, int targetUserId)
+        {
+            var (userAId, userBId) = OrderConversationUsers(userId, targetUserId);
+            var existingConversation = await GetConversationQuery(userId, targetUserId).FirstOrDefaultAsync();
+            if (existingConversation != null)
+            {
+                return existingConversation;
+            }
+
+            var conversation = new DirectConversation
+            {
+                UserAId = userAId,
+                UserBId = userBId,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            _context.DirectConversations.Add(conversation);
+            await _context.SaveChangesAsync();
+            return conversation;
+        }
+
+        private static (int UserAId, int UserBId) OrderConversationUsers(int firstUserId, int secondUserId)
+        {
+            return firstUserId < secondUserId
+                ? (firstUserId, secondUserId)
+                : (secondUserId, firstUserId);
+        }
+
+        private static string NormalizeProfileTab(string? tab)
+        {
+            return string.Equals(tab, "chat", StringComparison.OrdinalIgnoreCase)
+                ? "chat"
+                : "posts";
+        }
+
+        private void ApplyFlashMessages()
+        {
+            if (TempData["SuccessMessage"] is string successMessage)
+            {
+                ViewBag.SuccessMessage = successMessage;
+            }
+
+            if (TempData["ErrorMessage"] is string errorMessage)
+            {
+                ViewBag.ErrorMessage = errorMessage;
+            }
+        }
+
+        private bool IsAjaxRequest()
+        {
+            return string.Equals(Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
         }
     }
 }

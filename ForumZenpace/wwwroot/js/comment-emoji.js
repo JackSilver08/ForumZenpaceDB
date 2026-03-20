@@ -8,6 +8,10 @@
         return;
     }
 
+    if (popover.parentElement !== document.body) {
+        document.body.appendChild(popover);
+    }
+
     const selectionMap = new WeakMap();
     let activeInput = null;
     let activeTrigger = null;
@@ -146,6 +150,7 @@
         trigger.setAttribute('aria-expanded', 'true');
 
         positionPopover();
+        window.requestAnimationFrame(positionPopover);
     }
 
     function closePopover() {

@@ -242,8 +242,8 @@ namespace ForumZenpace.Controllers
 
             ViewBag.UserId = userId;
             
-            var topLevelComments = BuildCommentTree(post.Comments);
-            ViewBag.TopLevelComments = topLevelComments;
+            var commentThreads = BuildCommentThreads(post.Comments, post.Id, userId, User.Identity?.IsAuthenticated == true);
+            ViewBag.CommentThreads = commentThreads;
 
             return View(post);
         }
@@ -449,31 +449,82 @@ namespace ForumZenpace.Controllers
             return RedirectToAction("Index", "Home");
         }
 
-        private static List<Comment> BuildCommentTree(IEnumerable<Comment> comments)
+        private static List<CommentThreadViewModel> BuildCommentThreads(IEnumerable<Comment> comments, int postId, int? currentUserId, bool isAuthenticated)
         {
             var orderedComments = comments
                 .OrderBy(c => c.CreatedAt)
                 .ToList();
 
             var commentLookup = orderedComments.ToDictionary(c => c.Id);
-            foreach (var comment in orderedComments)
+            var childrenLookup = orderedComments
+                .Where(c => c.ParentId.HasValue && commentLookup.ContainsKey(c.ParentId.Value))
+                .GroupBy(c => c.ParentId!.Value)
+                .ToDictionary(group => group.Key, group => group.OrderBy(c => c.CreatedAt).ToList());
+
+            var rootComments = orderedComments
+                .Where(c => !c.ParentId.HasValue || !commentLookup.ContainsKey(c.ParentId.Value))
+                .ToList();
+
+            var threads = new List<CommentThreadViewModel>(rootComments.Count);
+            foreach (var rootComment in rootComments)
             {
-                comment.Replies = new List<Comment>();
+                var replies = new List<CommentReplyViewModel>();
+                CollectFlattenedReplies(rootComment.Id, rootComment.Id, 1, childrenLookup, commentLookup, replies);
+
+                threads.Add(new CommentThreadViewModel
+                {
+                    RootComment = rootComment,
+                    Replies = replies
+                        .OrderBy(reply => reply.Comment.CreatedAt)
+                        .ToList(),
+                    PostId = postId,
+                    CurrentUserId = currentUserId,
+                    IsAuthenticated = isAuthenticated
+                });
             }
 
-            var topLevelComments = new List<Comment>();
-            foreach (var comment in orderedComments)
+            return threads;
+        }
+
+        private static void CollectFlattenedReplies(
+            int parentCommentId,
+            int rootCommentId,
+            int depth,
+            IReadOnlyDictionary<int, List<Comment>> childrenLookup,
+            IReadOnlyDictionary<int, Comment> commentLookup,
+            ICollection<CommentReplyViewModel> replies)
+        {
+            if (!childrenLookup.TryGetValue(parentCommentId, out var children))
             {
-                if (comment.ParentId.HasValue && commentLookup.TryGetValue(comment.ParentId.Value, out var parentComment))
+                return;
+            }
+
+            foreach (var child in children)
+            {
+                string? replyingToAuthorName = null;
+                if (child.ParentId.HasValue
+                    && commentLookup.TryGetValue(child.ParentId.Value, out var parentComment)
+                    && parentComment.Id != rootCommentId)
                 {
-                    parentComment.Replies.Add(comment);
-                    continue;
+                    replyingToAuthorName = GetCommentAuthorName(parentComment);
                 }
 
-                topLevelComments.Add(comment);
-            }
+                replies.Add(new CommentReplyViewModel
+                {
+                    Comment = child,
+                    Depth = depth,
+                    ReplyingToAuthorName = replyingToAuthorName
+                });
 
-            return topLevelComments;
+                CollectFlattenedReplies(child.Id, rootCommentId, depth + 1, childrenLookup, commentLookup, replies);
+            }
+        }
+
+        private static string GetCommentAuthorName(Comment comment)
+        {
+            return string.IsNullOrWhiteSpace(comment.User?.FullName)
+                ? "Unknown user"
+                : comment.User.FullName;
         }
 
         private async Task<List<Comment>> GetCommentBranchAsync(Comment rootComment)

@@ -1,15 +1,17 @@
 @using System.Linq
 @model ForumZenpace.Models.ProfileViewModel
 @{
-    ViewData["Title"] = "Ho so cua toi";
     var displayName = string.IsNullOrWhiteSpace(Model.FullName)
         ? (Model.Username ?? "User")
         : Model.FullName;
+    ViewData["Title"] = Model.IsOwner ? "Ho so cua toi" : $"Ho so {displayName}";
     var avatarSeed = string.IsNullOrWhiteSpace(displayName) ? "U" : displayName;
     var avatarInitial = avatarSeed.Substring(0, 1).ToUpperInvariant();
     var hasAvatar = !string.IsNullOrWhiteSpace(Model.Avatar);
     var hasPosts = Model.Posts.Any();
-    var hasValidationErrors = ViewData.ModelState.ErrorCount > 0;
+    var hasValidationErrors = Model.IsOwner && ViewData.ModelState.ErrorCount > 0;
+    var isPostsTab = Model.ActiveTab == "posts";
+    var isChatTab = Model.ActiveTab == "chat";
 }
 
 <div class="profile-shell animated-entry">
@@ -25,22 +27,27 @@
                             <img class="profile-avatar-image" src="@Model.Avatar" alt="@displayName" style="display: @(hasAvatar ? "block" : "none");" />
                         </div>
 
-                        <button type="button"
-                                class="profile-avatar-trigger"
-                                title="Chinh sua ho so"
-                                aria-label="Chinh sua ho so"
-                                aria-haspopup="dialog"
-                                aria-controls="profileEditModal"
-                                onclick="openProfileModal()">
-                            <i class="fa-solid fa-pen"></i>
-                        </button>
+                        @if (Model.IsOwner)
+                        {
+                            <button type="button"
+                                    class="profile-avatar-trigger"
+                                    title="Chinh sua ho so"
+                                    aria-label="Chinh sua ho so"
+                                    aria-haspopup="dialog"
+                                    aria-controls="profileEditModal"
+                                    onclick="openProfileModal()">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                        }
                     </div>
                 </div>
 
                 <div class="profile-identity">
                     <h1 class="profile-display-name">@displayName</h1>
                     <div class="profile-handle">@@@Model.Username</div>
-                    <div class="profile-contact">@Model.Email</div>
+                    <div class="profile-contact">
+                        @(Model.IsOwner ? Model.Email : "Nhan tin truc tiep qua Zenpace de trao doi ve bai viet va chu de chung.")
+                    </div>
                 </div>
 
                 <div class="profile-summary-stats">
@@ -60,12 +67,19 @@
 
                 <div class="profile-summary-meta">
                     <span><i class="fa-regular fa-calendar"></i> Tham gia @Model.JoinedAt.ToString("MM/yyyy")</span>
-                    <span><i class="fa-regular fa-image"></i> @(hasAvatar ? "Avatar dang hoat dong" : "Chua co avatar")</span>
+                    <span>
+                        <i class="fa-regular @(Model.IsOwner ? "fa-image" : "fa-paper-plane")"></i>
+                        @(Model.IsOwner
+                            ? (hasAvatar ? "Avatar dang hoat dong" : "Chua co avatar")
+                            : "Co the lien lac qua tab chat")
+                    </span>
                 </div>
 
                 <div class="profile-upload-note">
                     <p class="field-hint">
-                        Nhan icon but chi de doi avatar va cap nhat thong tin co ban.
+                        @(Model.IsOwner
+                            ? "Nhan icon but chi de doi avatar va cap nhat thong tin co ban."
+                            : "Trang nay hien thi bai viet cong khai va khung chat rieng giua hai ben.")
                     </p>
                 </div>
 
@@ -76,6 +90,14 @@
                         <span>@ViewBag.SuccessMessage</span>
                     </div>
                 }
+
+                @if (ViewBag.ErrorMessage != null)
+                {
+                    <div class="profile-inline-alert is-error">
+                        <i class="fa-solid fa-circle-exclamation"></i>
+                        <span>@ViewBag.ErrorMessage</span>
+                    </div>
+                }
             </section>
         </aside>
 
@@ -83,74 +105,216 @@
             <div class="surface profile-content-card">
                 <div class="profile-content-header">
                     <div>
-                        <div class="panel-label">Noi dung cua ban</div>
-                        <h2 class="section-heading">Bai viet da dang</h2>
-                        <p class="surface-subtitle">Cac chu de cong khai duoc sap xep theo thoi gian moi nhat.</p>
+                        <div class="panel-label">@(Model.IsOwner ? "Noi dung cua ban" : $"Trang ca nhan cua {displayName}")</div>
+                        <h2 class="section-heading">
+                            @(isChatTab ? $"Chat voi {displayName}" : "Bai viet da dang")
+                        </h2>
+                        <p class="surface-subtitle">
+                            @(isChatTab
+                                ? "Cuoc tro chuyen nay chi hien giua ban va nguoi dung duoc chon."
+                                : (Model.IsOwner
+                                    ? "Cac chu de cong khai duoc sap xep theo thoi gian moi nhat."
+                                    : "Cac bai viet cong khai cua thanh vien nay duoc sap xep theo thoi gian moi nhat."))
+                        </p>
                     </div>
 
-                    <div class="profile-tabs" aria-label="Dieu huong bai viet">
-                        <button type="button" class="profile-tab is-active" aria-selected="true">
-                            Posts
-                            <span class="profile-tab-count">@Model.PostCount</span>
-                        </button>
+                    <div class="profile-tabs" aria-label="Dieu huong ho so">
+                        @if (Model.IsOwner)
+                        {
+                            <a asp-action="Index" class="profile-tab is-active" aria-selected="true">
+                                Posts
+                                <span class="profile-tab-count">@Model.PostCount</span>
+                            </a>
+                        }
+                        else
+                        {
+                            <a asp-action="UserProfile"
+                               asp-route-username="@Model.Username"
+                               asp-route-tab="posts"
+                               class="profile-tab @(isPostsTab ? "is-active" : string.Empty)"
+                               aria-selected="@(isPostsTab.ToString().ToLowerInvariant())">
+                                Posts
+                                <span class="profile-tab-count">@Model.PostCount</span>
+                            </a>
+                            <a asp-action="UserProfile"
+                               asp-route-username="@Model.Username"
+                               asp-route-tab="chat"
+                               class="profile-tab @(isChatTab ? "is-active" : string.Empty)"
+                               aria-selected="@(isChatTab.ToString().ToLowerInvariant())"
+                               data-chat-tab>
+                                Chat
+                                @if (Model.ChatMessageCount > 0)
+                                {
+                                    <span class="profile-tab-count" data-chat-count>@Model.ChatMessageCount</span>
+                                }
+                            </a>
+                        }
                     </div>
                 </div>
 
-                @if (hasPosts)
+                @if (isPostsTab)
                 {
-                    <div class="profile-post-list">
-                        @foreach (var post in Model.Posts)
-                        {
-                            <a asp-controller="Post" asp-action="Details" asp-route-id="@post.Id" class="glass-card profile-post-link">
-                                <div class="profile-post-head">
-                                    <div class="profile-post-meta">
-                                        @if (!string.IsNullOrWhiteSpace(post.CategoryName))
-                                        {
-                                            <span class="category-badge">@post.CategoryName</span>
-                                        }
-                                        <span>@post.CreatedAt.ToString("dd MMM yyyy")</span>
-                                    </div>
+                    @if (hasPosts)
+                    {
+                        <div class="profile-post-list">
+                            @foreach (var post in Model.Posts)
+                            {
+                                <a asp-controller="Post" asp-action="Details" asp-route-id="@post.Id" class="glass-card profile-post-link">
+                                    <div class="profile-post-head">
+                                        <div class="profile-post-meta">
+                                            @if (!string.IsNullOrWhiteSpace(post.CategoryName))
+                                            {
+                                                <span class="category-badge">@post.CategoryName</span>
+                                            }
+                                            <span>@post.CreatedAt.ToString("dd MMM yyyy")</span>
+                                        </div>
 
-                                    <span class="profile-post-open" aria-hidden="true">
-                                        <i class="fa-solid fa-arrow-right"></i>
-                                    </span>
-                                </div>
-
-                                <div class="profile-post-title">@post.Title</div>
-
-                                @if (!string.IsNullOrWhiteSpace(post.Excerpt))
-                                {
-                                    <p class="profile-post-excerpt">@post.Excerpt</p>
-                                }
-
-                                <div class="profile-post-footer">
-                                    <div class="profile-post-metrics">
-                                        <span class="metric comments">
-                                            <i class="fa-regular fa-comment-dots"></i>
-                                            <span>@post.CommentCount binh luan</span>
-                                        </span>
-                                        <span class="metric">
-                                            <i class="fa-regular fa-eye"></i>
-                                            <span>@post.ViewCount luot xem</span>
+                                        <span class="profile-post-open" aria-hidden="true">
+                                            <i class="fa-solid fa-arrow-right"></i>
                                         </span>
                                     </div>
 
-                                    <span class="profile-post-cta">Mo chu de</span>
+                                    <div class="profile-post-title">@post.Title</div>
+
+                                    @if (!string.IsNullOrWhiteSpace(post.Excerpt))
+                                    {
+                                        <p class="profile-post-excerpt">@post.Excerpt</p>
+                                    }
+
+                                    <div class="profile-post-footer">
+                                        <div class="profile-post-metrics">
+                                            <span class="metric comments">
+                                                <i class="fa-regular fa-comment-dots"></i>
+                                                <span>@post.CommentCount binh luan</span>
+                                            </span>
+                                            <span class="metric">
+                                                <i class="fa-regular fa-eye"></i>
+                                                <span>@post.ViewCount luot xem</span>
+                                            </span>
+                                        </div>
+
+                                        <span class="profile-post-cta">Mo chu de</span>
+                                    </div>
+                                </a>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="profile-empty-state">
+                            <div class="empty-icon">
+                                <i class="fa-regular fa-message"></i>
+                            </div>
+                            <h3 class="section-heading">Chua co chu de nao</h3>
+                            <p class="muted">
+                                @(Model.IsOwner
+                                    ? "Trang nay se tro thanh khu vuc chinh de theo doi bai viet cua ban sau khi ban dang chu de dau tien."
+                                    : "Thanh vien nay hien chua cong khai chu de nao tren Zenpace.")
+                            </p>
+                            @if (Model.IsOwner)
+                            {
+                                <div>
+                                    <a asp-controller="Post" asp-action="Create" class="btn btn-primary">Tao chu de moi</a>
                                 </div>
-                            </a>
-                        }
+                            }
+                        </div>
+                    }
+                }
+                else if (!Model.IsAuthenticatedViewer)
+                {
+                    <div class="profile-chat-guest">
+                        <div class="empty-icon">
+                            <i class="fa-regular fa-paper-plane"></i>
+                        </div>
+                        <h3 class="section-heading">Dang nhap de bat dau tro chuyen</h3>
+                        <p class="muted">Ban can dang nhap de nhan tin rieng voi nguoi dung nay ngay tren trang ca nhan cua ho.</p>
+                        <div>
+                            <a asp-controller="Auth" asp-action="Login" class="btn btn-primary">Dang nhap</a>
+                        </div>
                     </div>
                 }
                 else
                 {
-                    <div class="profile-empty-state">
-                        <div class="empty-icon">
-                            <i class="fa-regular fa-message"></i>
+                    <div class="profile-chat-panel">
+                        <div class="profile-chat-thread" data-chat-thread>
+                            @if (Model.ChatMessages.Any())
+                            {
+                                @foreach (var message in Model.ChatMessages)
+                                {
+                                    <article class="profile-chat-message @(message.IsOwnMessage ? "profile-chat-message--own" : string.Empty)">
+                                        <div class="profile-chat-bubble">
+                                            <div class="profile-chat-text">@message.Content</div>
+                                        </div>
+                                        <div class="profile-chat-meta">
+                                            <span>@(message.IsOwnMessage ? "Ban" : message.SenderDisplayName)</span>
+                                            <span class="dot"></span>
+                                            <time datetime="@message.CreatedAt.ToString("O")">@message.CreatedAt.ToString("dd MMM, HH:mm")</time>
+                                        </div>
+                                    </article>
+                                }
+                            }
+                            else
+                            {
+                                <div class="profile-chat-empty" data-chat-empty>
+                                    <div class="empty-icon">
+                                        <i class="fa-regular fa-comments"></i>
+                                    </div>
+                                    <h3 class="section-heading">Chua co tin nhan nao</h3>
+                                    <p class="muted">Hay mo dau cuoc tro chuyen bang loi nhan dau tien gui toi @displayName.</p>
+                                </div>
+                            }
                         </div>
-                        <h3 class="section-heading">Chua co chu de nao</h3>
-                        <p class="muted">Trang nay se tro thanh khu vuc chinh de theo doi bai viet cua ban sau khi ban dang chu de dau tien.</p>
-                        <div>
-                            <a asp-controller="Post" asp-action="Create" class="btn btn-primary">Tao chu de moi</a>
+
+                        <form asp-action="SendMessage" method="post" class="profile-chat-composer" data-chat-form>
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="TargetUserId" value="@Model.ProfileUserId" />
+                            <input type="hidden" name="Username" value="@Model.Username" />
+
+                            <div class="field">
+                                <label class="field-label" for="chatMessageBox">Tin nhan moi</label>
+                                <textarea id="chatMessageBox"
+                                          name="Content"
+                                          class="form-control profile-chat-textarea"
+                                          rows="2"
+                                          maxlength="1000"
+                                          data-chat-input
+                                          data-emoji-input
+                                          placeholder="Viet loi nhan lich su, ro rang va dung trong chu de..."></textarea>
+                                <p class="field-hint">Nhan `Enter` de gui nhanh, `Shift + Enter` de xuong dong.</p>
+                            </div>
+
+                            <div class="profile-chat-actions">
+                                <div class="profile-chat-toolbar">
+                                    <button
+                                        type="button"
+                                        class="comment-emoji-trigger"
+                                        data-emoji-trigger
+                                        title="Dang tai emoji"
+                                        aria-label="Chen emoji vao tin nhan"
+                                        aria-haspopup="dialog"
+                                        aria-expanded="false"
+                                        disabled>
+                                        <i class="fa-regular fa-face-smile"></i>
+                                        <span>Emoji</span>
+                                    </button>
+                                    <span class="field-hint">Khong chia se mat khau, OTP hoac thong tin nhay cam qua chat.</span>
+                                </div>
+
+                                <div class="profile-chat-submit">
+                                    <span class="profile-chat-status" data-chat-status hidden></span>
+                                    <button type="submit" class="btn btn-primary" data-chat-submit>Gui tin nhan</button>
+                                </div>
+                            </div>
+                        </form>
+
+                        <div
+                            class="comment-emoji-popover"
+                            data-emoji-popover
+                            role="dialog"
+                            aria-label="Bang chon emoji"
+                            aria-hidden="true"
+                            hidden>
+                            <emoji-picker class="comment-emoji-picker dark" data-emoji-picker></emoji-picker>
                         </div>
                     </div>
                 }
@@ -159,75 +323,251 @@
     </div>
 </div>
 
-<div id="profileEditModal"
-     class="profile-modal"
-     data-open-on-load="@(hasValidationErrors ? "true" : "false")"
-     hidden
-     aria-hidden="true">
-    <div class="profile-modal-backdrop" onclick="closeProfileModal()"></div>
+@if (Model.IsOwner)
+{
+    <div id="profileEditModal"
+         class="profile-modal"
+         data-open-on-load="@(hasValidationErrors ? "true" : "false")"
+         hidden
+         aria-hidden="true">
+        <div class="profile-modal-backdrop" onclick="closeProfileModal()"></div>
 
-    <div class="surface profile-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="profileEditTitle">
-        <div class="profile-modal-header">
-            <div>
-                <div class="panel-label">Chinh sua ho so</div>
-                <h2 id="profileEditTitle" class="section-heading">Avatar va thong tin co ban</h2>
+        <div class="surface profile-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="profileEditTitle">
+            <div class="profile-modal-header">
+                <div>
+                    <div class="panel-label">Chinh sua ho so</div>
+                    <h2 id="profileEditTitle" class="section-heading">Avatar va thong tin co ban</h2>
+                </div>
+
+                <button type="button" class="profile-modal-close" aria-label="Dong popup" onclick="closeProfileModal()">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
             </div>
 
-            <button type="button" class="profile-modal-close" aria-label="Dong popup" onclick="closeProfileModal()">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-        </div>
+            <form asp-action="Update" method="post" enctype="multipart/form-data" class="profile-modal-form">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
-        <form asp-action="Update" method="post" enctype="multipart/form-data" class="profile-modal-form">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-
-            <div class="profile-modal-avatar-row">
-                <div class="profile-avatar-frame profile-modal-avatar-frame">
-                    <div class="profile-avatar-panel">
-                        <div id="modalAvatarFallback" class="profile-avatar-fallback" style="display: @(hasAvatar ? "none" : "flex");">
-                            @avatarInitial
+                <div class="profile-modal-avatar-row">
+                    <div class="profile-avatar-frame profile-modal-avatar-frame">
+                        <div class="profile-avatar-panel">
+                            <div id="modalAvatarFallback" class="profile-avatar-fallback" style="display: @(hasAvatar ? "none" : "flex");">
+                                @avatarInitial
+                            </div>
+                            <img id="modalAvatarPreview" class="profile-avatar-image" src="@Model.Avatar" alt="@displayName" style="display: @(hasAvatar ? "block" : "none");" />
                         </div>
-                        <img id="modalAvatarPreview" class="profile-avatar-image" src="@Model.Avatar" alt="@displayName" style="display: @(hasAvatar ? "block" : "none");" />
+                    </div>
+
+                    <div class="profile-modal-avatar-tools">
+                        <input asp-for="AvatarFile" id="avatarUpload" type="file" accept=".jpg,.jpeg,.png,.gif,.webp" hidden />
+                        <label for="avatarUpload" class="btn btn-outline">Chon avatar</label>
+                        <p id="avatarFileName" class="field-hint">
+                            @(hasAvatar ? "Anh dai dien hien tai dang duoc su dung." : "Chua co avatar. Chon anh moi de cap nhat.")
+                        </p>
+                        <span asp-validation-for="AvatarFile" class="text-danger"></span>
+                        <p class="field-hint">Chap nhan JPG, PNG, GIF, WEBP. Gioi han toi da 5MB.</p>
                     </div>
                 </div>
 
-                <div class="profile-modal-avatar-tools">
-                    <input asp-for="AvatarFile" id="avatarUpload" type="file" accept=".jpg,.jpeg,.png,.gif,.webp" hidden />
-                    <label for="avatarUpload" class="btn btn-outline">Chon avatar</label>
-                    <p id="avatarFileName" class="field-hint">
-                        @(hasAvatar ? "Anh dai dien hien tai dang duoc su dung." : "Chua co avatar. Chon anh moi de cap nhat.")
-                    </p>
-                    <span asp-validation-for="AvatarFile" class="text-danger"></span>
-                    <p class="field-hint">Chap nhan JPG, PNG, GIF, WEBP. Gioi han toi da 5MB.</p>
-                </div>
-            </div>
+                <div class="stack-sm">
+                    <div class="field">
+                        <label asp-for="FullName" class="field-label">Ten hien thi</label>
+                        <input asp-for="FullName" class="form-control" placeholder="Ten hien thi cua ban" />
+                        <span asp-validation-for="FullName" class="text-danger"></span>
+                    </div>
 
-            <div class="stack-sm">
-                <div class="field">
-                    <label asp-for="FullName" class="field-label">Ten hien thi</label>
-                    <input asp-for="FullName" class="form-control" placeholder="Ten hien thi cua ban" />
-                    <span asp-validation-for="FullName" class="text-danger"></span>
+                    <div class="field">
+                        <label asp-for="Email" class="field-label">Dia chi email</label>
+                        <input asp-for="Email" class="form-control" type="email" placeholder="example@zenpace.com" />
+                        <span asp-validation-for="Email" class="text-danger"></span>
+                    </div>
                 </div>
 
-                <div class="field">
-                    <label asp-for="Email" class="field-label">Dia chi email</label>
-                    <input asp-for="Email" class="form-control" type="email" placeholder="example@zenpace.com" />
-                    <span asp-validation-for="Email" class="text-danger"></span>
+                <div class="profile-modal-footer">
+                    <button type="button" class="btn btn-text" onclick="closeProfileModal()">Huy</button>
+                    <button type="submit" class="btn btn-primary">Luu thay doi</button>
                 </div>
-            </div>
-
-            <div class="profile-modal-footer">
-                <button type="button" class="btn btn-text" onclick="closeProfileModal()">Huy</button>
-                <button type="submit" class="btn btn-primary">Luu thay doi</button>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
-</div>
+}
 
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
+    @if (Model.IsOwner)
+    {
+        <partial name="_ValidationScriptsPartial" />
+    }
+
+    @if (Model.CanSendMessages)
+    {
+        <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@@1.29.0/index.js"></script>
+        <script src="~/js/comment-emoji.js" asp-append-version="true"></script>
+    }
+
     <script>
         (() => {
+            const chatThread = document.querySelector('[data-chat-thread]');
+            if (chatThread instanceof HTMLElement) {
+                chatThread.scrollTop = chatThread.scrollHeight;
+            }
+
+            const chatForm = document.querySelector('[data-chat-form]');
+            const chatInput = document.querySelector('[data-chat-input]');
+            const chatSubmit = document.querySelector('[data-chat-submit]');
+            const chatStatus = document.querySelector('[data-chat-status]');
+            const chatEmpty = document.querySelector('[data-chat-empty]');
+            const chatTab = document.querySelector('[data-chat-tab]');
+            let chatCount = document.querySelector('[data-chat-count]');
+
+            if (chatForm instanceof HTMLFormElement
+                && chatInput instanceof HTMLTextAreaElement
+                && chatSubmit instanceof HTMLButtonElement
+                && chatThread instanceof HTMLElement) {
+                const updateComposerState = () => {
+                    const hasContent = chatInput.value.trim().length > 0;
+                    chatSubmit.disabled = !hasContent;
+                    autoResizeTextarea();
+                };
+
+                const autoResizeTextarea = () => {
+                    chatInput.style.height = 'auto';
+                    chatInput.style.height = `${Math.min(chatInput.scrollHeight, 180)}px`;
+                };
+
+                const setStatus = (message, isError = false) => {
+                    if (!(chatStatus instanceof HTMLElement)) {
+                        return;
+                    }
+
+                    if (!message) {
+                        chatStatus.hidden = true;
+                        chatStatus.textContent = '';
+                        chatStatus.classList.remove('is-error');
+                        return;
+                    }
+
+                    chatStatus.hidden = false;
+                    chatStatus.textContent = message;
+                    chatStatus.classList.toggle('is-error', isError);
+                };
+
+                const ensureCountBadge = () => {
+                    if (!(chatTab instanceof HTMLElement)) {
+                        return null;
+                    }
+
+                    if (chatCount instanceof HTMLElement) {
+                        return chatCount;
+                    }
+
+                    const badge = document.createElement('span');
+                    badge.className = 'profile-tab-count';
+                    badge.setAttribute('data-chat-count', '');
+                    badge.textContent = '0';
+                    chatTab.appendChild(badge);
+                    chatCount = badge;
+                    return badge;
+                };
+
+                const appendMessage = (message) => {
+                    if (chatEmpty instanceof HTMLElement) {
+                        chatEmpty.remove();
+                    }
+
+                    const article = document.createElement('article');
+                    article.className = 'profile-chat-message';
+                    if (message.isOwnMessage) {
+                        article.classList.add('profile-chat-message--own');
+                    }
+
+                    const bubble = document.createElement('div');
+                    bubble.className = 'profile-chat-bubble';
+
+                    const text = document.createElement('div');
+                    text.className = 'profile-chat-text';
+                    text.textContent = message.content;
+                    bubble.appendChild(text);
+
+                    const meta = document.createElement('div');
+                    meta.className = 'profile-chat-meta';
+
+                    const sender = document.createElement('span');
+                    sender.textContent = message.sender;
+                    meta.appendChild(sender);
+
+                    const dot = document.createElement('span');
+                    dot.className = 'dot';
+                    meta.appendChild(dot);
+
+                    const time = document.createElement('time');
+                    time.textContent = message.createdAt;
+                    meta.appendChild(time);
+
+                    article.appendChild(bubble);
+                    article.appendChild(meta);
+                    chatThread.appendChild(article);
+                    chatThread.scrollTop = chatThread.scrollHeight;
+
+                    const badge = ensureCountBadge();
+                    if (badge instanceof HTMLElement) {
+                        const nextCount = Number.parseInt(badge.textContent || '0', 10) + 1;
+                        badge.textContent = `${nextCount}`;
+                    }
+                };
+
+                chatInput.addEventListener('input', updateComposerState);
+                chatInput.addEventListener('keydown', (event) => {
+                    if (event.key !== 'Enter' || event.shiftKey || event.isComposing) {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    if (chatInput.value.trim().length === 0) {
+                        return;
+                    }
+
+                    chatForm.requestSubmit();
+                });
+
+                chatForm.addEventListener('submit', async (event) => {
+                    event.preventDefault();
+
+                    const content = chatInput.value.trim();
+                    if (!content) {
+                        setStatus('Noi dung tin nhan khong duoc de trong.', true);
+                        return;
+                    }
+
+                    chatSubmit.disabled = true;
+                    setStatus('');
+
+                    try {
+                        const response = await fetch(chatForm.action, {
+                            method: 'POST',
+                            body: new FormData(chatForm),
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                        });
+
+                        const data = await response.json();
+                        if (!response.ok || !data.success || !data.message) {
+                            setStatus(data.message || 'Khong the gui tin nhan luc nay.', true);
+                            return;
+                        }
+
+                        appendMessage(data.message);
+                        chatInput.value = '';
+                        setStatus('');
+                        updateComposerState();
+                        chatInput.focus();
+                    } catch {
+                        setStatus('Khong the gui tin nhan luc nay.', true);
+                    } finally {
+                        updateComposerState();
+                    }
+                });
+
+                updateComposerState();
+            }
+
             const modal = document.getElementById('profileEditModal');
             const fileInput = document.getElementById('avatarUpload');
             const preview = document.getElementById('modalAvatarPreview');

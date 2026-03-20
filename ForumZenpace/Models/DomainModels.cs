@@ -49,6 +49,9 @@ namespace ForumZenpace.Models
         public ICollection<PostImage> PostImages { get; set; } = new List<PostImage>();
         public ICollection<Report> Reports { get; set; } = new List<Report>();
         public ICollection<Notification> Notifications { get; set; } = new List<Notification>();
+        public ICollection<DirectConversation> PrimaryDirectConversations { get; set; } = new List<DirectConversation>();
+        public ICollection<DirectConversation> SecondaryDirectConversations { get; set; } = new List<DirectConversation>();
+        public ICollection<DirectMessage> DirectMessages { get; set; } = new List<DirectMessage>();
     }
 
     public class Category
@@ -204,6 +207,43 @@ namespace ForumZenpace.Models
 
         public bool IsRead { get; set; } = false;
         
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    }
+
+    public class DirectConversation
+    {
+        public int Id { get; set; }
+
+        public int UserAId { get; set; }
+        [ForeignKey("UserAId")]
+        public User UserA { get; set; } = null!;
+
+        public int UserBId { get; set; }
+        [ForeignKey("UserBId")]
+        public User UserB { get; set; } = null!;
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+        public ICollection<DirectMessage> Messages { get; set; } = new List<DirectMessage>();
+    }
+
+    public class DirectMessage
+    {
+        public int Id { get; set; }
+
+        public int ConversationId { get; set; }
+        [ForeignKey("ConversationId")]
+        public DirectConversation Conversation { get; set; } = null!;
+
+        public int SenderId { get; set; }
+        [ForeignKey("SenderId")]
+        public User Sender { get; set; } = null!;
+
+        [Required, MaxLength(1000)]
+        public string Content { get; set; } = string.Empty;
+
+        public bool IsRead { get; set; } = false;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }

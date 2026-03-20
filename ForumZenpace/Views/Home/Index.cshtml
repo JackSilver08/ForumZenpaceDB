@@ -117,20 +117,29 @@
                 {
                     <article class="glass-panel post-card">
                         <div class="post-card-header">
-                            <div class="avatar">
-                                @if (!string.IsNullOrWhiteSpace(post.User.Avatar))
-                                {
-                                    <img src="@post.User.Avatar" alt="@post.User.FullName" />
-                                }
-                                else
-                                {
-                                    <span>@GetInitials(post.User.FullName)</span>
-                                }
-                            </div>
+                            <a asp-controller="Profile"
+                               asp-action="UserProfile"
+                               asp-route-username="@post.User.Username"
+                               class="avatar-link"
+                               aria-label="Xem trang ca nhan cua @post.User.FullName">
+                                <div class="avatar">
+                                    @if (!string.IsNullOrWhiteSpace(post.User.Avatar))
+                                    {
+                                        <img src="@post.User.Avatar" alt="@post.User.FullName" />
+                                    }
+                                    else
+                                    {
+                                        <span>@GetInitials(post.User.FullName)</span>
+                                    }
+                                </div>
+                            </a>
 
                             <div class="post-card-body">
                                 <div class="post-meta-row">
-                                    <span class="post-author">@post.User.FullName</span>
+                                    <a asp-controller="Profile"
+                                       asp-action="UserProfile"
+                                       asp-route-username="@post.User.Username"
+                                       class="post-author post-author-link">@post.User.FullName</a>
                                     <span class="dot"></span>
                                     <span>@post.CreatedAt.ToString("dd MMM yyyy")</span>
                                     <span class="category-badge">@post.Category.Name</span>

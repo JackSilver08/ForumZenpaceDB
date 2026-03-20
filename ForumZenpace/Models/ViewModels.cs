@@ -68,15 +68,38 @@ namespace ForumZenpace.Models
         public int? ParentId { get; set; }
     }
 
-    public class CommentThreadItemViewModel
+    public class CommentThreadViewModel
+    {
+        [Required]
+        public Comment RootComment { get; set; } = null!;
+
+        public IReadOnlyList<CommentReplyViewModel> Replies { get; set; } = Array.Empty<CommentReplyViewModel>();
+
+        public int PostId { get; set; }
+        public int? CurrentUserId { get; set; }
+        public bool IsAuthenticated { get; set; }
+        public int InitialVisibleReplies { get; set; } = 3;
+    }
+
+    public class CommentReplyViewModel
+    {
+        [Required]
+        public Comment Comment { get; set; } = null!;
+
+        public int Depth { get; set; }
+        public string? ReplyingToAuthorName { get; set; }
+    }
+
+    public class CommentItemViewModel
     {
         [Required]
         public Comment Comment { get; set; } = null!;
 
         public int PostId { get; set; }
-        public int Level { get; set; }
         public int? CurrentUserId { get; set; }
         public bool IsAuthenticated { get; set; }
+        public bool IsReply { get; set; }
+        public string? ReplyingToAuthorName { get; set; }
     }
 
     public class ProfileViewModel
@@ -92,11 +115,39 @@ namespace ForumZenpace.Models
         
         // Expose username just for display
         public string? Username { get; set; }
+        public int ProfileUserId { get; set; }
+        public bool IsOwner { get; set; }
+        public bool IsAuthenticatedViewer { get; set; }
+        public string ActiveTab { get; set; } = "posts";
+        public bool ShowChatTab { get; set; }
+        public bool CanSendMessages { get; set; }
+        public int ChatMessageCount { get; set; }
+        public IReadOnlyList<ProfileChatMessageViewModel> ChatMessages { get; set; } = Array.Empty<ProfileChatMessageViewModel>();
         public DateTime JoinedAt { get; set; }
         public int PostCount { get; set; }
         public int TotalViewCount { get; set; }
         public int TotalCommentCount { get; set; }
         public IReadOnlyList<ProfilePostSummaryViewModel> Posts { get; set; } = Array.Empty<ProfilePostSummaryViewModel>();
+    }
+
+    public class ProfileChatMessageViewModel
+    {
+        public int Id { get; set; }
+        public string Content { get; set; } = string.Empty;
+        public DateTime CreatedAt { get; set; }
+        public bool IsOwnMessage { get; set; }
+        public string SenderDisplayName { get; set; } = string.Empty;
+    }
+
+    public class SendDirectMessageViewModel
+    {
+        public int TargetUserId { get; set; }
+
+        [Required, MaxLength(50)]
+        public string Username { get; set; } = string.Empty;
+
+        [Required, MaxLength(1000)]
+        public string Content { get; set; } = string.Empty;
     }
 
     public class ProfilePostSummaryViewModel

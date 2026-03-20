@@ -20,6 +20,8 @@ namespace ForumZenpace.Models
         public DbSet<PostImage> PostImages { get; set; }
         public DbSet<Report> Reports { get; set; }
         public DbSet<Notification> Notifications { get; set; }
+        public DbSet<DirectConversation> DirectConversations { get; set; }
+        public DbSet<DirectMessage> DirectMessages { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -36,6 +38,33 @@ namespace ForumZenpace.Models
 
             modelBuilder.Entity<PostImage>()
                 .HasIndex(pi => pi.DraftToken);
+
+            modelBuilder.Entity<DirectConversation>()
+                .HasIndex(dc => new { dc.UserAId, dc.UserBId })
+                .IsUnique();
+
+            modelBuilder.Entity<DirectMessage>()
+                .HasIndex(dm => new { dm.ConversationId, dm.CreatedAt });
+
+            modelBuilder.Entity<DirectConversation>()
+                .HasOne(dc => dc.UserA)
+                .WithMany(u => u.PrimaryDirectConversations)
+                .HasForeignKey(dc => dc.UserAId);
+
+            modelBuilder.Entity<DirectConversation>()
+                .HasOne(dc => dc.UserB)
+                .WithMany(u => u.SecondaryDirectConversations)
+                .HasForeignKey(dc => dc.UserBId);
+
+            modelBuilder.Entity<DirectMessage>()
+                .HasOne(dm => dm.Conversation)
+                .WithMany(dc => dc.Messages)
+                .HasForeignKey(dm => dm.ConversationId);
+
+            modelBuilder.Entity<DirectMessage>()
+                .HasOne(dm => dm.Sender)
+                .WithMany(u => u.DirectMessages)
+                .HasForeignKey(dm => dm.SenderId);
 
             // Disable cascade delete globally or per specific relationship to avoid multiple cascade paths issue in SQL Server
             foreach (var relationship in modelBuilder.Model.GetEntityTypes().SelectMany(e => e.GetForeignKeys()))

@@ -2,7 +2,7 @@
 @model ForumZenpace.Models.Post
 @{
     ViewData["Title"] = Model.Title;
-    var topLevelComments = ViewBag.TopLevelComments as List<ForumZenpace.Models.Comment> ?? new List<ForumZenpace.Models.Comment>();
+    var commentThreads = ViewBag.CommentThreads as IReadOnlyList<ForumZenpace.Models.CommentThreadViewModel> ?? Array.Empty<ForumZenpace.Models.CommentThreadViewModel>();
     int? currentUserId = ViewBag.UserId == null ? null : (int?)ViewBag.UserId;
     var isAuthenticated = User.Identity?.IsAuthenticated == true;
     var currentUserInitial = isAuthenticated && !string.IsNullOrWhiteSpace(User.Identity?.Name)
@@ -16,7 +16,13 @@
             <div class="detail-kicker">
                 <span class="category-badge" style="margin-left: 0;">@Model.Category.Name</span>
                 <div class="detail-meta">
-                    <span><i class="fa-regular fa-user"></i> @Model.User.FullName</span>
+                    <span>
+                        <i class="fa-regular fa-user"></i>
+                        <a asp-controller="Profile"
+                           asp-action="UserProfile"
+                           asp-route-username="@Model.User.Username"
+                           class="post-author-link">@Model.User.FullName</a>
+                    </span>
                     <span class="dot"></span>
                     <span>@Model.CreatedAt.ToString("dd MMM yyyy")</span>
                     <span class="dot"></span>
@@ -84,7 +90,7 @@
         <div class="surface-header">
             <div>
                 <h2 class="surface-title">Binh luan (@Model.Comments.Count)</h2>
-                <p class="surface-subtitle">Comment section duoc thu gon de hien thi duoc nhieu noi dung hon tren cung mot man hinh.</p>
+                <p class="surface-subtitle">Luong trao doi duoc sap xep gon, de doc va de theo doi hon o ca desktop lan mobile.</p>
             </div>
         </div>
 
@@ -133,20 +139,11 @@
         }
 
         <div class="comment-list">
-            @if (topLevelComments.Any())
+            @if (commentThreads.Any())
             {
-                @foreach (var comment in topLevelComments)
+                @foreach (var thread in commentThreads)
                 {
-                    var threadItem = new CommentThreadItemViewModel
-                    {
-                        Comment = comment,
-                        Level = 0,
-                        PostId = Model.Id,
-                        CurrentUserId = currentUserId,
-                        IsAuthenticated = isAuthenticated
-                    };
-
-                    <partial name="_CommentThreadItem" model="threadItem" />
+                    <partial name="_CommentThreadItem" model="thread" />
                 }
             }
             else
@@ -186,23 +183,30 @@
             }
         }
 
-        function toggleReplies(id, button) {
-            const replies = document.getElementById(`threadReplies-${id}`);
-            if (!replies || !(button instanceof HTMLElement)) {
+        function toggleReplyBatch(id, button) {
+            const replies = document.querySelectorAll(`[data-thread-extra="${id}"]`);
+            if (replies.length === 0 || !(button instanceof HTMLElement)) {
                 return;
             }
 
-            const isCollapsed = !replies.hasAttribute('hidden');
-            if (isCollapsed) {
-                replies.setAttribute('hidden', 'hidden');
-                button.classList.add('is-collapsed');
-                button.setAttribute('aria-expanded', 'false');
-                return;
-            }
+            const isExpanded = button.getAttribute('aria-expanded') === 'true';
+            replies.forEach((reply) => {
+                if (!(reply instanceof HTMLElement)) {
+                    return;
+                }
 
-            replies.removeAttribute('hidden');
-            button.classList.remove('is-collapsed');
-            button.setAttribute('aria-expanded', 'true');
+                if (isExpanded) {
+                    reply.setAttribute('hidden', 'hidden');
+                    return;
+                }
+
+                reply.removeAttribute('hidden');
+            });
+
+            button.setAttribute('aria-expanded', (!isExpanded).ToString().toLowerCase());
+            button.textContent = isExpanded
+                ? (button.dataset.collapsedLabel || 'Xem them phan hoi')
+                : (button.dataset.expandedLabel || 'An bot phan hoi');
         }
 
         function toggleReport() {
