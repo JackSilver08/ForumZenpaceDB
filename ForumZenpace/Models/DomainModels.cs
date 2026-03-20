@@ -30,6 +30,13 @@ namespace ForumZenpace.Models
         
         [Required, EmailAddress, MaxLength(100)]
         public string Email { get; set; }
+
+        public bool IsEmailConfirmed { get; set; }
+
+        [MaxLength(128)]
+        public string? EmailVerificationToken { get; set; }
+
+        public DateTime? EmailVerificationTokenExpiresAt { get; set; }
         
         [MaxLength(255)]
         public string? Avatar { get; set; }
@@ -59,6 +66,32 @@ namespace ForumZenpace.Models
         public ICollection<Friendship> SecondaryFriendships { get; set; } = new List<Friendship>();
         public ICollection<MessageBlock> SentMessageBlocks { get; set; } = new List<MessageBlock>();
         public ICollection<MessageBlock> ReceivedMessageBlocks { get; set; } = new List<MessageBlock>();
+    }
+
+    public class PendingRegistration
+    {
+        public int Id { get; set; }
+
+        [Required, MaxLength(50)]
+        public string Username { get; set; } = string.Empty;
+
+        [Required]
+        public string Password { get; set; } = string.Empty;
+
+        [Required, MaxLength(100)]
+        public string FullName { get; set; } = string.Empty;
+
+        [Required, EmailAddress, MaxLength(100)]
+        public string Email { get; set; } = string.Empty;
+
+        [Required, MaxLength(128)]
+        public string OtpHash { get; set; } = string.Empty;
+
+        public DateTime OtpExpiresAt { get; set; }
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     }
 
     public class Category

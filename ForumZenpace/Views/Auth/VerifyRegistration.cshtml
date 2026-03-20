@@ -1,0 +1,62 @@
+@model ForumZenpace.Models.VerifyRegistrationOtpViewModel
+@{
+    ViewData["Title"] = "Hoan tat dang ky";
+}
+
+<div class="auth-shell animated-entry">
+    <div class="surface auth-card">
+        <div class="auth-header">
+            <div class="auth-mark">
+                <i class="fa-solid fa-envelope-circle-check"></i>
+            </div>
+            <h1 class="auth-title">Xac thuc OTP de tao tai khoan</h1>
+            <p class="auth-subtitle">Ma OTP da duoc gui toi @Model.EmailMask. Chi khi nhap dung ma, he thong moi tao tai khoan @Model.Username.</p>
+        </div>
+
+        @if (TempData["AuthSuccessMessage"] is string authSuccessMessage)
+        {
+            <div class="auth-inline-alert mb-3">
+                <i class="fa-solid fa-circle-check"></i>
+                <span>@authSuccessMessage</span>
+            </div>
+        }
+
+        @if (TempData["AuthErrorMessage"] is string authErrorMessage)
+        {
+            <div class="auth-inline-alert is-error mb-3">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                <span>@authErrorMessage</span>
+            </div>
+        }
+
+        <form asp-action="VerifyRegistration" method="post" class="auth-form">
+            <input asp-for="PendingRegistrationId" type="hidden" />
+            <input asp-for="EmailMask" type="hidden" />
+            <input asp-for="Username" type="hidden" />
+
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-2 text-center"></div>
+
+            <div class="field">
+                <label asp-for="OtpCode" class="field-label">Ma OTP</label>
+                <div class="input-icon">
+                    <i class="fa-solid fa-key"></i>
+                    <input asp-for="OtpCode" class="form-control" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="Nhap 6 chu so" />
+                </div>
+                <span asp-validation-for="OtpCode" class="text-danger"></span>
+                <div class="field-hint">Ma OTP co hieu luc trong 15 phut. Moi lan gui lai, he thong se tao mot ma moi.</div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Xac thuc va tao tai khoan</button>
+        </form>
+
+        <form asp-action="ResendRegistrationOtp" method="post" class="auth-form" style="margin-top: 12px;">
+            <input type="hidden" name="pendingRegistrationId" value="@Model.PendingRegistrationId" />
+            <button type="submit" class="btn btn-outline" style="width: 100%;">Gui lai ma OTP</button>
+        </form>
+
+        <div class="auth-footer">
+            Muon doi thong tin?
+            <a asp-action="Register">Quay lai dang ky</a>
+        </div>
+    </div>
+</div>

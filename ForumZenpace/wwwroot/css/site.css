@@ -738,6 +738,95 @@ select.form-control {
 .home-social-rail {
     grid-column: 2 / 4;
     min-width: 0;
+    position: relative;
+}
+
+.social-friend-rail {
+    position: relative;
+    min-width: 0;
+}
+
+.social-friend-rail::before,
+.social-friend-rail::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 72px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--transition-fast);
+    z-index: 1;
+}
+
+.social-friend-rail::before {
+    left: 0;
+    background: linear-gradient(90deg, rgba(74, 44, 148, 0.82) 0%, rgba(74, 44, 148, 0) 100%);
+}
+
+.social-friend-rail::after {
+    right: 0;
+    background: linear-gradient(270deg, rgba(60, 55, 166, 0.82) 0%, rgba(60, 55, 166, 0) 100%);
+}
+
+.social-friend-rail.can-scroll-prev::before,
+.social-friend-rail.can-scroll-next::after {
+    opacity: 1;
+}
+
+.social-friend-nav {
+    position: absolute;
+    top: 50%;
+    z-index: 2;
+    width: 42px;
+    height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02)),
+        rgba(11, 15, 37, 0.84);
+    color: rgba(245, 247, 255, 0.94);
+    box-shadow:
+        0 14px 24px rgba(7, 9, 24, 0.28),
+        0 0 0 1px rgba(255, 255, 255, 0.04);
+    transform: translateY(-50%);
+    transition:
+        transform var(--transition-fast),
+        background var(--transition-fast),
+        border-color var(--transition-fast),
+        box-shadow var(--transition-fast);
+    backdrop-filter: blur(14px);
+}
+
+.social-friend-nav:hover {
+    transform: translateY(-50%) scale(1.03);
+    border-color: rgba(163, 195, 255, 0.34);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.03)),
+        rgba(14, 19, 46, 0.9);
+    box-shadow:
+        0 18px 28px rgba(7, 9, 24, 0.34),
+        0 0 20px rgba(121, 201, 255, 0.12);
+}
+
+.social-friend-nav:focus-visible {
+    outline: 2px solid rgba(140, 207, 255, 0.72);
+    outline-offset: 2px;
+}
+
+.social-friend-nav[hidden] {
+    display: none;
+}
+
+.social-friend-nav--prev {
+    left: 10px;
+}
+
+.social-friend-nav--next {
+    right: 10px;
 }
 
 .social-friend-list {
@@ -747,23 +836,17 @@ select.form-control {
     min-width: 0;
     overflow-x: auto;
     overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
     padding: 0 2px;
-    scrollbar-gutter: stable;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(143, 141, 255, 0.32) transparent;
+    scroll-behavior: smooth;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
 }
 
 .social-friend-list::-webkit-scrollbar {
-    height: 8px;
-}
-
-.social-friend-list::-webkit-scrollbar-thumb {
-    border-radius: 999px;
-    background: rgba(143, 141, 255, 0.28);
-}
-
-.social-friend-list::-webkit-scrollbar-track {
-    background: transparent;
+    display: none;
 }
 
 .social-card {
@@ -876,6 +959,8 @@ select.form-control {
 .social-card--friend,
 .social-card--empty {
     height: var(--social-rail-card-height);
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
 }
 
 .social-card--friend {
@@ -2012,7 +2097,8 @@ kbd {
     gap: 6px;
 }
 
-.profile-inline-alert {
+.profile-inline-alert,
+.auth-inline-alert {
     display: flex;
     align-items: center;
     gap: 10px;
@@ -2023,7 +2109,8 @@ kbd {
     background: rgba(73, 199, 146, 0.08);
 }
 
-.profile-inline-alert.is-error {
+.profile-inline-alert.is-error,
+.auth-inline-alert.is-error {
     color: #ffb2bf;
     border-color: rgba(240, 129, 151, 0.18);
     background: rgba(240, 129, 151, 0.08);
@@ -3882,29 +3969,48 @@ body.profile-modal-open {
           flex: 1 1 auto;
       }
 
-      .social-friend-list {
-          gap: var(--space-2);
-      }
+    .social-friend-rail::before,
+    .social-friend-rail::after {
+        width: 52px;
+    }
 
-      .social-card--friend {
-          width: 112px;
-          min-width: 112px;
-          padding: 16px 10px 14px;
-      }
+    .social-friend-nav {
+        width: 36px;
+        height: 36px;
+        font-size: 0.82rem;
+    }
 
-      .social-card--friend .social-avatar {
-          width: 100%;
-          height: 94px;
-          border-radius: 20px;
-      }
+    .social-friend-nav--prev {
+        left: 6px;
+    }
 
-      .social-card--friend .social-card-copy strong {
-          font-size: 0.76rem;
-      }
+    .social-friend-nav--next {
+        right: 6px;
+    }
 
-      .comment-card {
-          padding: var(--space-4);
-      }
+    .social-friend-list {
+        gap: var(--space-2);
+    }
+
+    .social-card--friend {
+        width: 112px;
+        min-width: 112px;
+        padding: 16px 10px 14px;
+    }
+
+    .social-card--friend .social-avatar {
+        width: 100%;
+        height: 94px;
+        border-radius: 20px;
+    }
+
+    .social-card--friend .social-card-copy strong {
+        font-size: 0.76rem;
+    }
+
+    .comment-card {
+        padding: var(--space-4);
+    }
 
     .comment-editor-footer {
         align-items: stretch;

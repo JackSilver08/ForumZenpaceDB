@@ -53,65 +53,85 @@
         </div>
 
         <div class="home-social-rail">
-            <div class="social-friend-list" data-friend-list>
-                @if (friends.Any())
-                {
-                    @foreach (var friend in friends)
+            <div class="social-friend-rail" data-friend-rail>
+                <button type="button"
+                        class="social-friend-nav social-friend-nav--prev"
+                        data-friend-nav-prev
+                        aria-label="Xem nhom ban truoc"
+                        aria-controls="homeFriendList"
+                        hidden>
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
+
+                <div id="homeFriendList" class="social-friend-list" data-friend-list>
+                    @if (friends.Any())
                     {
-                        var friendState = friend.IsMessageBlockedByViewer
-                            ? "blocked-by-viewer"
-                            : friend.IsMessageBlockedByOtherUser
-                                ? "blocked-by-other"
-                                : "connected";
+                        @foreach (var friend in friends)
+                        {
+                            var friendState = friend.IsMessageBlockedByViewer
+                                ? "blocked-by-viewer"
+                                : friend.IsMessageBlockedByOtherUser
+                                    ? "blocked-by-other"
+                                    : "connected";
 
-                        var friendTitle = friend.IsMessageBlockedByViewer
-                            ? "Ban dang chan tin nhan voi nguoi nay."
-                            : friend.IsMessageBlockedByOtherUser
-                                ? "Nguoi nay dang chan tin nhan voi ban."
-                                : $"Trang ca nhan cua @{friend.Username}";
+                            var friendTitle = friend.IsMessageBlockedByViewer
+                                ? "Ban dang chan tin nhan voi nguoi nay."
+                                : friend.IsMessageBlockedByOtherUser
+                                    ? "Nguoi nay dang chan tin nhan voi ban."
+                                    : $"Trang ca nhan cua @{friend.Username}";
 
-                        <a asp-controller="Profile"
-                           asp-action="UserProfile"
-                           asp-route-username="@friend.Username"
-                           class="glass-panel social-card social-card--friend"
-                           data-friend-card
-                           data-friend-user-id="@friend.UserId"
-                           data-friend-username="@friend.Username"
-                           data-friend-state="@friendState"
-                           title="@friendTitle">
-                            <span class="social-friend-badge @(friendState == "connected" ? "is-hidden" : string.Empty)"
-                                  data-friend-status-badge
-                                  aria-hidden="true">
-                                <i class="fa-solid @(friendState == "blocked-by-viewer" ? "fa-ban" : "fa-shield-halved")"></i>
-                            </span>
-                            <span class="social-avatar">
-                                @if (!string.IsNullOrWhiteSpace(friend.AvatarUrl))
-                                {
-                                    <img src="@friend.AvatarUrl" alt="@friend.DisplayName" />
-                                }
-                                else
-                                {
-                                    <span>@GetInitials(friend.DisplayName, friend.Username)</span>
-                                }
+                            <a asp-controller="Profile"
+                               asp-action="UserProfile"
+                               asp-route-username="@friend.Username"
+                               class="glass-panel social-card social-card--friend"
+                               data-friend-card
+                               data-friend-user-id="@friend.UserId"
+                               data-friend-username="@friend.Username"
+                               data-friend-state="@friendState"
+                               title="@friendTitle">
+                                <span class="social-friend-badge @(friendState == "connected" ? "is-hidden" : string.Empty)"
+                                      data-friend-status-badge
+                                      aria-hidden="true">
+                                    <i class="fa-solid @(friendState == "blocked-by-viewer" ? "fa-ban" : "fa-shield-halved")"></i>
+                                </span>
+                                <span class="social-avatar">
+                                    @if (!string.IsNullOrWhiteSpace(friend.AvatarUrl))
+                                    {
+                                        <img src="@friend.AvatarUrl" alt="@friend.DisplayName" />
+                                    }
+                                    else
+                                    {
+                                        <span>@GetInitials(friend.DisplayName, friend.Username)</span>
+                                    }
+                                </span>
+                                <span class="social-card-copy">
+                                    <strong>@@@friend.Username</strong>
+                                </span>
+                            </a>
+                        }
+                    }
+                    else
+                    {
+                        <div class="glass-panel social-card social-card--empty" data-friend-empty>
+                            <span class="social-card-icon">
+                                <i class="fa-regular fa-user"></i>
                             </span>
                             <span class="social-card-copy">
-                                <strong>@@@friend.Username</strong>
+                                <strong>Chua co ban</strong>
+                                <span>Bat dau ket noi tu o Them ban</span>
                             </span>
-                        </a>
+                        </div>
                     }
-                }
-                else
-                {
-                    <div class="glass-panel social-card social-card--empty" data-friend-empty>
-                        <span class="social-card-icon">
-                            <i class="fa-regular fa-user"></i>
-                        </span>
-                        <span class="social-card-copy">
-                            <strong>Chua co ban</strong>
-                            <span>Bat dau ket noi tu o Them ban</span>
-                        </span>
-                    </div>
-                }
+                </div>
+
+                <button type="button"
+                        class="social-friend-nav social-friend-nav--next"
+                        data-friend-nav-next
+                        aria-label="Xem nhom ban tiep theo"
+                        aria-controls="homeFriendList"
+                        hidden>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
             </div>
         </div>
     </div>

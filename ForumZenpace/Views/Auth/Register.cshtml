@@ -10,8 +10,24 @@
                 <i class="fa-solid fa-user-plus"></i>
             </div>
             <h1 class="auth-title">Tao tai khoan moi</h1>
-            <p class="auth-subtitle">Giao dien dang ky duoc rut gon de tap trung vao thong tin can thiet va de quet hon tren desktop.</p>
+            <p class="auth-subtitle">Sau khi nhap email va gui form, he thong se mo buoc xac thuc OTP. Chi khi nhap dung ma OTP, tai khoan moi duoc tao.</p>
         </div>
+
+        @if (TempData["AuthSuccessMessage"] is string authSuccessMessage)
+        {
+            <div class="auth-inline-alert mb-3">
+                <i class="fa-solid fa-circle-check"></i>
+                <span>@authSuccessMessage</span>
+            </div>
+        }
+
+        @if (TempData["AuthErrorMessage"] is string authErrorMessage)
+        {
+            <div class="auth-inline-alert is-error mb-3">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                <span>@authErrorMessage</span>
+            </div>
+        }
 
         <form asp-action="Register" method="post" class="auth-form">
             <div asp-validation-summary="ModelOnly" class="text-danger mb-2 text-center"></div>

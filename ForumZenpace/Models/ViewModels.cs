@@ -32,6 +32,27 @@ namespace ForumZenpace.Models
         public string ConfirmPassword { get; set; }
     }
 
+    public class VerifyEmailOtpViewModel
+    {
+        public int UserId { get; set; }
+        public string EmailMask { get; set; } = string.Empty;
+
+        [Required, Display(Name = "Ma OTP")]
+        [StringLength(6, MinimumLength = 6, ErrorMessage = "Ma OTP gom 6 chu so.")]
+        public string OtpCode { get; set; } = string.Empty;
+    }
+
+    public class VerifyRegistrationOtpViewModel
+    {
+        public int PendingRegistrationId { get; set; }
+        public string EmailMask { get; set; } = string.Empty;
+        public string Username { get; set; } = string.Empty;
+
+        [Required, Display(Name = "Ma OTP")]
+        [StringLength(6, MinimumLength = 6, ErrorMessage = "Ma OTP gom 6 chu so.")]
+        public string OtpCode { get; set; } = string.Empty;
+    }
+
     public class PostViewModel
     {
         public int? PostId { get; set; }

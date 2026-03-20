@@ -12,6 +12,7 @@ namespace ForumZenpace.Models
 
         public DbSet<Role> Roles { get; set; }
         public DbSet<User> Users { get; set; }
+        public DbSet<PendingRegistration> PendingRegistrations { get; set; }
         public DbSet<Category> Categories { get; set; }
         public DbSet<Post> Posts { get; set; }
         public DbSet<Comment> Comments { get; set; }
@@ -37,6 +38,14 @@ namespace ForumZenpace.Models
 
             modelBuilder.Entity<CommentLike>()
                 .HasIndex(cl => new { cl.UserId, cl.CommentId })
+                .IsUnique();
+
+            modelBuilder.Entity<PendingRegistration>()
+                .HasIndex(pr => pr.Username)
+                .IsUnique();
+
+            modelBuilder.Entity<PendingRegistration>()
+                .HasIndex(pr => pr.Email)
                 .IsUnique();
 
             modelBuilder.Entity<PostImage>()
@@ -94,6 +103,10 @@ namespace ForumZenpace.Models
                 .Property(notification => notification.Type)
                 .HasDefaultValue(NotificationTypes.General);
 
+            modelBuilder.Entity<User>()
+                .Property(user => user.IsEmailConfirmed)
+                .HasDefaultValue(false);
+
             modelBuilder.Entity<FriendRequest>()
                 .HasOne(friendRequest => friendRequest.Sender)
                 .WithMany(user => user.SentFriendRequests)
@@ -149,6 +162,9 @@ namespace ForumZenpace.Models
                     Password = "AdminPassword123!",
                     FullName = "Quản trị viên Zenpace",
                     Email = "admin@zenpace.com",
+                    IsEmailConfirmed = true,
+                    EmailVerificationToken = (string?)null,
+                    EmailVerificationTokenExpiresAt = (DateTime?)null,
                     Avatar = (string?)null,
                     CreatedAt = new DateTime(2026, 3, 18, 6, 36, 35, 80, DateTimeKind.Utc).AddTicks(3815),
                     IsActive = true,

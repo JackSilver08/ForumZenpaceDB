@@ -16,11 +16,16 @@
     const notificationLink = document.querySelector('[data-notification-link]');
     let notificationBadge = document.querySelector('[data-notification-badge]');
     const friendModal = document.querySelector('[data-friend-modal]');
+    const friendRail = document.querySelector('[data-friend-rail]');
     const friendList = document.querySelector('[data-friend-list]');
+    const friendPrevButton = document.querySelector('[data-friend-nav-prev]');
+    const friendNextButton = document.querySelector('[data-friend-nav-next]');
     const profileSocial = document.querySelector('[data-profile-social]');
     const profileSocialStatus = document.querySelector('[data-profile-social-status]');
     const notificationPage = document.querySelector('[data-notification-page]');
     let notificationList = document.querySelector('[data-notification-list]');
+    let friendRailResizeObserver = null;
+    let friendRailFrame = 0;
     let searchTimer = 0;
     let searchToken = 0;
 
@@ -79,6 +84,88 @@
         }
     };
 
+    const setFriendNavVisibility = (button, visible) => {
+        if (!(button instanceof HTMLButtonElement)) {
+            return;
+        }
+
+        button.hidden = !visible;
+        button.disabled = !visible;
+    };
+
+    const getFriendRailGap = () => {
+        if (!(friendList instanceof HTMLElement)) {
+            return 0;
+        }
+
+        const styles = window.getComputedStyle(friendList);
+        const gapValue = Number.parseFloat(styles.columnGap || styles.gap || '0');
+        return Number.isFinite(gapValue) ? gapValue : 0;
+    };
+
+    const getFriendRailStep = () => {
+        if (!(friendList instanceof HTMLElement)) {
+            return 0;
+        }
+
+        const firstItem = friendList.querySelector('[data-friend-card], [data-friend-empty]');
+        if (!(firstItem instanceof HTMLElement)) {
+            return Math.max(friendList.clientWidth * 0.82, 0);
+        }
+
+        return firstItem.getBoundingClientRect().width + getFriendRailGap();
+    };
+
+    const updateFriendRailControls = () => {
+        if (!(friendRail instanceof HTMLElement) || !(friendList instanceof HTMLElement)) {
+            return;
+        }
+
+        const maxScrollLeft = Math.max(0, friendList.scrollWidth - friendList.clientWidth);
+        const hasOverflow = maxScrollLeft > 4;
+
+        if (!hasOverflow && friendList.scrollLeft > 0) {
+            friendList.scrollLeft = 0;
+        }
+
+        const canScrollPrev = hasOverflow && friendList.scrollLeft > 4;
+        const canScrollNext = hasOverflow && friendList.scrollLeft < maxScrollLeft - 4;
+
+        friendRail.classList.toggle('is-scrollable', hasOverflow);
+        friendRail.classList.toggle('can-scroll-prev', canScrollPrev);
+        friendRail.classList.toggle('can-scroll-next', canScrollNext);
+
+        setFriendNavVisibility(friendPrevButton, canScrollPrev);
+        setFriendNavVisibility(friendNextButton, canScrollNext);
+    };
+
+    const scheduleFriendRailUpdate = () => {
+        if (friendRailFrame) {
+            return;
+        }
+
+        friendRailFrame = window.requestAnimationFrame(() => {
+            friendRailFrame = 0;
+            updateFriendRailControls();
+        });
+    };
+
+    const scrollFriendRail = (direction) => {
+        if (!(friendList instanceof HTMLElement)) {
+            return;
+        }
+
+        const step = getFriendRailStep();
+        if (step <= 0) {
+            return;
+        }
+
+        friendList.scrollBy({
+            left: direction * step,
+            behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+        });
+    };
+
     const ensureFriendEmptyState = () => {
         if (!(friendList instanceof HTMLElement) || friendList.querySelector('[data-friend-card]')) {
             return;
@@ -92,6 +179,8 @@
                     <span>Bat dau ket noi tu o Them ban</span>
                 </span>
             </div>`;
+
+        scheduleFriendRailUpdate();
     };
 
     const removeFriendEmptyState = () => friendList?.querySelector('[data-friend-empty]')?.remove();
@@ -157,15 +246,18 @@
         const existingCard = friendList.querySelector(`[data-friend-user-id="${friend.userId}"]`);
         if (existingCard instanceof HTMLElement) {
             existingCard.outerHTML = renderFriendCard(friend);
+            scheduleFriendRailUpdate();
             return;
         }
 
         friendList.insertAdjacentHTML('afterbegin', renderFriendCard(friend));
+        scheduleFriendRailUpdate();
     };
 
     const removeFriendCard = (friendUserId) => {
         friendList?.querySelector(`[data-friend-user-id="${friendUserId}"]`)?.remove();
         ensureFriendEmptyState();
+        scheduleFriendRailUpdate();
     };
 
     const updateFriendCardBlockState = (targetUserId, payload) => {
@@ -530,6 +622,22 @@
     };
 
     const bindHomeSocial = () => {
+        if (friendPrevButton instanceof HTMLButtonElement) {
+            friendPrevButton.addEventListener('click', () => scrollFriendRail(-1));
+        }
+
+        if (friendNextButton instanceof HTMLButtonElement) {
+            friendNextButton.addEventListener('click', () => scrollFriendRail(1));
+        }
+
+        friendList?.addEventListener('scroll', () => scheduleFriendRailUpdate(), { passive: true });
+        window.addEventListener('resize', () => scheduleFriendRailUpdate());
+
+        if ('ResizeObserver' in window && friendList instanceof HTMLElement) {
+            friendRailResizeObserver = new ResizeObserver(() => scheduleFriendRailUpdate());
+            friendRailResizeObserver.observe(friendList);
+        }
+
         document.querySelector('[data-open-friend-modal]')?.addEventListener('click', () => openFriendModal());
         document.querySelectorAll('[data-close-friend-modal]').forEach((element) => element.addEventListener('click', () => closeFriendModal()));
 
@@ -575,6 +683,8 @@
                 closeFriendModal();
             }
         });
+
+        scheduleFriendRailUpdate();
     };
 
     const bindNotificationPage = () => {

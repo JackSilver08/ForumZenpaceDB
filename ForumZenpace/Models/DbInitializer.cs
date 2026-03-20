@@ -40,6 +40,7 @@ namespace ForumZenpace.Models
                     Password = "AdminPassword123!",
                     FullName = "Quản trị viên Zenpace",
                     Email = "admin@zenpace.com",
+                    IsEmailConfirmed = true,
                     RoleId = 1,
                     CreatedAt = DateTime.UtcNow
                 };

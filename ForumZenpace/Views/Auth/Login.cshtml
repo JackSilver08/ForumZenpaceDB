@@ -13,6 +13,22 @@
             <p class="auth-subtitle">Tro lai khong gian thao luan voi giao dien gon hon va tap trung vao noi dung.</p>
         </div>
 
+        @if (TempData["AuthSuccessMessage"] is string authSuccessMessage)
+        {
+            <div class="auth-inline-alert mb-3">
+                <i class="fa-solid fa-circle-check"></i>
+                <span>@authSuccessMessage</span>
+            </div>
+        }
+
+        @if (TempData["AuthErrorMessage"] is string authErrorMessage)
+        {
+            <div class="auth-inline-alert is-error mb-3">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                <span>@authErrorMessage</span>
+            </div>
+        }
+
         <form asp-action="Login" method="post" class="auth-form">
             <div asp-validation-summary="ModelOnly" class="text-danger mb-2 text-center"></div>
 

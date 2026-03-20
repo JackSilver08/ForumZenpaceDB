@@ -1,0 +1,61 @@
+@model ForumZenpace.Models.VerifyEmailOtpViewModel
+@{
+    ViewData["Title"] = "Xac thuc email";
+}
+
+<div class="auth-shell animated-entry">
+    <div class="surface auth-card">
+        <div class="auth-header">
+            <div class="auth-mark">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <h1 class="auth-title">Xac thuc email bang OTP</h1>
+            <p class="auth-subtitle">Nhap ma OTP 6 chu so da duoc gui toi email @Model.EmailMask de kich hoat tai khoan.</p>
+        </div>
+
+        @if (TempData["AuthSuccessMessage"] is string authSuccessMessage)
+        {
+            <div class="auth-inline-alert mb-3">
+                <i class="fa-solid fa-circle-check"></i>
+                <span>@authSuccessMessage</span>
+            </div>
+        }
+
+        @if (TempData["AuthErrorMessage"] is string authErrorMessage)
+        {
+            <div class="auth-inline-alert is-error mb-3">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                <span>@authErrorMessage</span>
+            </div>
+        }
+
+        <form asp-action="VerifyEmail" method="post" class="auth-form">
+            <input asp-for="UserId" type="hidden" />
+            <input asp-for="EmailMask" type="hidden" />
+
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-2 text-center"></div>
+
+            <div class="field">
+                <label asp-for="OtpCode" class="field-label">Ma OTP</label>
+                <div class="input-icon">
+                    <i class="fa-solid fa-key"></i>
+                    <input asp-for="OtpCode" class="form-control" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="Nhap 6 chu so" />
+                </div>
+                <span asp-validation-for="OtpCode" class="text-danger"></span>
+                <div class="field-hint">Ma OTP co hieu luc trong 15 phut. Moi lan gui lai, he thong se tao mot ma moi.</div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Xac thuc tai khoan</button>
+        </form>
+
+        <form asp-action="ResendEmailOtp" method="post" class="auth-form" style="margin-top: 12px;">
+            <input type="hidden" name="userId" value="@Model.UserId" />
+            <button type="submit" class="btn btn-outline" style="width: 100%;">Gui lai ma OTP</button>
+        </form>
+
+        <div class="auth-footer">
+            Muon quay lai?
+            <a asp-action="Login">Trang dang nhap</a>
+        </div>
+    </div>
+</div>

@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -27,6 +29,7 @@ namespace ForumZenpace.Controllers
         private readonly IWebHostEnvironment _environment;
         private readonly DirectMessageService _directMessageService;
         private readonly SocialService _socialService;
+        private readonly EmailVerificationService _emailVerificationService;
         private readonly IHubContext<DirectMessageHub> _hubContext;
 
         public ProfileController(
@@ -34,12 +37,14 @@ namespace ForumZenpace.Controllers
             IWebHostEnvironment environment,
             DirectMessageService directMessageService,
             SocialService socialService,
+            EmailVerificationService emailVerificationService,
             IHubContext<DirectMessageHub> hubContext)
         {
             _context = context;
             _environment = environment;
             _directMessageService = directMessageService;
             _socialService = socialService;
+            _emailVerificationService = emailVerificationService;
             _hubContext = hubContext;
         }
 
@@ -95,15 +100,31 @@ namespace ForumZenpace.Controllers
 
             if (user == null) return NotFound();
 
+            model.FullName = model.FullName?.Trim() ?? string.Empty;
+            model.Email = model.Email?.Trim() ?? string.Empty;
+
             ValidateAvatarFile(model.AvatarFile);
+
+            var emailChanged = !string.Equals(user.Email, model.Email, StringComparison.OrdinalIgnoreCase);
+            if (emailChanged && await _context.Users.AnyAsync(u => u.Id != user.Id && u.Email == model.Email))
+            {
+                ModelState.AddModelError(nameof(ProfileViewModel.Email), "Email da duoc su dung cho mot tai khoan khac.");
+            }
 
             if (!ModelState.IsValid)
             {
                 return View("Index", await BuildProfileViewModelAsync(user, userId.Value, "posts", model));
             }
 
-            user.FullName = model.FullName.Trim();
-            user.Email = model.Email.Trim();
+            user.FullName = model.FullName;
+
+            if (emailChanged)
+            {
+                user.Email = model.Email;
+                user.IsEmailConfirmed = false;
+                user.EmailVerificationToken = null;
+                user.EmailVerificationTokenExpiresAt = null;
+            }
 
             if (model.AvatarFile is not null)
             {
@@ -111,6 +132,18 @@ namespace ForumZenpace.Controllers
             }
 
             await _context.SaveChangesAsync();
+
+            if (emailChanged)
+            {
+                var emailSent = await TrySendOtpAsync(user);
+                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+                TempData[emailSent ? "AuthSuccessMessage" : "AuthErrorMessage"] = emailSent
+                    ? "Email moi cua ban can duoc xac thuc. Chung toi da gui ma OTP moi va da dang xuat ban de bao ve tai khoan."
+                    : "Email moi chua duoc xac thuc va he thong chua gui duoc OTP. Ban da duoc dang xuat; vui long kiem tra EmailJsSettings.";
+
+                return RedirectToAction("VerifyEmail", "Auth", new { userId = user.Id });
+            }
 
             ViewBag.SuccessMessage = "Cap nhat ho so thanh cong.";
             return View("Index", await BuildProfileViewModelAsync(user, userId.Value, "posts"));
@@ -351,6 +384,21 @@ namespace ForumZenpace.Controllers
         private bool IsAjaxRequest()
         {
             return string.Equals(Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private async Task<bool> TrySendOtpAsync(User user)
+        {
+            try
+            {
+                var otpCode = _emailVerificationService.IssueOtp(user);
+                await _context.SaveChangesAsync();
+                await _emailVerificationService.SendOtpEmailAsync(user, otpCode, HttpContext.RequestAborted);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 }

@@ -10,6 +10,9 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 builder.Services.AddSignalR();
+builder.Services.Configure<EmailJsSettings>(builder.Configuration.GetSection("EmailJsSettings"));
+builder.Services.AddHttpClient<IEmailSender, EmailJsEmailSender>();
+builder.Services.AddScoped<EmailVerificationService>();
 builder.Services.AddScoped<DirectMessageService>();
 builder.Services.AddScoped<SocialService>();
 
