@@ -38,10 +38,16 @@ namespace ForumZenpace.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> ToggleUserStatus(int id)
         {
+            if (!TryGetCurrentUserId(out var currentUserId))
+            {
+                return Challenge();
+            }
+
             var user = await _context.Users.FindAsync(id);
-            if (user != null && user.Id != int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier))) // Don't block yourself
+            if (user != null && user.Id != currentUserId) // Don't block yourself
             {
                 user.IsActive = !user.IsActive;
                 await _context.SaveChangesAsync();
@@ -56,6 +62,7 @@ namespace ForumZenpace.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> TogglePostStatus(int id)
         {
             var post = await _context.Posts.FindAsync(id);
@@ -68,6 +75,7 @@ namespace ForumZenpace.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeletePost(int id)
         {
             var post = await _context.Posts.FindAsync(id);
@@ -99,6 +107,7 @@ namespace ForumZenpace.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddCategory(string name)
         {
             if (!string.IsNullOrWhiteSpace(name))
@@ -117,6 +126,11 @@ namespace ForumZenpace.Controllers
                 .OrderByDescending(r => r.CreatedAt)
                 .ToListAsync();
             return View(reports);
+        }
+
+        private bool TryGetCurrentUserId(out int userId)
+        {
+            return int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out userId);
         }
     }
 }

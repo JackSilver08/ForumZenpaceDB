@@ -30,7 +30,7 @@
         }
 
         <form asp-action="VerifyEmail" method="post" class="auth-form">
-            <input asp-for="UserId" type="hidden" />
+            <input asp-for="FlowToken" type="hidden" />
             <input asp-for="EmailMask" type="hidden" />
 
             <div asp-validation-summary="ModelOnly" class="text-danger mb-2 text-center"></div>
@@ -49,7 +49,7 @@
         </form>
 
         <form asp-action="ResendEmailOtp" method="post" class="auth-form" style="margin-top: 12px;">
-            <input type="hidden" name="userId" value="@Model.UserId" />
+            <input type="hidden" name="flowToken" value="@Model.FlowToken" />
             <button type="submit" class="btn btn-outline" style="width: 100%;">Gui lai ma OTP</button>
         </form>
 

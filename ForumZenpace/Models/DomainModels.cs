@@ -10,7 +10,7 @@ namespace ForumZenpace.Models
         public int Id { get; set; }
         
         [Required, MaxLength(50)]
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
         
         public ICollection<User> Users { get; set; } = new List<User>();
     }
@@ -20,16 +20,16 @@ namespace ForumZenpace.Models
         public int Id { get; set; }
         
         [Required, MaxLength(50)]
-        public string Username { get; set; }
+        public string Username { get; set; } = string.Empty;
         
         [Required]
-        public string Password { get; set; }
+        public string Password { get; set; } = string.Empty;
         
         [Required, MaxLength(100)]
-        public string FullName { get; set; }
+        public string FullName { get; set; } = string.Empty;
         
         [Required, EmailAddress, MaxLength(100)]
-        public string Email { get; set; }
+        public string Email { get; set; } = string.Empty;
 
         public bool IsEmailConfirmed { get; set; }
 
@@ -37,6 +37,11 @@ namespace ForumZenpace.Models
         public string? EmailVerificationToken { get; set; }
 
         public DateTime? EmailVerificationTokenExpiresAt { get; set; }
+
+        [MaxLength(128)]
+        public string? PasswordResetToken { get; set; }
+
+        public DateTime? PasswordResetTokenExpiresAt { get; set; }
         
         [MaxLength(255)]
         public string? Avatar { get; set; }
@@ -47,7 +52,7 @@ namespace ForumZenpace.Models
 
         public int RoleId { get; set; }
         [ForeignKey("RoleId")]
-        public Role Role { get; set; }
+        public Role Role { get; set; } = null!;
 
         public ICollection<Post> Posts { get; set; } = new List<Post>();
         public ICollection<Comment> Comments { get; set; } = new List<Comment>();
@@ -99,7 +104,7 @@ namespace ForumZenpace.Models
         public int Id { get; set; }
         
         [Required, MaxLength(100)]
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
 
         public ICollection<Post> Posts { get; set; } = new List<Post>();
     }
@@ -109,10 +114,10 @@ namespace ForumZenpace.Models
         public int Id { get; set; }
         
         [Required, MaxLength(255)]
-        public string Title { get; set; }
+        public string Title { get; set; } = string.Empty;
         
         [Required]
-        public string Content { get; set; }
+        public string Content { get; set; } = string.Empty;
         
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
@@ -123,11 +128,11 @@ namespace ForumZenpace.Models
 
         public int UserId { get; set; }
         [ForeignKey("UserId")]
-        public User User { get; set; }
+        public User User { get; set; } = null!;
 
         public int CategoryId { get; set; }
         [ForeignKey("CategoryId")]
-        public Category Category { get; set; }
+        public Category Category { get; set; } = null!;
 
         public ICollection<Comment> Comments { get; set; } = new List<Comment>();
         public ICollection<Like> Likes { get; set; } = new List<Like>();
@@ -140,17 +145,17 @@ namespace ForumZenpace.Models
         public int Id { get; set; }
         
         [Required]
-        public string Content { get; set; }
+        public string Content { get; set; } = string.Empty;
         
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public int UserId { get; set; }
         [ForeignKey("UserId")]
-        public User User { get; set; }
+        public User User { get; set; } = null!;
 
         public int PostId { get; set; }
         [ForeignKey("PostId")]
-        public Post Post { get; set; }
+        public Post Post { get; set; } = null!;
 
         public int? ParentId { get; set; }
         [ForeignKey("ParentId")]
@@ -166,11 +171,11 @@ namespace ForumZenpace.Models
 
         public int UserId { get; set; }
         [ForeignKey("UserId")]
-        public User User { get; set; }
+        public User User { get; set; } = null!;
 
         public int PostId { get; set; }
         [ForeignKey("PostId")]
-        public Post Post { get; set; }
+        public Post Post { get; set; } = null!;
     }
 
     public class CommentLike
@@ -179,11 +184,11 @@ namespace ForumZenpace.Models
 
         public int UserId { get; set; }
         [ForeignKey("UserId")]
-        public User User { get; set; }
+        public User User { get; set; } = null!;
 
         public int CommentId { get; set; }
         [ForeignKey("CommentId")]
-        public Comment Comment { get; set; }
+        public Comment Comment { get; set; } = null!;
     }
 
     public class PostImage
@@ -192,7 +197,7 @@ namespace ForumZenpace.Models
 
         public int UserId { get; set; }
         [ForeignKey("UserId")]
-        public User User { get; set; }
+        public User User { get; set; } = null!;
 
         public int? PostId { get; set; }
         [ForeignKey("PostId")]
@@ -202,16 +207,16 @@ namespace ForumZenpace.Models
         public string? DraftToken { get; set; }
 
         [Required, MaxLength(255)]
-        public string FileName { get; set; }
+        public string FileName { get; set; } = string.Empty;
 
         [Required, MaxLength(255)]
-        public string OriginalFileName { get; set; }
+        public string OriginalFileName { get; set; } = string.Empty;
 
         [Required, MaxLength(100)]
-        public string ContentType { get; set; }
+        public string ContentType { get; set; } = string.Empty;
 
         [Required, MaxLength(255)]
-        public string ImageUrl { get; set; }
+        public string ImageUrl { get; set; } = string.Empty;
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
@@ -222,14 +227,14 @@ namespace ForumZenpace.Models
 
         public int UserId { get; set; }
         [ForeignKey("UserId")]
-        public User User { get; set; }
+        public User User { get; set; } = null!;
 
         public int PostId { get; set; }
         [ForeignKey("PostId")]
-        public Post Post { get; set; }
+        public Post Post { get; set; } = null!;
 
         [Required, MaxLength(255)]
-        public string Reason { get; set; }
+        public string Reason { get; set; } = string.Empty;
         
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
@@ -240,10 +245,10 @@ namespace ForumZenpace.Models
 
         public int UserId { get; set; }
         [ForeignKey("UserId")]
-        public User User { get; set; }
+        public User User { get; set; } = null!;
 
         [Required]
-        public string Content { get; set; }
+        public string Content { get; set; } = string.Empty;
 
         [Required, MaxLength(40)]
         public string Type { get; set; } = NotificationTypes.General;

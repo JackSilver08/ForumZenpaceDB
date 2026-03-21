@@ -1,5 +1,5 @@
-using Microsoft.EntityFrameworkCore;
 using System.Linq;
+using Microsoft.EntityFrameworkCore;
 
 namespace ForumZenpace.Models
 {
@@ -31,28 +31,27 @@ namespace ForumZenpace.Models
         {
             base.OnModelCreating(modelBuilder);
 
-            // UNIQUE(UserId, PostId) constraint for Like
             modelBuilder.Entity<Like>()
-                .HasIndex(l => new { l.UserId, l.PostId })
+                .HasIndex(like => new { like.UserId, like.PostId })
                 .IsUnique();
 
             modelBuilder.Entity<CommentLike>()
-                .HasIndex(cl => new { cl.UserId, cl.CommentId })
+                .HasIndex(commentLike => new { commentLike.UserId, commentLike.CommentId })
                 .IsUnique();
 
             modelBuilder.Entity<PendingRegistration>()
-                .HasIndex(pr => pr.Username)
+                .HasIndex(pendingRegistration => pendingRegistration.Username)
                 .IsUnique();
 
             modelBuilder.Entity<PendingRegistration>()
-                .HasIndex(pr => pr.Email)
+                .HasIndex(pendingRegistration => pendingRegistration.Email)
                 .IsUnique();
 
             modelBuilder.Entity<PostImage>()
-                .HasIndex(pi => pi.DraftToken);
+                .HasIndex(postImage => postImage.DraftToken);
 
             modelBuilder.Entity<DirectConversation>()
-                .HasIndex(dc => new { dc.UserAId, dc.UserBId })
+                .HasIndex(conversation => new { conversation.UserAId, conversation.UserBId })
                 .IsUnique();
 
             modelBuilder.Entity<Friendship>()
@@ -67,27 +66,27 @@ namespace ForumZenpace.Models
                 .IsUnique();
 
             modelBuilder.Entity<DirectMessage>()
-                .HasIndex(dm => new { dm.ConversationId, dm.CreatedAt });
+                .HasIndex(message => new { message.ConversationId, message.CreatedAt });
 
             modelBuilder.Entity<DirectConversation>()
-                .HasOne(dc => dc.UserA)
-                .WithMany(u => u.PrimaryDirectConversations)
-                .HasForeignKey(dc => dc.UserAId);
+                .HasOne(conversation => conversation.UserA)
+                .WithMany(user => user.PrimaryDirectConversations)
+                .HasForeignKey(conversation => conversation.UserAId);
 
             modelBuilder.Entity<DirectConversation>()
-                .HasOne(dc => dc.UserB)
-                .WithMany(u => u.SecondaryDirectConversations)
-                .HasForeignKey(dc => dc.UserBId);
+                .HasOne(conversation => conversation.UserB)
+                .WithMany(user => user.SecondaryDirectConversations)
+                .HasForeignKey(conversation => conversation.UserBId);
 
             modelBuilder.Entity<DirectMessage>()
-                .HasOne(dm => dm.Conversation)
-                .WithMany(dc => dc.Messages)
-                .HasForeignKey(dm => dm.ConversationId);
+                .HasOne(message => message.Conversation)
+                .WithMany(conversation => conversation.Messages)
+                .HasForeignKey(message => message.ConversationId);
 
             modelBuilder.Entity<DirectMessage>()
-                .HasOne(dm => dm.Sender)
-                .WithMany(u => u.DirectMessages)
-                .HasForeignKey(dm => dm.SenderId);
+                .HasOne(message => message.Sender)
+                .WithMany(user => user.DirectMessages)
+                .HasForeignKey(message => message.SenderId);
 
             modelBuilder.Entity<Notification>()
                 .HasOne(notification => notification.ActorUser)
@@ -137,8 +136,7 @@ namespace ForumZenpace.Models
                 .WithMany(user => user.ReceivedMessageBlocks)
                 .HasForeignKey(block => block.BlockedUserId);
 
-            // Disable cascade delete globally or per specific relationship to avoid multiple cascade paths issue in SQL Server
-            foreach (var relationship in modelBuilder.Model.GetEntityTypes().SelectMany(e => e.GetForeignKeys()))
+            foreach (var relationship in modelBuilder.Model.GetEntityTypes().SelectMany(entityType => entityType.GetForeignKeys()))
             {
                 relationship.DeleteBehavior = DeleteBehavior.Restrict;
             }
@@ -152,24 +150,6 @@ namespace ForumZenpace.Models
             modelBuilder.Entity<Role>().HasData(
                 new Role { Id = 1, Name = "Admin" },
                 new Role { Id = 2, Name = "User" }
-            );
-
-            modelBuilder.Entity<User>().HasData(
-                new
-                {
-                    Id = 1,
-                    Username = "admin",
-                    Password = "AdminPassword123!",
-                    FullName = "Quản trị viên Zenpace",
-                    Email = "admin@zenpace.com",
-                    IsEmailConfirmed = true,
-                    EmailVerificationToken = (string?)null,
-                    EmailVerificationTokenExpiresAt = (DateTime?)null,
-                    Avatar = (string?)null,
-                    CreatedAt = new DateTime(2026, 3, 18, 6, 36, 35, 80, DateTimeKind.Utc).AddTicks(3815),
-                    IsActive = true,
-                    RoleId = 1
-                }
             );
         }
     }

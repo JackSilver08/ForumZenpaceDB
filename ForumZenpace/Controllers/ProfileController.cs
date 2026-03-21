@@ -30,6 +30,7 @@ namespace ForumZenpace.Controllers
         private readonly DirectMessageService _directMessageService;
         private readonly SocialService _socialService;
         private readonly EmailVerificationService _emailVerificationService;
+        private readonly AuthFlowTokenService _authFlowTokenService;
         private readonly IHubContext<DirectMessageHub> _hubContext;
 
         public ProfileController(
@@ -38,6 +39,7 @@ namespace ForumZenpace.Controllers
             DirectMessageService directMessageService,
             SocialService socialService,
             EmailVerificationService emailVerificationService,
+            AuthFlowTokenService authFlowTokenService,
             IHubContext<DirectMessageHub> hubContext)
         {
             _context = context;
@@ -45,6 +47,7 @@ namespace ForumZenpace.Controllers
             _directMessageService = directMessageService;
             _socialService = socialService;
             _emailVerificationService = emailVerificationService;
+            _authFlowTokenService = authFlowTokenService;
             _hubContext = hubContext;
         }
 
@@ -124,6 +127,8 @@ namespace ForumZenpace.Controllers
                 user.IsEmailConfirmed = false;
                 user.EmailVerificationToken = null;
                 user.EmailVerificationTokenExpiresAt = null;
+                user.PasswordResetToken = null;
+                user.PasswordResetTokenExpiresAt = null;
             }
 
             if (model.AvatarFile is not null)
@@ -142,7 +147,10 @@ namespace ForumZenpace.Controllers
                     ? "Email moi cua ban can duoc xac thuc. Chung toi da gui ma OTP moi va da dang xuat ban de bao ve tai khoan."
                     : "Email moi chua duoc xac thuc va he thong chua gui duoc OTP. Ban da duoc dang xuat; vui long kiem tra EmailJsSettings.";
 
-                return RedirectToAction("VerifyEmail", "Auth", new { userId = user.Id });
+                return RedirectToAction("VerifyEmail", "Auth", new
+                {
+                    token = _authFlowTokenService.CreateEmailVerificationToken(user.Id, EmailVerificationService.GetFlowTokenLifetime())
+                });
             }
 
             ViewBag.SuccessMessage = "Cap nhat ho so thanh cong.";
@@ -390,6 +398,11 @@ namespace ForumZenpace.Controllers
         {
             try
             {
+                if (!_emailVerificationService.CanIssueOtp(user, out _))
+                {
+                    return false;
+                }
+
                 var otpCode = _emailVerificationService.IssueOtp(user);
                 await _context.SaveChangesAsync();
                 await _emailVerificationService.SendOtpEmailAsync(user, otpCode, HttpContext.RequestAborted);

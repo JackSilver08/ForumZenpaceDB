@@ -21,14 +21,23 @@ namespace ForumZenpace.Controllers
 
         public async Task<IActionResult> Index()
         {
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            if (!TryGetCurrentUserId(out var userId))
+            {
+                return Challenge();
+            }
+
             return View(await _socialService.GetNotificationPageAsync(userId));
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> MarkAsRead(int id)
         {
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            if (!TryGetCurrentUserId(out var userId))
+            {
+                return Challenge();
+            }
+
             var unreadCount = await _socialService.MarkNotificationAsReadAsync(userId, id);
             await _hubContext.Clients.Group(SocialChannel.GetUserGroupName(userId))
                 .SendAsync("NotificationCountChanged", new { unreadCount });
@@ -36,13 +45,23 @@ namespace ForumZenpace.Controllers
         }
         
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> MarkAllAsRead()
         {
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            if (!TryGetCurrentUserId(out var userId))
+            {
+                return Challenge();
+            }
+
             var unreadCount = await _socialService.MarkAllNotificationsAsReadAsync(userId);
             await _hubContext.Clients.Group(SocialChannel.GetUserGroupName(userId))
                 .SendAsync("NotificationCountChanged", new { unreadCount });
             return RedirectToAction(nameof(Index));
+        }
+
+        private bool TryGetCurrentUserId(out int userId)
+        {
+            return int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out userId);
         }
     }
 }

@@ -591,6 +591,13 @@ namespace ForumZenpace.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("PasswordResetToken")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTime?>("PasswordResetTokenExpiresAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<int>("RoleId")
                         .HasColumnType("int");
 
@@ -604,20 +611,6 @@ namespace ForumZenpace.Migrations
                     b.HasIndex("RoleId");
 
                     b.ToTable("Users");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            CreatedAt = new DateTime(2026, 3, 18, 6, 36, 35, 80, DateTimeKind.Utc).AddTicks(3815),
-                            Email = "admin@zenpace.com",
-                            FullName = "Quản trị viên Zenpace",
-                            IsActive = true,
-                            IsEmailConfirmed = true,
-                            Password = "AdminPassword123!",
-                            RoleId = 1,
-                            Username = "admin"
-                        });
                 });
 
             modelBuilder.Entity("ForumZenpace.Models.Comment", b =>

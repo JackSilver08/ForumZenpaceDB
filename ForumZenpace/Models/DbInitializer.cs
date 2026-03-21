@@ -1,5 +1,6 @@
-using Microsoft.EntityFrameworkCore;
 using System.Data;
+using ForumZenpace.Services;
+using Microsoft.EntityFrameworkCore;
 
 namespace ForumZenpace.Models
 {
@@ -8,60 +9,19 @@ namespace ForumZenpace.Models
         private const string ProductVersion = "10.0.5";
         private const string InitialCreateMigrationId = "20260318020427_InitialCreate";
         private const string SeedInitialDataMigrationId = "20260318063635_SeedInitialData";
+        private const string AdminEmail = "adminzenpace@gmail.com";
+        private const string AdminUsername = "admin";
+        private const string AdminDefaultPassword = "AdminPassword123!";
 
-        public static async Task Initialize(ForumDbContext context)
+        public static async Task Initialize(ForumDbContext context, PasswordSecurityService passwordSecurityService)
         {
             await EnsureDatabaseSchemaAsync(context);
+            await EnsurePasswordStorageAsync(context, passwordSecurityService);
+            await EnsureCategoriesAsync(context);
 
-            if (context.Categories.Any())
-            {
-                return;
-            }
-
-            var categories = new Category[]
-            {
-                new Category { Name = "Lập trình & Kỹ thuật" },
-                new Category { Name = "Cuộc sống số" },
-                new Category { Name = "Thảo luận chung" }
-            };
-
-            foreach (var category in categories)
-            {
-                context.Categories.Add(category);
-            }
-
-            await context.SaveChangesAsync();
-
-            if (!context.Users.Any())
-            {
-                var admin = new User
-                {
-                    Username = "admin",
-                    Password = "AdminPassword123!",
-                    FullName = "Quản trị viên Zenpace",
-                    Email = "admin@zenpace.com",
-                    IsEmailConfirmed = true,
-                    RoleId = 1,
-                    CreatedAt = DateTime.UtcNow
-                };
-
-                context.Users.Add(admin);
-                await context.SaveChangesAsync();
-
-                var post = new Post
-                {
-                    Title = "Chào mừng bạn đến với Diễn đàn Zenpace!",
-                    Content = "Đây là bài viết đầu tiên được khởi tạo tự động để chào mừng bạn gia nhập cộng đồng Zenpace. Hãy bắt đầu chia sẻ tri thức của bạn tại đây!",
-                    UserId = admin.Id,
-                    CategoryId = categories[0].Id,
-                    Status = "Active",
-                    CreatedAt = DateTime.UtcNow,
-                    ViewCount = 100
-                };
-
-                context.Posts.Add(post);
-                await context.SaveChangesAsync();
-            }
+            var admin = await EnsureAdminAccountAsync(context, passwordSecurityService);
+            await EnsureAdminEmailAsync(context);
+            await EnsureWelcomePostAsync(context, admin);
         }
 
         private static async Task EnsureDatabaseSchemaAsync(ForumDbContext context)
@@ -73,8 +33,115 @@ namespace ForumZenpace.Models
             }
 
             await AlignMigrationHistoryAsync(context);
-
             await context.Database.MigrateAsync();
+        }
+
+        private static async Task EnsureCategoriesAsync(ForumDbContext context)
+        {
+            if (await context.Categories.AnyAsync())
+            {
+                return;
+            }
+
+            context.Categories.AddRange(
+                new Category { Name = "Lập trình & Kỹ thuật" },
+                new Category { Name = "Thiết kế & Nghệ thuật" },
+                new Category { Name = "Đời sống & Khoa học" });
+
+            await context.SaveChangesAsync();
+        }
+
+        private static async Task<User> EnsureAdminAccountAsync(ForumDbContext context, PasswordSecurityService passwordSecurityService)
+        {
+            var admin = await context.Users.FirstOrDefaultAsync(user => user.Username == AdminUsername);
+            if (admin is not null)
+            {
+                return admin;
+            }
+
+            admin = new User
+            {
+                Username = AdminUsername,
+                Password = passwordSecurityService.HashPassword(AdminDefaultPassword),
+                FullName = "Quản trị viên Zenpace",
+                Email = AdminEmail,
+                IsEmailConfirmed = false,
+                RoleId = 1,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            context.Users.Add(admin);
+            await context.SaveChangesAsync();
+            return admin;
+        }
+
+        private static async Task EnsurePasswordStorageAsync(ForumDbContext context, PasswordSecurityService passwordSecurityService)
+        {
+            var users = await context.Users
+                .Where(user => !string.IsNullOrWhiteSpace(user.Password))
+                .ToListAsync();
+
+            var pendingRegistrations = await context.PendingRegistrations
+                .Where(registration => !string.IsNullOrWhiteSpace(registration.Password))
+                .ToListAsync();
+
+            var hasChanges = false;
+
+            foreach (var user in users)
+            {
+                var hashedPassword = passwordSecurityService.EnsureHashedPassword(user.Password);
+                if (!string.Equals(hashedPassword, user.Password, StringComparison.Ordinal))
+                {
+                    user.Password = hashedPassword;
+                    hasChanges = true;
+                }
+            }
+
+            foreach (var pendingRegistration in pendingRegistrations)
+            {
+                var hashedPassword = passwordSecurityService.EnsureHashedPassword(pendingRegistration.Password);
+                if (!string.Equals(hashedPassword, pendingRegistration.Password, StringComparison.Ordinal))
+                {
+                    pendingRegistration.Password = hashedPassword;
+                    hasChanges = true;
+                }
+            }
+
+            if (hasChanges)
+            {
+                await context.SaveChangesAsync();
+            }
+        }
+
+        private static async Task EnsureWelcomePostAsync(ForumDbContext context, User admin)
+        {
+            var hasWelcomePost = await context.Posts.AnyAsync(post =>
+                post.UserId == admin.Id
+                && post.Title == "Chào mừng bạn đến với Diễn đàn Zenpace!");
+
+            if (hasWelcomePost)
+            {
+                return;
+            }
+
+            var firstCategory = await context.Categories.OrderBy(category => category.Id).FirstOrDefaultAsync();
+            if (firstCategory is null)
+            {
+                return;
+            }
+
+            context.Posts.Add(new Post
+            {
+                Title = "Chào mừng bạn đến với Diễn đàn Zenpace!",
+                Content = "Đây là bài viết đầu tiên được khởi tạo tự động để chào mừng bạn gia nhập cộng đồng Zenpace. Hãy bắt đầu chia sẻ tri thức của bạn tại đây!",
+                UserId = admin.Id,
+                CategoryId = firstCategory.Id,
+                Status = "Active",
+                CreatedAt = DateTime.UtcNow,
+                ViewCount = 100
+            });
+
+            await context.SaveChangesAsync();
         }
 
         private static async Task AlignMigrationHistoryAsync(ForumDbContext context)
@@ -135,10 +202,28 @@ namespace ForumZenpace.Models
             }
 
             var categoryIds = new[] { 1, 2, 3 };
-            var seededCategoryCount = await context.Categories.CountAsync(c => categoryIds.Contains(c.Id));
-            var hasAdminUser = await context.Users.AnyAsync(u => u.Id == 1);
+            var seededCategoryCount = await context.Categories.CountAsync(category => categoryIds.Contains(category.Id));
+            var hasAdminUser = await context.Users.AnyAsync(user => user.Username == AdminUsername);
 
             return seededCategoryCount == categoryIds.Length && hasAdminUser;
+        }
+
+        private static async Task EnsureAdminEmailAsync(ForumDbContext context)
+        {
+            var admin = await context.Users.FirstOrDefaultAsync(user => user.Username == AdminUsername);
+            if (admin == null || string.Equals(admin.Email, AdminEmail, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            admin.Email = AdminEmail;
+            admin.IsEmailConfirmed = false;
+            admin.EmailVerificationToken = null;
+            admin.EmailVerificationTokenExpiresAt = null;
+            admin.PasswordResetToken = null;
+            admin.PasswordResetTokenExpiresAt = null;
+
+            await context.SaveChangesAsync();
         }
 
         private static async Task<bool> TableExistsAsync(ForumDbContext context, string tableName)

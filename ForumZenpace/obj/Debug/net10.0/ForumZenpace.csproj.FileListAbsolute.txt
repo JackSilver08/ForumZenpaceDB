@@ -278,5 +278,5 @@ C:\ForumZenpace\build-verify-temp\ForumZenpace.deps.json
 C:\ForumZenpace\build-verify-temp\ForumZenpace.runtimeconfig.json
 C:\ForumZenpace\build-verify-temp\ForumZenpace.dll
 C:\ForumZenpace\build-verify-temp\ForumZenpace.pdb
-C:\ForumZenpace\ForumZenpace\obj\Debug\net10.0\compressed\gzww4hlc9w-{0}-0v92fonjt1-0v92fonjt1.gz
-C:\ForumZenpace\ForumZenpace\obj\Debug\net10.0\compressed\bu9xcnkk2q-{0}-x0gvzgzjfm-x0gvzgzjfm.gz
+C:\ForumZenpace\ForumZenpace\obj\Debug\net10.0\compressed\bu9xcnkk2q-{0}-qacefit8q5-qacefit8q5.gz
+C:\ForumZenpace\ForumZenpace\obj\Debug\net10.0\compressed\gzww4hlc9w-{0}-8smmobcmgh-8smmobcmgh.gz

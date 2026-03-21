@@ -4,18 +4,21 @@
     const hubUrl = body.dataset.socialHubUrl || '';
     const signalRClient = window.signalR;
 
-    if (!Number.isInteger(currentUserId) || currentUserId <= 0 || !hubUrl || !signalRClient) {
+    if (!Number.isInteger(currentUserId) || currentUserId <= 0) {
         return;
     }
 
-    const connection = new signalRClient.HubConnectionBuilder()
-        .withUrl(hubUrl)
-        .withAutomaticReconnect()
-        .build();
+    const connection = hubUrl && signalRClient
+        ? new signalRClient.HubConnectionBuilder()
+            .withUrl(hubUrl)
+            .withAutomaticReconnect()
+            .build()
+        : null;
 
     const notificationLink = document.querySelector('[data-notification-link]');
     let notificationBadge = document.querySelector('[data-notification-badge]');
     const friendModal = document.querySelector('[data-friend-modal]');
+    const friendModalDialog = friendModal?.querySelector('.social-modal-dialog');
     const friendRail = document.querySelector('[data-friend-rail]');
     const friendList = document.querySelector('[data-friend-list]');
     const friendPrevButton = document.querySelector('[data-friend-nav-prev]');
@@ -28,6 +31,8 @@
     let friendRailFrame = 0;
     let searchTimer = 0;
     let searchToken = 0;
+    let realtimeReady = false;
+    let friendModalLastFocusedElement = null;
 
     const escapeHtml = (value) => `${value ?? ''}`
         .replace(/&/g, '&amp;')
@@ -75,6 +80,92 @@
         const nextCount = Number.isFinite(count) ? Math.max(0, count) : 0;
         badge.textContent = `${nextCount}`;
         badge.hidden = nextCount === 0;
+    };
+
+    const getRequestVerificationToken = () => {
+        const tokenMeta = document.querySelector('meta[name="request-verification-token"]');
+        if (tokenMeta instanceof HTMLMetaElement && tokenMeta.content) {
+            return tokenMeta.content;
+        }
+
+        const tokenField = document.querySelector('input[name="__RequestVerificationToken"]');
+        return tokenField instanceof HTMLInputElement ? tokenField.value : '';
+    };
+
+    const renderAntiForgeryTokenInput = () => {
+        const token = getRequestVerificationToken();
+        return token
+            ? `<input type="hidden" name="__RequestVerificationToken" value="${escapeHtml(token)}" />`
+            : '';
+    };
+
+    const isRealtimeAvailable = () => Boolean(connection && realtimeReady);
+
+    const getCurrentReturnUrl = () => `${window.location.pathname}${window.location.search}${window.location.hash}`;
+
+    const buildRequestBody = (payload = {}) => {
+        const bodyParams = new URLSearchParams();
+        const token = getRequestVerificationToken();
+        if (token) {
+            bodyParams.append('__RequestVerificationToken', token);
+        }
+
+        Object.entries(payload).forEach(([key, value]) => {
+            if (value === null || value === undefined) {
+                return;
+            }
+
+            bodyParams.append(key, `${value}`);
+        });
+
+        return bodyParams;
+    };
+
+    const fetchJson = async (url, options = {}) => {
+        const response = await fetch(url, options);
+        const data = await response.json().catch(() => null);
+        if (!response.ok || !data) {
+            throw new Error(data?.message || 'Khong the xu ly yeu cau luc nay.');
+        }
+
+        return data;
+    };
+
+    const postSocialAction = async (url, payload = {}) => {
+        const bodyParams = buildRequestBody(payload);
+        return await fetchJson(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: bodyParams.toString()
+        });
+    };
+
+    const getSocialData = async (url, query = {}) => {
+        const requestUrl = new URL(url, window.location.origin);
+        Object.entries(query).forEach(([key, value]) => {
+            if (value === null || value === undefined || `${value}`.length === 0) {
+                return;
+            }
+
+            requestUrl.searchParams.set(key, `${value}`);
+        });
+
+        return await fetchJson(requestUrl.toString(), {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+    };
+
+    const getFriendModalFocusableElements = () => {
+        if (!(friendModalDialog instanceof HTMLElement)) {
+            return [];
+        }
+
+        return Array.from(friendModalDialog.querySelectorAll(
+            'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )).filter((element) => element instanceof HTMLElement && !element.hasAttribute('hidden'));
     };
 
     const setFriendSearchStatus = (message) => {
@@ -368,7 +459,7 @@
     };
 
     const performCandidateSearch = async (term) => {
-        if (!friendModal || connection.state !== signalRClient.HubConnectionState.Connected) {
+        if (!friendModal) {
             return;
         }
 
@@ -376,7 +467,9 @@
         setFriendSearchStatus('Dang tim thanh vien...');
 
         try {
-            const items = await connection.invoke('SearchFriendCandidates', term);
+            const items = isRealtimeAvailable()
+                ? await connection.invoke('SearchFriendCandidates', term)
+                : await getSocialData('/Social/SearchFriendCandidates', { term });
             if (currentToken !== searchToken) {
                 return;
             }
@@ -402,6 +495,7 @@
             return;
         }
 
+        friendModalLastFocusedElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
         friendModal.hidden = false;
         friendModal.setAttribute('aria-hidden', 'false');
         document.body.classList.add('profile-modal-open');
@@ -417,6 +511,12 @@
         friendModal.hidden = true;
         friendModal.setAttribute('aria-hidden', 'true');
         document.body.classList.remove('profile-modal-open');
+
+        if (friendModalLastFocusedElement instanceof HTMLElement) {
+            friendModalLastFocusedElement.focus();
+        }
+
+        friendModalLastFocusedElement = null;
     };
 
     const ensureNotificationList = () => {
@@ -475,6 +575,7 @@
                         <button type="button" class="btn btn-text btn-sm" data-notification-decline data-friend-request-id="${notification.friendRequestId}">Tu choi</button>` : ''}
                     ${!notification.isRead ? `
                         <form action="/Notification/MarkAsRead" method="post" data-mark-notification-read>
+                            ${renderAntiForgeryTokenInput()}
                             <input type="hidden" name="id" value="${notification.id}" />
                             <button type="submit" class="notice-action" title="Danh dau da doc">
                                 <i class="fa-solid fa-check"></i>
@@ -667,7 +768,15 @@
 
             button.disabled = true;
             try {
-                await connection.invoke('SendFriendRequest', targetUserId);
+                if (isRealtimeAvailable()) {
+                    await connection.invoke('SendFriendRequest', targetUserId);
+                } else {
+                    await postSocialAction('/Social/SendFriendRequest', {
+                        targetUserId,
+                        returnUrl: getCurrentReturnUrl()
+                    });
+                }
+
                 setCandidateState(targetUserId, 'pending-sent');
                 if (getProfileTargetUserId() === targetUserId) {
                     syncProfileState({ isFriend: false, hasOutgoingRequest: true, hasIncomingRequest: false });
@@ -681,6 +790,31 @@
         document.addEventListener('keydown', (event) => {
             if (event.key === 'Escape' && friendModal instanceof HTMLElement && !friendModal.hidden) {
                 closeFriendModal();
+                return;
+            }
+
+            if (event.key !== 'Tab' || !(friendModal instanceof HTMLElement) || friendModal.hidden) {
+                return;
+            }
+
+            const focusableElements = getFriendModalFocusableElements();
+            if (focusableElements.length === 0) {
+                return;
+            }
+
+            const firstElement = focusableElements[0];
+            const lastElement = focusableElements[focusableElements.length - 1];
+            const activeElement = document.activeElement;
+
+            if (event.shiftKey && activeElement === firstElement) {
+                event.preventDefault();
+                lastElement.focus();
+                return;
+            }
+
+            if (!event.shiftKey && activeElement === lastElement) {
+                event.preventDefault();
+                firstElement.focus();
             }
         });
 
@@ -695,7 +829,15 @@
                 if (Number.isInteger(requestId) && requestId > 0) {
                     acceptButton.disabled = true;
                     try {
-                        await connection.invoke('AcceptFriendRequest', requestId);
+                        if (isRealtimeAvailable()) {
+                            await connection.invoke('AcceptFriendRequest', requestId);
+                        } else {
+                            await postSocialAction('/Social/AcceptFriendRequest', {
+                                requestId,
+                                returnUrl: getCurrentReturnUrl()
+                            });
+                            window.location.reload();
+                        }
                     } catch {
                         acceptButton.disabled = false;
                     }
@@ -712,7 +854,15 @@
             if (Number.isInteger(requestId) && requestId > 0) {
                 declineButton.disabled = true;
                 try {
-                    await connection.invoke('DeclineFriendRequest', requestId);
+                    if (isRealtimeAvailable()) {
+                        await connection.invoke('DeclineFriendRequest', requestId);
+                    } else {
+                        await postSocialAction('/Social/DeclineFriendRequest', {
+                            requestId,
+                            returnUrl: getCurrentReturnUrl()
+                        });
+                        window.location.reload();
+                    }
                 } catch {
                     declineButton.disabled = false;
                 }
@@ -741,90 +891,135 @@
 
             try {
                 if (action.hasAttribute('data-social-send-request')) {
-                    await connection.invoke('SendFriendRequest', targetUserId);
+                    if (isRealtimeAvailable()) {
+                        await connection.invoke('SendFriendRequest', targetUserId);
+                    } else {
+                        await postSocialAction('/Social/SendFriendRequest', {
+                            targetUserId,
+                            returnUrl: getCurrentReturnUrl()
+                        });
+                    }
+
                     syncProfileState({ isFriend: false, hasOutgoingRequest: true, hasIncomingRequest: false });
                     return;
                 }
 
                 if (action.hasAttribute('data-social-remove-friend')) {
-                    await connection.invoke('RemoveFriend', targetUserId);
-                    syncProfileState({ isFriend: false, hasOutgoingRequest: false, hasIncomingRequest: false });
+                    if (isRealtimeAvailable()) {
+                        await connection.invoke('RemoveFriend', targetUserId);
+                        syncProfileState({ isFriend: false, hasOutgoingRequest: false, hasIncomingRequest: false });
+                    } else {
+                        await postSocialAction('/Social/RemoveFriend', {
+                            targetUserId,
+                            returnUrl: getCurrentReturnUrl()
+                        });
+                        window.location.reload();
+                    }
                     return;
                 }
 
-                await connection.invoke('ToggleMessageBlock', targetUserId);
+                if (isRealtimeAvailable()) {
+                    await connection.invoke('ToggleMessageBlock', targetUserId);
+                } else {
+                    await postSocialAction('/Social/ToggleMessageBlock', {
+                        targetUserId,
+                        returnUrl: getCurrentReturnUrl()
+                    });
+                    window.location.reload();
+                }
             } catch {
                 renderProfileStatus();
             }
         });
     };
 
-    connection.on('NotificationCountChanged', (payload) => setUnreadCount(Number.parseInt(`${payload.unreadCount ?? 0}`, 10)));
-    connection.on('NotificationUpserted', (notification) => prependNotification(notification));
-    connection.on('FriendRequestResolved', (payload) => {
-        updateNotificationResolution(payload.requestId, payload.status);
-        setUnreadCount(Number.parseInt(`${payload.unreadCount ?? 0}`, 10));
-    });
-    connection.on('FriendRequestStateChanged', (payload) => {
-        const targetUserId = Number.parseInt(`${payload.userId ?? ''}`, 10);
-        const state = `${payload.state ?? ''}`;
-        if (!Number.isInteger(targetUserId) || targetUserId <= 0) {
-            return;
-        }
-
-        setCandidateState(targetUserId, state);
-        if (getProfileTargetUserId() === targetUserId) {
-            syncProfileState({
-                isFriend: state === 'friend',
-                hasOutgoingRequest: state === 'pending-sent',
-                hasIncomingRequest: state === 'pending-received'
-            });
-        }
-    });
-    connection.on('FriendshipAdded', (friend) => {
-        upsertFriendCard(friend);
-        setCandidateState(friend.userId, 'friend');
-        if (getProfileTargetUserId() === friend.userId) {
-            syncProfileState({
-                isFriend: true,
-                hasOutgoingRequest: false,
-                hasIncomingRequest: false,
-                isMessageBlockedByViewer: !!friend.isMessageBlockedByViewer,
-                isMessageBlockedByOtherUser: !!friend.isMessageBlockedByOtherUser
-            });
-        }
-    });
-    connection.on('FriendshipRemoved', (payload) => {
-        const friendUserId = Number.parseInt(`${payload.friendUserId ?? ''}`, 10);
-        if (!Number.isInteger(friendUserId) || friendUserId <= 0) {
-            return;
-        }
-
-        removeFriendCard(friendUserId);
-        setCandidateState(friendUserId, 'none');
-        if (getProfileTargetUserId() === friendUserId) {
-            syncProfileState({ isFriend: false, hasOutgoingRequest: false, hasIncomingRequest: false });
-        }
-    });
-    connection.on('MessageBlockChanged', (payload) => {
-        const targetUserId = Number.parseInt(`${payload.targetUserId ?? ''}`, 10);
-        if (!Number.isInteger(targetUserId) || targetUserId <= 0) {
-            return;
-        }
-
-        updateFriendCardBlockState(targetUserId, payload);
-        updateChatState(payload);
-        if (getProfileTargetUserId() === targetUserId) {
-            syncProfileState({
-                isMessageBlockedByViewer: !!payload.isMessageBlockedByViewer,
-                isMessageBlockedByOtherUser: !!payload.isMessageBlockedByOtherUser
-            });
-        }
-    });
-
     bindHomeSocial();
     bindNotificationPage();
     bindProfileSocial();
 
-    connection.start().catch(() => setFriendSearchStatus('Realtime tam thoi khong kha dung.'));
+    if (connection) {
+        connection.onreconnecting(() => {
+            realtimeReady = false;
+        });
+
+        connection.onreconnected(() => {
+            realtimeReady = true;
+        });
+
+        connection.onclose(() => {
+            realtimeReady = false;
+        });
+
+        connection.on('NotificationCountChanged', (payload) => setUnreadCount(Number.parseInt(`${payload.unreadCount ?? 0}`, 10)));
+        connection.on('NotificationUpserted', (notification) => prependNotification(notification));
+        connection.on('FriendRequestResolved', (payload) => {
+            updateNotificationResolution(payload.requestId, payload.status);
+            setUnreadCount(Number.parseInt(`${payload.unreadCount ?? 0}`, 10));
+        });
+        connection.on('FriendRequestStateChanged', (payload) => {
+            const targetUserId = Number.parseInt(`${payload.userId ?? ''}`, 10);
+            const state = `${payload.state ?? ''}`;
+            if (!Number.isInteger(targetUserId) || targetUserId <= 0) {
+                return;
+            }
+
+            setCandidateState(targetUserId, state);
+            if (getProfileTargetUserId() === targetUserId) {
+                syncProfileState({
+                    isFriend: state === 'friend',
+                    hasOutgoingRequest: state === 'pending-sent',
+                    hasIncomingRequest: state === 'pending-received'
+                });
+            }
+        });
+        connection.on('FriendshipAdded', (friend) => {
+            upsertFriendCard(friend);
+            setCandidateState(friend.userId, 'friend');
+            if (getProfileTargetUserId() === friend.userId) {
+                syncProfileState({
+                    isFriend: true,
+                    hasOutgoingRequest: false,
+                    hasIncomingRequest: false,
+                    isMessageBlockedByViewer: !!friend.isMessageBlockedByViewer,
+                    isMessageBlockedByOtherUser: !!friend.isMessageBlockedByOtherUser
+                });
+            }
+        });
+        connection.on('FriendshipRemoved', (payload) => {
+            const friendUserId = Number.parseInt(`${payload.friendUserId ?? ''}`, 10);
+            if (!Number.isInteger(friendUserId) || friendUserId <= 0) {
+                return;
+            }
+
+            removeFriendCard(friendUserId);
+            setCandidateState(friendUserId, 'none');
+            if (getProfileTargetUserId() === friendUserId) {
+                syncProfileState({ isFriend: false, hasOutgoingRequest: false, hasIncomingRequest: false });
+            }
+        });
+        connection.on('MessageBlockChanged', (payload) => {
+            const targetUserId = Number.parseInt(`${payload.targetUserId ?? ''}`, 10);
+            if (!Number.isInteger(targetUserId) || targetUserId <= 0) {
+                return;
+            }
+
+            updateFriendCardBlockState(targetUserId, payload);
+            updateChatState(payload);
+            if (getProfileTargetUserId() === targetUserId) {
+                syncProfileState({
+                    isMessageBlockedByViewer: !!payload.isMessageBlockedByViewer,
+                    isMessageBlockedByOtherUser: !!payload.isMessageBlockedByOtherUser
+                });
+            }
+        });
+
+        connection.start()
+            .then(() => {
+                realtimeReady = true;
+            })
+            .catch(() => {
+                realtimeReady = false;
+                setFriendSearchStatus('Realtime tam thoi khong kha dung. He thong se tu dong dung fallback HTTP.');
+            });
+    }
 })();

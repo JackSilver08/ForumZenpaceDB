@@ -22,13 +22,49 @@ namespace ForumZenpace.Services
             DateTime expiresAt,
             CancellationToken cancellationToken = default)
         {
+            await SendOtpAsync(
+                toEmail,
+                recipientName,
+                otpCode,
+                expiresAt,
+                string.IsNullOrWhiteSpace(_settings.TemplateId) ? null : _settings.TemplateId,
+                "xac thuc email",
+                cancellationToken);
+        }
+
+        public async Task SendPasswordResetOtpAsync(
+            string toEmail,
+            string recipientName,
+            string otpCode,
+            DateTime expiresAt,
+            CancellationToken cancellationToken = default)
+        {
+            await SendOtpAsync(
+                toEmail,
+                recipientName,
+                otpCode,
+                expiresAt,
+                string.IsNullOrWhiteSpace(_settings.PasswordResetTemplateId) ? _settings.TemplateId : _settings.PasswordResetTemplateId,
+                "dat lai mat khau",
+                cancellationToken);
+        }
+
+        private async Task SendOtpAsync(
+            string toEmail,
+            string recipientName,
+            string otpCode,
+            DateTime expiresAt,
+            string? templateId,
+            string purposeLabel,
+            CancellationToken cancellationToken)
+        {
             var missingSettings = new List<string>();
             if (string.IsNullOrWhiteSpace(_settings.ServiceId))
             {
                 missingSettings.Add(nameof(_settings.ServiceId));
             }
 
-            if (string.IsNullOrWhiteSpace(_settings.TemplateId))
+            if (string.IsNullOrWhiteSpace(templateId))
             {
                 missingSettings.Add(nameof(_settings.TemplateId));
             }
@@ -47,14 +83,20 @@ namespace ForumZenpace.Services
             var payload = new Dictionary<string, object>
             {
                 ["service_id"] = _settings.ServiceId,
-                ["template_id"] = _settings.TemplateId,
+                ["template_id"] = templateId!,
                 ["user_id"] = _settings.PublicKey,
                 ["template_params"] = new Dictionary<string, string>
                 {
                     ["email"] = toEmail,
+                    ["to_email"] = toEmail,
+                    ["toEmail"] = toEmail,
                     ["to_name"] = recipientName,
+                    ["recipient_name"] = recipientName,
                     ["passcode"] = otpCode,
                     ["time"] = expiresAt.ToLocalTime().ToString("HH:mm dd/MM/yyyy"),
+                    ["otp_purpose"] = purposeLabel,
+                    ["subject"] = $"Zenpace OTP - {purposeLabel}",
+                    ["action_label"] = purposeLabel,
                     ["from_name"] = _settings.FromName,
                     ["company_name"] = _settings.CompanyName,
                     ["app_name"] = _settings.CompanyName

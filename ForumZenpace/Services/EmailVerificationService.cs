@@ -8,6 +8,7 @@ namespace ForumZenpace.Services
     public class EmailVerificationService
     {
         private static readonly TimeSpan OtpLifetime = TimeSpan.FromMinutes(15);
+        private static readonly TimeSpan OtpResendCooldown = TimeSpan.FromSeconds(60);
         private readonly IEmailSender _emailSender;
 
         public EmailVerificationService(IEmailSender emailSender)
@@ -30,6 +31,14 @@ namespace ForumZenpace.Services
             pendingRegistration.OtpHash = HashOtp(otpCode);
             pendingRegistration.OtpExpiresAt = DateTime.UtcNow.Add(OtpLifetime);
             pendingRegistration.UpdatedAt = DateTime.UtcNow;
+            return otpCode;
+        }
+
+        public string IssuePasswordResetOtp(User user)
+        {
+            var otpCode = GenerateOtpCode();
+            user.PasswordResetToken = HashOtp(otpCode);
+            user.PasswordResetTokenExpiresAt = DateTime.UtcNow.Add(OtpLifetime);
             return otpCode;
         }
 
@@ -63,6 +72,21 @@ namespace ForumZenpace.Services
                 cancellationToken);
         }
 
+        public async Task SendPasswordResetOtpEmailAsync(User user, string otpCode, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(user.PasswordResetToken) || user.PasswordResetTokenExpiresAt is null)
+            {
+                throw new InvalidOperationException("Tai khoan chua co OTP dat lai mat khau hop le.");
+            }
+
+            await _emailSender.SendPasswordResetOtpAsync(
+                user.Email,
+                GetRecipientName(user.FullName, user.Username),
+                otpCode,
+                user.PasswordResetTokenExpiresAt.Value,
+                cancellationToken);
+        }
+
         public bool VerifyOtp(User user, string otpCode)
         {
             if (string.IsNullOrWhiteSpace(user.EmailVerificationToken)
@@ -86,11 +110,49 @@ namespace ForumZenpace.Services
             return string.Equals(pendingRegistration.OtpHash, HashOtp(otpCode), StringComparison.Ordinal);
         }
 
+        public bool VerifyPasswordResetOtp(User user, string otpCode)
+        {
+            if (string.IsNullOrWhiteSpace(user.PasswordResetToken)
+                || user.PasswordResetTokenExpiresAt is null
+                || user.PasswordResetTokenExpiresAt.Value <= DateTime.UtcNow)
+            {
+                return false;
+            }
+
+            return string.Equals(user.PasswordResetToken, HashOtp(otpCode), StringComparison.Ordinal);
+        }
+
         public void MarkEmailConfirmed(User user)
         {
             user.IsEmailConfirmed = true;
             user.EmailVerificationToken = null;
             user.EmailVerificationTokenExpiresAt = null;
+        }
+
+        public void ClearPasswordReset(User user)
+        {
+            user.PasswordResetToken = null;
+            user.PasswordResetTokenExpiresAt = null;
+        }
+
+        public bool CanIssueOtp(User user, out TimeSpan retryAfter)
+        {
+            return CanIssueOtp(user.EmailVerificationToken, user.EmailVerificationTokenExpiresAt, out retryAfter);
+        }
+
+        public bool CanIssueOtp(PendingRegistration pendingRegistration, out TimeSpan retryAfter)
+        {
+            return CanIssueOtp(pendingRegistration.OtpHash, pendingRegistration.OtpExpiresAt, out retryAfter);
+        }
+
+        public bool CanIssuePasswordResetOtp(User user, out TimeSpan retryAfter)
+        {
+            return CanIssueOtp(user.PasswordResetToken, user.PasswordResetTokenExpiresAt, out retryAfter);
+        }
+
+        public static TimeSpan GetFlowTokenLifetime()
+        {
+            return TimeSpan.FromHours(1);
         }
 
         public static string MaskEmail(string email)
@@ -113,6 +175,31 @@ namespace ForumZenpace.Services
         private static string GenerateOtpCode()
         {
             return RandomNumberGenerator.GetInt32(100000, 1000000).ToString(CultureInfo.InvariantCulture);
+        }
+
+        private static bool CanIssueOtp(string? tokenHash, DateTime? expiresAt, out TimeSpan retryAfter)
+        {
+            retryAfter = TimeSpan.Zero;
+
+            if (string.IsNullOrWhiteSpace(tokenHash) || expiresAt is null)
+            {
+                return true;
+            }
+
+            var issuedAt = expiresAt.Value.Subtract(OtpLifetime);
+            var retryAt = issuedAt.Add(OtpResendCooldown);
+            if (retryAt <= DateTime.UtcNow)
+            {
+                return true;
+            }
+
+            retryAfter = retryAt - DateTime.UtcNow;
+            return false;
+        }
+
+        private static bool CanIssueOtp(string? tokenHash, DateTime expiresAt, out TimeSpan retryAfter)
+        {
+            return CanIssueOtp(tokenHash, (DateTime?)expiresAt, out retryAfter);
         }
 
         private static string GetRecipientName(string? fullName, string? username)

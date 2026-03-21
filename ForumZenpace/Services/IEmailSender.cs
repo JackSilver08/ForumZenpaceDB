@@ -8,5 +8,12 @@ namespace ForumZenpace.Services
             string otpCode,
             DateTime expiresAt,
             CancellationToken cancellationToken = default);
+
+        Task SendPasswordResetOtpAsync(
+            string toEmail,
+            string recipientName,
+            string otpCode,
+            DateTime expiresAt,
+            CancellationToken cancellationToken = default);
     }
 }

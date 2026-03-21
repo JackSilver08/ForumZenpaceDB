@@ -134,7 +134,7 @@ namespace ForumZenpace.Services
                         UserId = user.Id,
                         Username = user.Username,
                         DisplayName = GetDisplayName(user.FullName, user.Username),
-                        Email = user.Email,
+                        Email = EmailVerificationService.MaskEmail(user.Email),
                         AvatarUrl = user.Avatar,
                         RelationshipState = relationshipState,
                         CanSendRequest = relationshipState == "none",

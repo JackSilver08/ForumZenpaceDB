@@ -30,7 +30,7 @@
         }
 
         <form asp-action="VerifyRegistration" method="post" class="auth-form">
-            <input asp-for="PendingRegistrationId" type="hidden" />
+            <input asp-for="FlowToken" type="hidden" />
             <input asp-for="EmailMask" type="hidden" />
             <input asp-for="Username" type="hidden" />
 
@@ -50,7 +50,7 @@
         </form>
 
         <form asp-action="ResendRegistrationOtp" method="post" class="auth-form" style="margin-top: 12px;">
-            <input type="hidden" name="pendingRegistrationId" value="@Model.PendingRegistrationId" />
+            <input type="hidden" name="flowToken" value="@Model.FlowToken" />
             <button type="submit" class="btn btn-outline" style="width: 100%;">Gui lai ma OTP</button>
         </form>
 

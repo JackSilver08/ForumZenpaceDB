@@ -8,33 +8,34 @@ namespace ForumZenpace.Models
     public class LoginViewModel
     {
         [Required]
-        public string Username { get; set; }
+        public string Username { get; set; } = string.Empty;
 
         [Required, DataType(DataType.Password)]
-        public string Password { get; set; }
+        public string Password { get; set; } = string.Empty;
     }
 
     public class RegisterViewModel
     {
         [Required, MaxLength(50)]
-        public string Username { get; set; }
+        public string Username { get; set; } = string.Empty;
         
         [Required, MaxLength(100)]
-        public string FullName { get; set; }
+        public string FullName { get; set; } = string.Empty;
 
         [Required, EmailAddress, MaxLength(100)]
-        public string Email { get; set; }
+        public string Email { get; set; } = string.Empty;
 
         [Required, DataType(DataType.Password)]
-        public string Password { get; set; }
+        public string Password { get; set; } = string.Empty;
         
         [Required, DataType(DataType.Password), Compare("Password", ErrorMessage = "Passwords do not match")]
-        public string ConfirmPassword { get; set; }
+        public string ConfirmPassword { get; set; } = string.Empty;
     }
 
     public class VerifyEmailOtpViewModel
     {
-        public int UserId { get; set; }
+        [Required]
+        public string FlowToken { get; set; } = string.Empty;
         public string EmailMask { get; set; } = string.Empty;
 
         [Required, Display(Name = "Ma OTP")]
@@ -44,7 +45,8 @@ namespace ForumZenpace.Models
 
     public class VerifyRegistrationOtpViewModel
     {
-        public int PendingRegistrationId { get; set; }
+        [Required]
+        public string FlowToken { get; set; } = string.Empty;
         public string EmailMask { get; set; } = string.Empty;
         public string Username { get; set; } = string.Empty;
 
@@ -61,10 +63,10 @@ namespace ForumZenpace.Models
         public string DraftToken { get; set; } = string.Empty;
 
         [Required, MaxLength(255)]
-        public string Title { get; set; }
+        public string Title { get; set; } = string.Empty;
         
         [Required]
-        public string Content { get; set; }
+        public string Content { get; set; } = string.Empty;
         
         [Required]
         public int CategoryId { get; set; }
@@ -84,7 +86,7 @@ namespace ForumZenpace.Models
     public class CommentViewModel
     {
         [Required]
-        public string Content { get; set; }
+        public string Content { get; set; } = string.Empty;
         public int PostId { get; set; }
         public int? ParentId { get; set; }
     }
@@ -233,6 +235,30 @@ namespace ForumZenpace.Models
         public string RelationshipState { get; set; } = string.Empty;
         public bool CanSendRequest { get; set; }
         public string ActionLabel { get; set; } = string.Empty;
+    }
+
+    public class ForgotPasswordViewModel
+    {
+        [Required, Display(Name = "Ten tai khoan hoac email")]
+        public string Identifier { get; set; } = string.Empty;
+    }
+
+    public class ResetPasswordViewModel
+    {
+        [Required]
+        public string FlowToken { get; set; } = string.Empty;
+
+        public string EmailMask { get; set; } = string.Empty;
+
+        [Required, Display(Name = "Ma OTP")]
+        [StringLength(6, MinimumLength = 6, ErrorMessage = "Ma OTP gom 6 chu so.")]
+        public string OtpCode { get; set; } = string.Empty;
+
+        [Required, DataType(DataType.Password)]
+        public string NewPassword { get; set; } = string.Empty;
+
+        [Required, DataType(DataType.Password), Compare("NewPassword", ErrorMessage = "Mat khau moi khong khop.")]
+        public string ConfirmPassword { get; set; } = string.Empty;
     }
 
     public class NotificationItemViewModel

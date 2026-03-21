@@ -56,7 +56,10 @@ namespace ForumZenpace.Controllers
                 return View(model);
             }
 
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            if (!TryGetCurrentUserId(out var userId))
+            {
+                return Challenge();
+            }
 
             var post = new Post
             {
@@ -76,7 +79,11 @@ namespace ForumZenpace.Controllers
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            if (!TryGetCurrentUserId(out var userId))
+            {
+                return Challenge();
+            }
+
             var post = await _context.Posts.FirstOrDefaultAsync(p => p.Id == id && p.UserId == userId);
             
             if (post == null) return NotFound("Post not found or you don't have permission.");
@@ -97,7 +104,11 @@ namespace ForumZenpace.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, PostViewModel model)
         {
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            if (!TryGetCurrentUserId(out var userId))
+            {
+                return Challenge();
+            }
+
             var post = await _context.Posts.FirstOrDefaultAsync(p => p.Id == id && p.UserId == userId);
 
             if (post == null) return NotFound();
@@ -132,7 +143,10 @@ namespace ForumZenpace.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UploadImage(PostImageUploadViewModel model)
         {
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            if (!TryGetCurrentUserId(out var userId))
+            {
+                return Challenge();
+            }
 
             var validationError = ValidatePostImage(model.Image);
             if (validationError != null)
@@ -183,9 +197,14 @@ namespace ForumZenpace.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            if (!TryGetCurrentUserId(out var userId))
+            {
+                return Challenge();
+            }
+
             var post = await _context.Posts.FirstOrDefaultAsync(p => p.Id == id && p.UserId == userId);
 
             if (post != null)
@@ -233,22 +252,22 @@ namespace ForumZenpace.Controllers
             post.ViewCount++;
             await _context.SaveChangesAsync();
             
-            int? userId = null;
-            if (User.Identity.IsAuthenticated)
+            var userId = GetCurrentUserId();
+            if (userId.HasValue)
             {
-                userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-                ViewBag.HasLiked = post.Likes.Any(l => l.UserId == userId);
+                ViewBag.HasLiked = post.Likes.Any(l => l.UserId == userId.Value);
             }
 
             ViewBag.UserId = userId;
             
-            var commentThreads = BuildCommentThreads(post.Comments, post.Id, userId, User.Identity?.IsAuthenticated == true);
+            var commentThreads = BuildCommentThreads(post.Comments, post.Id, userId, userId.HasValue);
             ViewBag.CommentThreads = commentThreads;
 
             return View(post);
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddComment(CommentViewModel model)
         {
             if (string.IsNullOrWhiteSpace(model.Content)) 
@@ -258,7 +277,10 @@ namespace ForumZenpace.Controllers
                 return RedirectToAction("Details", new { id = model.PostId });
             }
 
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            if (!TryGetCurrentUserId(out var userId))
+            {
+                return Challenge();
+            }
 
             var comment = new Comment
             {
@@ -273,7 +295,7 @@ namespace ForumZenpace.Controllers
             
             // Notify Post Owner
             var post = await _context.Posts.FindAsync(model.PostId);
-            if (post.UserId != userId)
+            if (post != null && post.UserId != userId)
             {
                 _context.Notifications.Add(new Notification
                 {
@@ -301,9 +323,13 @@ namespace ForumZenpace.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> ToggleLike(int postId)
         {
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            if (!TryGetCurrentUserId(out var userId))
+            {
+                return Challenge();
+            }
             
             var existingLike = await _context.Likes.FirstOrDefaultAsync(l => l.UserId == userId && l.PostId == postId);
             bool isLiked = false;
@@ -318,7 +344,7 @@ namespace ForumZenpace.Controllers
                 isLiked = true;
                 
                 var post = await _context.Posts.FindAsync(postId);
-                if (post.UserId != userId)
+                if (post != null && post.UserId != userId)
                 {
                     _context.Notifications.Add(new Notification
                     {
@@ -340,9 +366,14 @@ namespace ForumZenpace.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> ToggleCommentLike(int commentId)
         {
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            if (!TryGetCurrentUserId(out var userId))
+            {
+                return Challenge();
+            }
+
             var comment = await _context.Comments
                 .Include(c => c.User)
                 .FirstOrDefaultAsync(c => c.Id == commentId);
@@ -390,6 +421,7 @@ namespace ForumZenpace.Controllers
         }
         
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Report(int postId, string reason)
         {
             if (string.IsNullOrWhiteSpace(reason)) 
@@ -399,7 +431,11 @@ namespace ForumZenpace.Controllers
                 return RedirectToAction("Details", new { id = postId });
             }
             
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            if (!TryGetCurrentUserId(out var userId))
+            {
+                return Challenge();
+            }
+
             _context.Reports.Add(new Report
             {
                 PostId = postId,
@@ -415,9 +451,14 @@ namespace ForumZenpace.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteComment(int id)
         {
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            if (!TryGetCurrentUserId(out var userId))
+            {
+                return Challenge();
+            }
+
             var comment = await _context.Comments.FirstOrDefaultAsync(c => c.Id == id && c.UserId == userId);
             
             if (comment != null)
@@ -709,6 +750,18 @@ namespace ForumZenpace.Controllers
                 .Select(match => match.Groups["url"].Value.Trim())
                 .Where(url => !string.IsNullOrWhiteSpace(url))
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        }
+
+        private int? GetCurrentUserId()
+        {
+            return int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId)
+                ? userId
+                : null;
+        }
+
+        private bool TryGetCurrentUserId(out int userId)
+        {
+            return int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out userId);
         }
     }
 }

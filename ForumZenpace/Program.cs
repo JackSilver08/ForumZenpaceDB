@@ -13,6 +13,8 @@ builder.Services.AddSignalR();
 builder.Services.Configure<EmailJsSettings>(builder.Configuration.GetSection("EmailJsSettings"));
 builder.Services.AddHttpClient<IEmailSender, EmailJsEmailSender>();
 builder.Services.AddScoped<EmailVerificationService>();
+builder.Services.AddScoped<PasswordSecurityService>();
+builder.Services.AddScoped<AuthFlowTokenService>();
 builder.Services.AddScoped<DirectMessageService>();
 builder.Services.AddScoped<SocialService>();
 
@@ -67,12 +69,13 @@ app.MapControllerRoute(
 // Seed Database
 using (var scope = app.Services.CreateScope())
 {
-    var services = scope.ServiceProvider;
-    try
-    {
-        var context = services.GetRequiredService<ForumDbContext>();
-        await DbInitializer.Initialize(context);
-    }
+        var services = scope.ServiceProvider;
+        try
+        {
+            var context = services.GetRequiredService<ForumDbContext>();
+            var passwordSecurityService = services.GetRequiredService<PasswordSecurityService>();
+            await DbInitializer.Initialize(context, passwordSecurityService);
+        }
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
