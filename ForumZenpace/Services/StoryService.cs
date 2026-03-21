@@ -8,6 +8,9 @@ namespace ForumZenpace.Services
     {
         private const string SpotifyExternalContentType = "external/spotify";
         private const string YouTubeExternalContentType = "external/youtube";
+        private const string AudioPlayerKind = "audio";
+        private const string SpotifyPlayerKind = "spotify";
+        private const string YouTubePlayerKind = "youtube";
         private static readonly HashSet<string> AllowedStoryImageExtensions = new(StringComparer.OrdinalIgnoreCase)
         {
             ".jpg",
@@ -590,6 +593,10 @@ namespace ForumZenpace.Services
                 ShowInlineMusicPlayer = music.ShowInlinePlayer,
                 CanEmbedMusic = music.CanEmbed,
                 MusicEmbedUrl = music.EmbedUrl,
+                MusicPlayerKind = music.PlayerKind,
+                MusicPlayerKey = music.PlayerKey,
+                MusicPlayerUri = music.PlayerUri,
+                CanSeekMusic = music.CanSeek,
                 MusicSourceLabel = music.SourceLabel,
                 MusicActionUrl = music.ActionUrl,
                 MusicActionLabel = music.ActionLabel,
@@ -698,6 +705,10 @@ namespace ForumZenpace.Services
                     EmbedUrl = string.IsNullOrWhiteSpace(spotifyTrackId)
                         ? string.Empty
                         : $"https://open.spotify.com/embed/track/{spotifyTrackId}",
+                    PlayerKind = string.IsNullOrWhiteSpace(spotifyTrackId) ? string.Empty : SpotifyPlayerKind,
+                    PlayerKey = spotifyTrackId ?? string.Empty,
+                    PlayerUri = string.IsNullOrWhiteSpace(spotifyTrackId) ? string.Empty : $"spotify:track:{spotifyTrackId}",
+                    CanSeek = !string.IsNullOrWhiteSpace(spotifyTrackId),
                     SourceLabel = "Spotify",
                     ActionUrl = musicUrl,
                     ActionLabel = "Mo tren Spotify"
@@ -715,6 +726,9 @@ namespace ForumZenpace.Services
                     EmbedUrl = string.IsNullOrWhiteSpace(videoId)
                         ? string.Empty
                         : $"https://www.youtube.com/embed/{videoId}?rel=0&playsinline=1",
+                    PlayerKind = string.IsNullOrWhiteSpace(videoId) ? string.Empty : YouTubePlayerKind,
+                    PlayerKey = videoId ?? string.Empty,
+                    CanSeek = !string.IsNullOrWhiteSpace(videoId),
                     SourceLabel = "YouTube",
                     ActionUrl = musicUrl,
                     ActionLabel = "Mo tren YouTube"
@@ -726,6 +740,8 @@ namespace ForumZenpace.Services
                 HasMusic = true,
                 DisplayName = string.IsNullOrWhiteSpace(displayName) ? "Nhac story" : displayName,
                 ShowInlinePlayer = true,
+                PlayerKind = AudioPlayerKind,
+                CanSeek = true,
                 SourceLabel = musicUrl.StartsWith("/library/story-music/", StringComparison.OrdinalIgnoreCase)
                     ? "Thu vien"
                     : musicUrl.StartsWith("/uploads/story-music/", StringComparison.OrdinalIgnoreCase)
@@ -955,6 +971,10 @@ namespace ForumZenpace.Services
         public bool ShowInlinePlayer { get; set; }
         public bool CanEmbed { get; set; }
         public string EmbedUrl { get; set; } = string.Empty;
+        public string PlayerKind { get; set; } = string.Empty;
+        public string PlayerKey { get; set; } = string.Empty;
+        public string PlayerUri { get; set; } = string.Empty;
+        public bool CanSeek { get; set; }
         public string SourceLabel { get; set; } = string.Empty;
         public string ActionUrl { get; set; } = string.Empty;
         public string ActionLabel { get; set; } = string.Empty;

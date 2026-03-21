@@ -418,6 +418,10 @@ namespace ForumZenpace.Models
         public bool ShowInlineMusicPlayer { get; set; }
         public bool CanEmbedMusic { get; set; }
         public string MusicEmbedUrl { get; set; } = string.Empty;
+        public string MusicPlayerKind { get; set; } = string.Empty;
+        public string MusicPlayerKey { get; set; } = string.Empty;
+        public string MusicPlayerUri { get; set; } = string.Empty;
+        public bool CanSeekMusic { get; set; }
         public string MusicSourceLabel { get; set; } = string.Empty;
         public string MusicActionUrl { get; set; } = string.Empty;
         public string MusicActionLabel { get; set; } = string.Empty;

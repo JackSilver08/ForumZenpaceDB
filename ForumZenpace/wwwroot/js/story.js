@@ -175,10 +175,10 @@
 
             audioLabel.textContent = composedLabel;
             if (audioCaption instanceof HTMLElement) {
-                audioCaption.textContent = `${sourceLabel} se hien qua player hoac nut mo ngoai trong story viewer.`;
+                audioCaption.textContent = `${sourceLabel} se hien trong thanh player mini o dau story.`;
             }
             if (musicName instanceof HTMLElement) {
-                musicName.textContent = `${sourceLabel} link se duoc uu tien hon nhac thu vien.`;
+                musicName.textContent = `${sourceLabel} link se duoc uu tien trong player mini cua story.`;
             }
             return;
         }

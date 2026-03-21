@@ -73,6 +73,84 @@
         </div>
 
         <div class="story-viewer-stage story-surface story-surface--@story.BackgroundStyle">
+            @if (story.HasMusic && !string.IsNullOrWhiteSpace(story.MusicUrl))
+            {
+                <div class="story-surface__music story-music-player"
+                     data-story-music-player
+                     data-player-kind="@story.MusicPlayerKind"
+                     data-player-url="@story.MusicUrl"
+                     data-player-key="@story.MusicPlayerKey"
+                     data-player-uri="@story.MusicPlayerUri"
+                     data-can-seek="@story.CanSeekMusic.ToString().ToLowerInvariant()">
+                    <button type="button"
+                            class="story-music-player__toggle"
+                            data-story-player-toggle
+                            aria-label="Phat nhac">
+                        <i class="fa-solid fa-play" data-story-player-toggle-icon></i>
+                    </button>
+
+                    <div class="story-music-player__body">
+                        <div class="story-music-player__header">
+                            <div class="story-music-player__meta">
+                                <div class="story-music-player__eyebrow">
+                                    <span class="story-music-player__label">
+                                        <i class="fa-solid fa-music"></i>
+                                        <span>Dang phat trong story</span>
+                                    </span>
+                                    @if (!string.IsNullOrWhiteSpace(story.MusicSourceLabel))
+                                    {
+                                        <span class="story-music-player__source">@story.MusicSourceLabel</span>
+                                    }
+                                </div>
+                                <div class="story-music-player__title">
+                                    @(string.IsNullOrWhiteSpace(story.MusicDisplayName) ? "Nhac story" : story.MusicDisplayName)
+                                </div>
+                            </div>
+
+                            @if (!string.IsNullOrWhiteSpace(story.MusicActionUrl))
+                            {
+                                <a href="@story.MusicActionUrl"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="story-music-player__action"
+                                   aria-label="@(string.IsNullOrWhiteSpace(story.MusicActionLabel) ? "Mo bai nhac" : story.MusicActionLabel)">
+                                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                </a>
+                            }
+                        </div>
+
+                        <div class="story-music-player__timeline">
+                            <span class="story-music-player__time" data-story-player-current>0:00</span>
+                            <input type="range"
+                                   class="story-music-player__range"
+                                   min="0"
+                                   max="100"
+                                   step="0.1"
+                                   value="0"
+                                   data-story-player-range />
+                            <span class="story-music-player__time" data-story-player-duration>0:00</span>
+                        </div>
+                    </div>
+
+                    @if (string.Equals(story.MusicPlayerKind, "audio", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <audio preload="auto" src="@story.MusicUrl" data-story-player-audio hidden></audio>
+                    }
+                    else if (string.Equals(story.MusicPlayerKind, "youtube", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <div class="story-music-player__engine story-music-player__engine--youtube" aria-hidden="true">
+                            <div class="story-music-player__host" data-story-player-youtube-host></div>
+                        </div>
+                    }
+                    else if (string.Equals(story.MusicPlayerKind, "spotify", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <div class="story-music-player__engine story-music-player__engine--spotify" aria-hidden="true">
+                            <div class="story-music-player__host" data-story-player-spotify-host></div>
+                        </div>
+                    }
+                </div>
+            }
+
             @if (story.HasImage && !string.IsNullOrWhiteSpace(story.ImageUrl))
             {
                 <img class="story-surface__image" src="@story.ImageUrl" alt="@story.PreviewText" />
@@ -110,53 +188,6 @@
             </div>
         </div>
 
-        @if (story.HasMusic && !string.IsNullOrWhiteSpace(story.MusicUrl))
-        {
-            <div class="story-viewer-audio">
-                <div class="story-viewer-audio__label">
-                    <span>
-                        <i class="fa-solid fa-music"></i>
-                        <span>@(string.IsNullOrWhiteSpace(story.MusicDisplayName) ? "Nhac story" : story.MusicDisplayName)</span>
-                    </span>
-                    @if (!string.IsNullOrWhiteSpace(story.MusicSourceLabel))
-                    {
-                        <span class="status-pill is-muted">@story.MusicSourceLabel</span>
-                    }
-                </div>
-
-                @if (story.ShowInlineMusicPlayer)
-                {
-                    <audio controls preload="metadata" src="@story.MusicUrl" autoplay data-story-viewer-audio></audio>
-                }
-                else if (story.CanEmbedMusic && !string.IsNullOrWhiteSpace(story.MusicEmbedUrl))
-                {
-                    <div class="story-viewer-music-embed">
-                        <iframe src="@story.MusicEmbedUrl"
-                                title="@story.MusicDisplayName"
-                                loading="lazy"
-                                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                                referrerpolicy="strict-origin-when-cross-origin"></iframe>
-                    </div>
-                }
-                else
-                {
-                    <p class="field-hint">Bai nhac nay duoc mo ben ngoai de dung player chinh thuc.</p>
-                }
-
-                @if (!string.IsNullOrWhiteSpace(story.MusicActionUrl))
-                {
-                    <div class="story-viewer-audio__actions">
-                        <a href="@story.MusicActionUrl"
-                           target="_blank"
-                           rel="noopener noreferrer"
-                           class="btn btn-outline">
-                            @(string.IsNullOrWhiteSpace(story.MusicActionLabel) ? "Mo bai nhac" : story.MusicActionLabel)
-                        </a>
-                    </div>
-                }
-            </div>
-        }
-
         @if (Model.CanManage)
         {
             <form asp-action="Delete" method="post" class="story-viewer-delete">
@@ -169,25 +200,7 @@
     </section>
 </div>
 
-@if (story.HasMusic && story.ShowInlineMusicPlayer && !string.IsNullOrWhiteSpace(story.MusicUrl))
+@if (story.HasMusic && !string.IsNullOrWhiteSpace(story.MusicUrl))
 {
-    <script>
-        (() => {
-            const audio = document.querySelector('[data-story-viewer-audio]');
-            if (!(audio instanceof HTMLAudioElement)) {
-                return;
-            }
-
-            const tryAutoplay = () => {
-                audio.play().catch(() => {});
-            };
-
-            if (audio.readyState >= 2) {
-                tryAutoplay();
-                return;
-            }
-
-            audio.addEventListener('canplay', tryAutoplay, { once: true });
-        })();
-    </script>
+    <script src="~/js/story-viewer-player.js" asp-append-version="true"></script>
 }
