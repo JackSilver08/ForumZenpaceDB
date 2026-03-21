@@ -11,48 +11,70 @@ namespace ForumZenpace.Controllers
         private readonly ForumDbContext _context;
         private readonly SocialService _socialService;
         private readonly StoryService _storyService;
+        private readonly RecommendationService _recommendationService;
 
-        public HomeController(ForumDbContext context, SocialService socialService, StoryService storyService)
+        public HomeController(ForumDbContext context, SocialService socialService, StoryService storyService, RecommendationService recommendationService)
         {
             _context = context;
             _socialService = socialService;
             _storyService = storyService;
+            _recommendationService = recommendationService;
         }
 
         public async Task<IActionResult> Index(string searchString, int? categoryId, string sortOrder)
         {
-            var posts = _context.Posts
-                .Include(p => p.User)
-                .Include(p => p.Category)
-                .Include(p => p.Likes)
-                .Include(p => p.Comments)
-                .Where(p => p.Status == "Active")
-                .AsQueryable();
-
-            if (!string.IsNullOrEmpty(searchString))
-            {
-                posts = posts.Where(p => p.Title.Contains(searchString) || p.Content.Contains(searchString));
-            }
-
-            if (categoryId.HasValue)
-            {
-                posts = posts.Where(p => p.CategoryId == categoryId.Value);
-            }
-
-            switch (sortOrder)
-            {
-                case "views":
-                    posts = posts.OrderByDescending(p => p.ViewCount);
-                    break;
-                case "likes":
-                    posts = posts.OrderByDescending(p => p.Likes.Count);
-                    break;
-                default:
-                    posts = posts.OrderByDescending(p => p.CreatedAt);
-                    break;
-            }
-
             var currentUserId = GetCurrentUserId();
+
+            // Default to 'recommended' for logged-in users on first visit.
+            if (string.IsNullOrEmpty(sortOrder) && currentUserId.HasValue)
+            {
+                sortOrder = "recommended";
+            }
+
+            List<Post> postList;
+            bool isRecommendedSort = sortOrder == "recommended" && currentUserId.HasValue;
+
+            if (isRecommendedSort && string.IsNullOrEmpty(searchString) && !categoryId.HasValue)
+            {
+                // Use recommendation engine
+                postList = await _recommendationService.GetRecommendedPostsAsync(currentUserId!.Value);
+            }
+            else
+            {
+                var posts = _context.Posts
+                    .Include(p => p.User)
+                    .Include(p => p.Category)
+                    .Include(p => p.Likes)
+                    .Include(p => p.Comments)
+                    .Where(p => p.Status == "Active")
+                    .AsQueryable();
+
+                if (!string.IsNullOrEmpty(searchString))
+                {
+                    posts = posts.Where(p => p.Title.Contains(searchString) || p.Content.Contains(searchString));
+                }
+
+                if (categoryId.HasValue)
+                {
+                    posts = posts.Where(p => p.CategoryId == categoryId.Value);
+                }
+
+                switch (sortOrder)
+                {
+                    case "views":
+                        posts = posts.OrderByDescending(p => p.ViewCount);
+                        break;
+                    case "likes":
+                        posts = posts.OrderByDescending(p => p.Likes.Count);
+                        break;
+                    default:
+                        posts = posts.OrderByDescending(p => p.CreatedAt);
+                        break;
+                }
+
+                postList = await posts.ToListAsync();
+            }
+
             var friends = currentUserId.HasValue
                 ? await _socialService.GetFriendsAsync(currentUserId.Value)
                 : Array.Empty<FriendSummaryViewModel>();
@@ -64,12 +86,13 @@ namespace ForumZenpace.Controllers
 
             return View(new HomeIndexViewModel
             {
-                Posts = await posts.ToListAsync(),
+                Posts = postList,
                 Categories = await _context.Categories.ToListAsync(),
                 CurrentSort = sortOrder ?? string.Empty,
                 CurrentCategoryId = categoryId,
                 SearchString = searchString,
                 CurrentUserId = currentUserId,
+                IsRecommendedSort = isRecommendedSort,
                 CurrentUserStory = currentUserId.HasValue
                     ? await _storyService.GetCurrentUserStorySummaryAsync(currentUserId.Value, HttpContext.RequestAborted)
                     : null,

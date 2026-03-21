@@ -1,0 +1,11 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+D:\trung\Zenpace\ForumZenpaceDB\ForumZenpace\Services\BackgroundTaskQueue.cs(21,22): error CS0029: Cannot implicitly convert type 'System.Threading.Channels.Channel<System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>>' to 'System.Threading.Channels.Channel<System.Func<System.IServiceProvider, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>>' [D:\trung\Zenpace\ForumZenpaceDB\ForumZenpace\ForumZenpace.csproj]
+
+Build FAILED.
+
+D:\trung\Zenpace\ForumZenpaceDB\ForumZenpace\Services\BackgroundTaskQueue.cs(21,22): error CS0029: Cannot implicitly convert type 'System.Threading.Channels.Channel<System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>>' to 'System.Threading.Channels.Channel<System.Func<System.IServiceProvider, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>>' [D:\trung\Zenpace\ForumZenpaceDB\ForumZenpace\ForumZenpace.csproj]
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:13.00

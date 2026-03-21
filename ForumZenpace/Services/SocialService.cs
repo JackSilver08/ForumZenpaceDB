@@ -61,6 +61,12 @@ namespace ForumZenpace.Services
             CancellationToken cancellationToken = default)
         {
             var normalizedTerm = term?.Trim() ?? string.Empty;
+            
+            if (string.IsNullOrWhiteSpace(normalizedTerm))
+            {
+                return await GetFriendSuggestionsAsync(currentUserId, limit, cancellationToken);
+            }
+
             var usersQuery = _context.Users
                 .AsNoTracking()
                 .Where(user => user.IsActive && user.Id != currentUserId);
@@ -140,12 +146,100 @@ namespace ForumZenpace.Services
                         CanSendRequest = relationshipState == "none",
                         ActionLabel = relationshipState switch
                         {
-                            "friend" => "Ban be",
-                            "pending-sent" => "Da gui",
-                            "pending-received" => "Mo thong bao",
+                            "friend" => "Xoa ban",
+                            "pending-sent" => "Da gui loi moi",
+                            "pending-received" => "Duyet",
                             _ => "Ket ban"
                         }
                     };
+                })
+                .ToList();
+        }
+
+        private async Task<IReadOnlyList<FriendCandidateViewModel>> GetFriendSuggestionsAsync(int currentUserId, int limit, CancellationToken cancellationToken)
+        {
+            var myFriendIds = await _context.Friendships
+                .AsNoTracking()
+                .Where(f => f.UserAId == currentUserId || f.UserBId == currentUserId)
+                .Select(f => f.UserAId == currentUserId ? f.UserBId : f.UserAId)
+                .ToListAsync(cancellationToken);
+
+            if (myFriendIds.Count == 0)
+            {
+                var randomUsers = await _context.Users
+                    .AsNoTracking()
+                    .Where(u => u.IsActive && u.Id != currentUserId)
+                    .OrderBy(u => Guid.NewGuid())
+                    .Take(limit)
+                    .ToListAsync(cancellationToken);
+                
+                return randomUsers.Select(user => new FriendCandidateViewModel
+                {
+                    UserId = user.Id,
+                    Username = user.Username,
+                    DisplayName = GetDisplayName(user.FullName, user.Username),
+                    Email = EmailVerificationService.MaskEmail(user.Email),
+                    AvatarUrl = user.Avatar,
+                    RelationshipState = "none",
+                    CanSendRequest = true,
+                    ActionLabel = "Ket ban"
+                }).ToList();
+            }
+
+            var pendingRequests = await _context.FriendRequests
+                .AsNoTracking()
+                .Where(r => r.Status == FriendRequestStatuses.Pending && (r.SenderId == currentUserId || r.ReceiverId == currentUserId))
+                .ToListAsync(cancellationToken);
+                
+            var blocks = await _context.MessageBlocks
+                .AsNoTracking()
+                .Where(b => b.BlockerUserId == currentUserId || b.BlockedUserId == currentUserId)
+                .ToListAsync(cancellationToken);
+
+            var excludedIds = new HashSet<int>(myFriendIds);
+            excludedIds.Add(currentUserId);
+            foreach(var p in pendingRequests) excludedIds.Add(p.SenderId == currentUserId ? p.ReceiverId : p.SenderId);
+            foreach(var b in blocks) excludedIds.Add(b.BlockerUserId == currentUserId ? b.BlockedUserId : b.BlockerUserId);
+
+            var mutualCandidates = await _context.Friendships
+                .AsNoTracking()
+                .Where(f => myFriendIds.Contains(f.UserAId) || myFriendIds.Contains(f.UserBId))
+                .Select(f => new {
+                    CandidateId = myFriendIds.Contains(f.UserAId) ? f.UserBId : f.UserAId,
+                    FriendInCommon = myFriendIds.Contains(f.UserAId) ? f.UserAId : f.UserBId
+                })
+                .ToListAsync(cancellationToken);
+
+            var rankedCandidates = mutualCandidates
+                .Where(x => !excludedIds.Contains(x.CandidateId))
+                .GroupBy(x => x.CandidateId)
+                .Select(g => new { UserId = g.Key, MutualCount = g.Select(x => x.FriendInCommon).Distinct().Count() })
+                .OrderByDescending(x => x.MutualCount)
+                .Take(limit)
+                .ToList();
+
+            if (rankedCandidates.Count == 0)
+            {
+                return new List<FriendCandidateViewModel>();
+            }
+
+            var candidateIds = rankedCandidates.Select(x => x.UserId).ToList();
+            var users = await _context.Users
+                .AsNoTracking()
+                .Where(u => candidateIds.Contains(u.Id) && u.IsActive)
+                .ToListAsync(cancellationToken);
+
+            return rankedCandidates
+                .Join(users, r => r.UserId, u => u.Id, (r, user) => new FriendCandidateViewModel
+                {
+                    UserId = user.Id,
+                    Username = user.Username,
+                    DisplayName = GetDisplayName(user.FullName, user.Username),
+                    Email = EmailVerificationService.MaskEmail(user.Email),
+                    AvatarUrl = user.Avatar,
+                    RelationshipState = "none",
+                    CanSendRequest = true,
+                    ActionLabel = $"Ket ban ({r.MutualCount} chung)"
                 })
                 .ToList();
         }
@@ -154,7 +248,6 @@ namespace ForumZenpace.Services
         {
             var (userAId, userBId) = OrderUsers(currentUserId, targetUserId);
             var friendshipExists = await _context.Friendships
-                .AsNoTracking()
                 .AnyAsync(friendship => friendship.UserAId == userAId && friendship.UserBId == userBId, cancellationToken);
 
             var pendingRequest = await _context.FriendRequests

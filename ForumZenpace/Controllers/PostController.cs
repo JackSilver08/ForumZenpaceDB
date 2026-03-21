@@ -5,29 +5,28 @@ using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using System.Text.RegularExpressions;
 using ForumZenpace.Models;
+using ForumZenpace.Services;
 
 namespace ForumZenpace.Controllers
 {
     [Authorize]
     public class PostController : Controller
     {
-        private static readonly HashSet<string> AllowedPostImageExtensions = new(StringComparer.OrdinalIgnoreCase)
-        {
-            ".jpg",
-            ".jpeg",
-            ".png",
-            ".gif",
-            ".webp"
-        };
-        private static readonly Regex MarkdownImageRegex = new(@"!\[[^\]]*\]\((?<url>[^)]+)\)", RegexOptions.Compiled);
-        private const long MaxPostImageSizeBytes = 10 * 1024 * 1024;
         private readonly ForumDbContext _context;
-        private readonly IWebHostEnvironment _environment;
+        private readonly RecommendationService _recommendationService;
+        private readonly PostImageService _postImageService;
+        private readonly IBackgroundTaskQueue _taskQueue;
 
-        public PostController(ForumDbContext context, IWebHostEnvironment environment)
+        public PostController(
+            ForumDbContext context, 
+            RecommendationService recommendationService,
+            PostImageService postImageService,
+            IBackgroundTaskQueue taskQueue)
         {
             _context = context;
-            _environment = environment;
+            _recommendationService = recommendationService;
+            _postImageService = postImageService;
+            _taskQueue = taskQueue;
         }
 
         [HttpGet]
@@ -36,7 +35,7 @@ namespace ForumZenpace.Controllers
             ViewBag.Categories = new SelectList(await _context.Categories.ToListAsync(), "Id", "Name");
             return View(new PostViewModel
             {
-                DraftToken = CreateDraftToken()
+                DraftToken = _postImageService.CreateDraftToken()
             });
         }
 
@@ -44,10 +43,10 @@ namespace ForumZenpace.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(PostViewModel model)
         {
-            model.DraftToken = SanitizeDraftToken(model.DraftToken);
+            model.DraftToken = _postImageService.SanitizeDraftToken(model.DraftToken);
             if (string.IsNullOrWhiteSpace(model.DraftToken))
             {
-                model.DraftToken = CreateDraftToken();
+                model.DraftToken = _postImageService.CreateDraftToken();
             }
 
             if (!ModelState.IsValid)
@@ -71,7 +70,19 @@ namespace ForumZenpace.Controllers
 
             _context.Posts.Add(post);
             await _context.SaveChangesAsync();
-            await AttachDraftImagesToPostAsync(post.Id, userId, model.DraftToken, model.Content);
+            await _postImageService.AttachDraftImagesToPostAsync(post.Id, userId, model.DraftToken, model.Content);
+
+            // Generate embedding vector for recommendation engine asynchronously
+            var postId = post.Id;
+            await _taskQueue.QueueBackgroundWorkItemAsync(async (sp, token) =>
+            {
+                var scopedContext = sp.GetRequiredService<ForumDbContext>();
+                var scopedRecommendation = sp.GetRequiredService<RecommendationService>();
+                var dbPost = await scopedContext.Posts.FindAsync(new object[] { postId }, token);
+                if (dbPost != null) {
+                    await scopedRecommendation.GeneratePostEmbeddingAsync(dbPost);
+                }
+            });
 
             return RedirectToAction("Details", new { id = post.Id });
         }
@@ -93,7 +104,7 @@ namespace ForumZenpace.Controllers
             
             return View(new PostViewModel {
                 PostId = post.Id,
-                DraftToken = CreateDraftToken(),
+                DraftToken = _postImageService.CreateDraftToken(),
                 Title = post.Title,
                 Content = post.Content,
                 CategoryId = post.CategoryId
@@ -114,10 +125,10 @@ namespace ForumZenpace.Controllers
             if (post == null) return NotFound();
 
             model.PostId = id;
-            model.DraftToken = SanitizeDraftToken(model.DraftToken);
+            model.DraftToken = _postImageService.SanitizeDraftToken(model.DraftToken);
             if (string.IsNullOrWhiteSpace(model.DraftToken))
             {
-                model.DraftToken = CreateDraftToken();
+                model.DraftToken = _postImageService.CreateDraftToken();
             }
 
             if (!ModelState.IsValid)
@@ -133,8 +144,8 @@ namespace ForumZenpace.Controllers
             post.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
-            await AttachDraftImagesToPostAsync(post.Id, userId, model.DraftToken, model.Content);
-            await SyncPostImagesAsync(post.Id, userId, model.Content);
+            await _postImageService.AttachDraftImagesToPostAsync(post.Id, userId, model.DraftToken, model.Content);
+            await _postImageService.SyncPostImagesAsync(post.Id, userId, model.Content);
 
             return RedirectToAction("Details", new { id = post.Id });
         }
@@ -148,13 +159,13 @@ namespace ForumZenpace.Controllers
                 return Challenge();
             }
 
-            var validationError = ValidatePostImage(model.Image);
+            var validationError = _postImageService.ValidatePostImage(model.Image);
             if (validationError != null)
             {
                 return Json(new { success = false, message = validationError });
             }
 
-            model.DraftToken = SanitizeDraftToken(model.DraftToken);
+            model.DraftToken = _postImageService.SanitizeDraftToken(model.DraftToken);
 
             if (model.PostId.HasValue)
             {
@@ -171,7 +182,7 @@ namespace ForumZenpace.Controllers
 
             var saveAsDraftImage = !string.IsNullOrWhiteSpace(model.DraftToken);
 
-            var (fileName, imageUrl) = await SavePostImageAsync(model.Image, userId);
+            var (fileName, imageUrl) = await _postImageService.SavePostImageAsync(model.Image, userId);
             var originalFileName = Path.GetFileName(model.Image.FileName);
 
             var postImage = new PostImage
@@ -192,7 +203,7 @@ namespace ForumZenpace.Controllers
             {
                 success = true,
                 imageUrl,
-                markdown = CreateImageMarkdown(postImage)
+                markdown = _postImageService.CreateImageMarkdown(postImage)
             });
         }
 
@@ -224,7 +235,7 @@ namespace ForumZenpace.Controllers
                 _context.Likes.RemoveRange(likes);
                 _context.PostImages.RemoveRange(postImages);
                 _context.Reports.RemoveRange(reports);
-                DeletePostImageFiles(postImages);
+                _postImageService.DeletePostImageFiles(postImages);
 
                 _context.Posts.Remove(post);
                 await _context.SaveChangesAsync();
@@ -297,10 +308,17 @@ namespace ForumZenpace.Controllers
             var post = await _context.Posts.FindAsync(model.PostId);
             if (post != null && post.UserId != userId)
             {
-                _context.Notifications.Add(new Notification
+                var receiverId = post.UserId;
+                var title = post.Title;
+                await _taskQueue.QueueBackgroundWorkItemAsync(async (sp, token) =>
                 {
-                    UserId = post.UserId,
-                    Content = $"Someone commented on your post '{post.Title}'."
+                    var scopedContext = sp.GetRequiredService<ForumDbContext>();
+                    scopedContext.Notifications.Add(new Notification
+                    {
+                        UserId = receiverId,
+                        Content = $"Someone commented on your post '{title}'."
+                    });
+                    await scopedContext.SaveChangesAsync(token);
                 });
             }
 
@@ -346,15 +364,29 @@ namespace ForumZenpace.Controllers
                 var post = await _context.Posts.FindAsync(postId);
                 if (post != null && post.UserId != userId)
                 {
-                    _context.Notifications.Add(new Notification
+                    var receiverId = post.UserId;
+                    var title = post.Title;
+                    await _taskQueue.QueueBackgroundWorkItemAsync(async (sp, token) =>
                     {
-                        UserId = post.UserId,
-                        Content = $"Someone liked your post '{post.Title}'."
+                        var scopedContext = sp.GetRequiredService<ForumDbContext>();
+                        scopedContext.Notifications.Add(new Notification
+                        {
+                            UserId = receiverId,
+                            Content = $"Someone liked your post '{title}'."
+                        });
+                        await scopedContext.SaveChangesAsync(token);
                     });
                 }
             }
 
             await _context.SaveChangesAsync();
+
+            // Safely update user preference vector on background thread
+            await _taskQueue.QueueBackgroundWorkItemAsync(async (sp, token) =>
+            {
+                var scopedRecommendationService = sp.GetRequiredService<RecommendationService>();
+                await scopedRecommendationService.UpdateUserPreferenceVectorAsync(userId);
+            });
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
@@ -401,10 +433,16 @@ namespace ForumZenpace.Controllers
 
                 if (comment.UserId != userId)
                 {
-                    _context.Notifications.Add(new Notification
+                    var receiverId = comment.UserId;
+                    await _taskQueue.QueueBackgroundWorkItemAsync(async (sp, token) =>
                     {
-                        UserId = comment.UserId,
-                        Content = "Someone liked your comment."
+                        var scopedContext = sp.GetRequiredService<ForumDbContext>();
+                        scopedContext.Notifications.Add(new Notification
+                        {
+                            UserId = receiverId,
+                            Content = "Someone liked your comment."
+                        });
+                        await scopedContext.SaveChangesAsync(token);
                     });
                 }
             }
@@ -597,159 +635,6 @@ namespace ForumZenpace.Controllers
             return postComments
                 .Where(c => idsToDelete.Contains(c.Id))
                 .ToList();
-        }
-
-        private static string? ValidatePostImage(IFormFile? image)
-        {
-            if (image is null || image.Length == 0)
-            {
-                return "Anh tai len khong hop le.";
-            }
-
-            if (image.Length > MaxPostImageSizeBytes)
-            {
-                return "Anh trong bai viet chi duoc toi da 10MB.";
-            }
-
-            var extension = Path.GetExtension(image.FileName);
-            if (string.IsNullOrWhiteSpace(extension) || !AllowedPostImageExtensions.Contains(extension))
-            {
-                return "Chi chap nhan file JPG, PNG, GIF hoac WEBP.";
-            }
-
-            return null;
-        }
-
-        private async Task<(string FileName, string ImageUrl)> SavePostImageAsync(IFormFile image, int userId)
-        {
-            var webRootPath = _environment.WebRootPath ?? Path.Combine(_environment.ContentRootPath, "wwwroot");
-            var postImageDirectory = Path.Combine(webRootPath, "uploads", "posts");
-            Directory.CreateDirectory(postImageDirectory);
-
-            var extension = Path.GetExtension(image.FileName).ToLowerInvariant();
-            var fileName = $"post-{userId}-{Guid.NewGuid():N}{extension}";
-            var filePath = Path.Combine(postImageDirectory, fileName);
-
-            await using var stream = new FileStream(filePath, FileMode.Create);
-            await image.CopyToAsync(stream);
-
-            return (fileName, $"/uploads/posts/{fileName}");
-        }
-
-        private async Task AttachDraftImagesToPostAsync(int postId, int userId, string draftToken, string content)
-        {
-            if (string.IsNullOrWhiteSpace(draftToken))
-            {
-                return;
-            }
-
-            var normalizedDraftToken = SanitizeDraftToken(draftToken);
-            var referencedUrls = ExtractImageUrls(content);
-            var draftImages = await _context.PostImages
-                .Where(pi => pi.UserId == userId && pi.PostId == null && pi.DraftToken == normalizedDraftToken)
-                .ToListAsync();
-
-            var orphanedDraftImages = draftImages
-                .Where(pi => !referencedUrls.Contains(pi.ImageUrl))
-                .ToList();
-
-            if (orphanedDraftImages.Count > 0)
-            {
-                _context.PostImages.RemoveRange(orphanedDraftImages);
-                DeletePostImageFiles(orphanedDraftImages);
-            }
-
-            foreach (var image in draftImages.Except(orphanedDraftImages))
-            {
-                image.PostId = postId;
-                image.DraftToken = null;
-            }
-
-            await _context.SaveChangesAsync();
-        }
-
-        private async Task SyncPostImagesAsync(int postId, int userId, string content)
-        {
-            var referencedUrls = ExtractImageUrls(content);
-            var postImages = await _context.PostImages
-                .Where(pi => pi.PostId == postId && pi.UserId == userId)
-                .ToListAsync();
-
-            var removedImages = postImages
-                .Where(pi => !referencedUrls.Contains(pi.ImageUrl))
-                .ToList();
-
-            if (removedImages.Count == 0)
-            {
-                return;
-            }
-
-            _context.PostImages.RemoveRange(removedImages);
-            DeletePostImageFiles(removedImages);
-            await _context.SaveChangesAsync();
-        }
-
-        private void DeletePostImageFiles(IEnumerable<PostImage> postImages)
-        {
-            var webRootPath = _environment.WebRootPath ?? Path.Combine(_environment.ContentRootPath, "wwwroot");
-            var postImageDirectory = Path.Combine(webRootPath, "uploads", "posts");
-
-            foreach (var postImage in postImages)
-            {
-                if (string.IsNullOrWhiteSpace(postImage.FileName))
-                {
-                    continue;
-                }
-
-                var filePath = Path.Combine(postImageDirectory, postImage.FileName);
-                if (System.IO.File.Exists(filePath))
-                {
-                    System.IO.File.Delete(filePath);
-                }
-            }
-        }
-
-        private static string CreateDraftToken()
-        {
-            return Guid.NewGuid().ToString("N");
-        }
-
-        private static string SanitizeDraftToken(string? draftToken)
-        {
-            if (string.IsNullOrWhiteSpace(draftToken))
-            {
-                return string.Empty;
-            }
-
-            var trimmed = draftToken.Trim();
-            return trimmed.Length <= 64 ? trimmed : trimmed[..64];
-        }
-
-        private static string CreateImageMarkdown(PostImage postImage)
-        {
-            var altText = Path.GetFileNameWithoutExtension(postImage.OriginalFileName)
-                .Replace("-", " ", StringComparison.Ordinal)
-                .Trim();
-
-            if (string.IsNullOrWhiteSpace(altText))
-            {
-                altText = "Hinh anh bai viet";
-            }
-
-            return $"![{altText}]({postImage.ImageUrl})";
-        }
-
-        private static HashSet<string> ExtractImageUrls(string? content)
-        {
-            if (string.IsNullOrWhiteSpace(content))
-            {
-                return new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            }
-
-            return MarkdownImageRegex.Matches(content)
-                .Select(match => match.Groups["url"].Value.Trim())
-                .Where(url => !string.IsNullOrWhiteSpace(url))
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
         }
 
         private int? GetCurrentUserId()

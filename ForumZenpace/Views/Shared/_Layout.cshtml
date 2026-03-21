@@ -66,11 +66,12 @@
                             </a>
                         }
 
-                        <a asp-controller="Profile" asp-action="Index" class="user-badge">
+                        <a asp-controller="Profile" asp-action="Index" class="user-badge avatar-link">
                             <span class="user-name">@currentUserName</span>
                             <span class="avatar-badge">
                                 @currentUserInitial
                             </span>
+                            <span class="presence-dot" data-presence-user-id="@currentUserId"></span>
                         </a>
 
                         <form asp-controller="Auth" asp-action="Logout" method="post">
@@ -116,7 +117,7 @@
     @if (currentUserId.HasValue)
     {
         <script src="~/js/story.js" asp-append-version="true"></script>
-        <script src="~/js/social.js" asp-append-version="true"></script>
+        <script type="module" src="~/js/social.js" asp-append-version="true"></script>
     }
     @await RenderSectionAsync("Scripts", required: false)
 </body>

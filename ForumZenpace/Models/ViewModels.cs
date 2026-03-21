@@ -121,6 +121,7 @@ namespace ForumZenpace.Models
         public string? SearchString { get; set; }
         public int? CurrentCategoryId { get; set; }
         public int? CurrentUserId { get; set; }
+        public bool IsRecommendedSort { get; set; }
         public int UnreadNotificationCount { get; set; }
         public CurrentUserStorySummaryViewModel? CurrentUserStory { get; set; }
         public IReadOnlyList<FriendSummaryViewModel> Friends { get; set; } = Array.Empty<FriendSummaryViewModel>();

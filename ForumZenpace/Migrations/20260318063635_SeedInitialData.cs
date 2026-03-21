@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -13,6 +13,7 @@ namespace ForumZenpace.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.Sql("SET IDENTITY_INSERT [Categories] ON");
             migrationBuilder.Sql(
                 """
                 IF NOT EXISTS (SELECT 1 FROM [Categories] WHERE [Id] = 1)
@@ -30,7 +31,9 @@ namespace ForumZenpace.Migrations
                     INSERT INTO [Categories] ([Id], [Name]) VALUES (3, N'Đời sống & Khoa học');
                 END
                 """);
+            migrationBuilder.Sql("SET IDENTITY_INSERT [Categories] OFF");
 
+            migrationBuilder.Sql("SET IDENTITY_INSERT [Users] ON");
             migrationBuilder.Sql(
                 """
                 IF NOT EXISTS (SELECT 1 FROM [Users] WHERE [Id] = 1)
@@ -39,6 +42,7 @@ namespace ForumZenpace.Migrations
                     VALUES (1, NULL, '2026-03-18T06:36:35.0803815Z', N'admin@zenpace.com', N'Quản trị viên Zenpace', 1, N'AdminPassword123!', 1, N'admin');
                 END
                 """);
+            migrationBuilder.Sql("SET IDENTITY_INSERT [Users] OFF");
         }
 
         /// <inheritdoc />

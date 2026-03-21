@@ -9,16 +9,52 @@ namespace ForumZenpace.Hubs
     public sealed class SocialHub : Hub
     {
         private readonly SocialService _socialService;
+        private readonly PresenceTracker _presenceTracker;
 
-        public SocialHub(SocialService socialService)
+        public SocialHub(SocialService socialService, PresenceTracker presenceTracker)
         {
             _socialService = socialService;
+            _presenceTracker = presenceTracker;
         }
 
         public override async Task OnConnectedAsync()
         {
-            await Groups.AddToGroupAsync(Context.ConnectionId, SocialChannel.GetUserGroupName(GetCurrentUserId()));
+            var userId = GetCurrentUserId();
+            await Groups.AddToGroupAsync(Context.ConnectionId, SocialChannel.GetUserGroupName(userId));
+
+            var isFirstConnection = await _presenceTracker.UserConnectedAsync(userId, Context.ConnectionId);
+            if (isFirstConnection)
+            {
+                // Broadcast to all other clients that this user came online
+                await Clients.Others.SendAsync("UserOnline", new { userId });
+            }
+
             await base.OnConnectedAsync();
+        }
+
+        public override async Task OnDisconnectedAsync(Exception? exception)
+        {
+            var userId = GetCurrentUserId();
+            var isLastConnection = await _presenceTracker.UserDisconnectedAsync(userId, Context.ConnectionId);
+            if (isLastConnection)
+            {
+                // Broadcast to all other clients that this user went offline
+                await Clients.Others.SendAsync("UserOffline", new { userId });
+            }
+
+            await base.OnDisconnectedAsync(exception);
+        }
+
+        /// <summary>Client sends this periodically to prove it's still alive.</summary>
+        public async Task Heartbeat()
+        {
+            await _presenceTracker.HeartbeatAsync(GetCurrentUserId());
+        }
+
+        /// <summary>Client calls this on first connect to get current online user list.</summary>
+        public async Task<int[]> GetOnlineUsers()
+        {
+            return await _presenceTracker.GetOnlineUsersAsync();
         }
 
         public async Task<IReadOnlyList<Models.FriendCandidateViewModel>> SearchFriendCandidates(string? term)

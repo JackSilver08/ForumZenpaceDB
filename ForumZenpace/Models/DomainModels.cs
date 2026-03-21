@@ -73,6 +73,9 @@ namespace ForumZenpace.Models
         public ICollection<MessageBlock> ReceivedMessageBlocks { get; set; } = new List<MessageBlock>();
         public ICollection<Story> Stories { get; set; } = new List<Story>();
         public ICollection<StoryView> StoryViews { get; set; } = new List<StoryView>();
+
+        /// <summary>Averaged embedding vector of liked posts, stored as JSON float array.</summary>
+        public string? PreferenceVectorData { get; set; }
     }
 
     public class PendingRegistration
@@ -140,6 +143,9 @@ namespace ForumZenpace.Models
         public ICollection<Like> Likes { get; set; } = new List<Like>();
         public ICollection<PostImage> Images { get; set; } = new List<PostImage>();
         public ICollection<Report> Reports { get; set; } = new List<Report>();
+
+        /// <summary>768-dimensional embedding vector from Gemini, stored as JSON float array.</summary>
+        public string? VectorData { get; set; }
     }
 
     public class Comment

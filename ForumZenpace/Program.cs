@@ -9,7 +9,23 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-builder.Services.AddSignalR();
+
+var useRedis = builder.Configuration.GetValue<bool>("UseRedis");
+var redisConnection = builder.Configuration.GetConnectionString("RedisConnection");
+
+if (useRedis && !string.IsNullOrEmpty(redisConnection))
+{
+    builder.Services.AddStackExchangeRedisCache(options =>
+    {
+        options.Configuration = redisConnection;
+    });
+    builder.Services.AddSignalR().AddStackExchangeRedis(redisConnection);
+}
+else
+{
+    builder.Services.AddDistributedMemoryCache();
+    builder.Services.AddSignalR();
+}
 builder.Services.Configure<EmailJsSettings>(builder.Configuration.GetSection("EmailJsSettings"));
 builder.Services.AddHttpClient<IEmailSender, EmailJsEmailSender>();
 builder.Services.AddScoped<EmailVerificationService>();
@@ -19,6 +35,14 @@ builder.Services.AddScoped<DirectMessageService>();
 builder.Services.AddScoped<SocialService>();
 builder.Services.AddScoped<StoryMusicLibraryService>();
 builder.Services.AddScoped<StoryService>();
+builder.Services.AddHttpClient<GeminiEmbeddingService>();
+builder.Services.AddScoped<RecommendationService>();
+builder.Services.AddScoped<PostImageService>();
+builder.Services.AddSingleton<PresenceTracker>();
+
+// Register Background Queue for fan-out async tasks
+builder.Services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
+builder.Services.AddHostedService<NotificationWorkerService>();
 
 // Setup DbContext
 builder.Services.AddDbContext<ForumDbContext>(options =>

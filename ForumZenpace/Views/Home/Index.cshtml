@@ -193,10 +193,17 @@
         <div class="feed-controls">
             <div class="segmented-control glass-panel">
                 <a asp-action="Index"
+                   asp-route-sortOrder="recommended"
+                   asp-route-categoryId="@currentCategory"
+                   asp-route-searchString="@searchRoute"
+                   class="btn @(currentSort == "recommended" ? "btn-primary" : "btn-text")">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> De xuat
+                </a>
+                <a asp-action="Index"
                    asp-route-sortOrder="newest"
                    asp-route-categoryId="@currentCategory"
                    asp-route-searchString="@searchRoute"
-                   class="btn @(string.IsNullOrEmpty(currentSort) || currentSort == "newest" ? "btn-primary" : "btn-text")">
+                   class="btn @(currentSort == "newest" ? "btn-primary" : "btn-text")">
                     Moi nhat
                 </a>
                 <a asp-action="Index"
@@ -211,7 +218,7 @@
                    asp-route-categoryId="@currentCategory"
                    asp-route-searchString="@searchRoute"
                    class="btn @(currentSort == "likes" ? "btn-primary" : "btn-text")">
-                    De xuat
+                    Yeu thich
                 </a>
             </div>
         </div>
@@ -317,6 +324,7 @@
                                         <span>@GetInitials(post.User.FullName, post.User.Username)</span>
                                     }
                                 </div>
+                                <span class="presence-dot" data-presence-user-id="@post.User.Id"></span>
                             </a>
 
                             <div class="post-card-body">
