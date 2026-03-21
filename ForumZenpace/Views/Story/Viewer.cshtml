@@ -1,0 +1,193 @@
+@model ForumZenpace.Models.StoryViewerPageViewModel
+@{
+    ViewData["Title"] = "Story";
+    var story = Model.Story;
+    var storyText = string.IsNullOrWhiteSpace(story.TextContent) ? story.PreviewText : story.TextContent;
+}
+
+<div class="story-viewer-shell animated-entry">
+    <div class="story-viewer-topbar">
+        @if (Model.IsOwner)
+        {
+            <a asp-controller="Profile" asp-action="Index" asp-route-tab="stories" class="btn btn-text">
+                <i class="fa-solid fa-arrow-left"></i>
+                <span>Ve profile</span>
+            </a>
+        }
+        else
+        {
+            <a asp-controller="Profile"
+               asp-action="UserProfile"
+               asp-route-username="@Model.ReturnProfileUsername"
+               asp-route-tab="stories"
+               class="btn btn-text">
+                <i class="fa-solid fa-arrow-left"></i>
+                <span>Ve profile</span>
+            </a>
+        }
+
+        <div class="story-viewer-sequence" aria-label="Danh sach story">
+            @foreach (var item in Model.Sequence)
+            {
+                <a asp-action="Viewer"
+                   asp-route-id="@item.Id"
+                   class="story-viewer-segment @(item.IsCurrent ? "is-current" : string.Empty) @(item.IsExpired ? "is-expired" : string.Empty) @(item.HasBeenViewedByViewer ? "is-viewed" : "is-fresh")"
+                   aria-label="Story @item.Id"></a>
+            }
+        </div>
+    </div>
+
+    <section class="surface story-viewer-card">
+        <div class="story-viewer-header">
+            <div class="story-viewer-author">
+                <a asp-controller="Profile"
+                   asp-action="UserProfile"
+                   asp-route-username="@story.AuthorUsername"
+                   asp-route-tab="stories"
+                   class="story-viewer-avatar">
+                    @if (!string.IsNullOrWhiteSpace(story.AuthorAvatarUrl))
+                    {
+                        <img src="@story.AuthorAvatarUrl" alt="@story.AuthorDisplayName" />
+                    }
+                    else
+                    {
+                        <span>@story.AuthorDisplayName[..1].ToUpperInvariant()</span>
+                    }
+                </a>
+
+                <div>
+                    <div class="story-viewer-author-name">@story.AuthorDisplayName</div>
+                    <div class="story-viewer-author-meta">
+                        <span>@@@story.AuthorUsername</span>
+                        <span class="dot"></span>
+                        <span>@story.CreatedAt.ToString("dd MMM yyyy, HH:mm")</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="story-viewer-status">
+                <span class="status-pill @(story.IsExpired ? "is-muted" : "is-live")">
+                    @(story.IsExpired ? "Archive" : "Dang hoat dong")
+                </span>
+            </div>
+        </div>
+
+        <div class="story-viewer-stage story-surface story-surface--@story.BackgroundStyle">
+            @if (story.HasImage && !string.IsNullOrWhiteSpace(story.ImageUrl))
+            {
+                <img class="story-surface__image" src="@story.ImageUrl" alt="@story.PreviewText" />
+            }
+            <div class="story-surface__overlay"></div>
+            <div class="story-surface__copy">@storyText</div>
+        </div>
+
+        <div class="story-viewer-footer">
+            <div class="story-viewer-metrics">
+                <span><i class="fa-regular fa-eye"></i> @story.ViewCount luot xem</span>
+                <span><i class="fa-regular fa-clock"></i> Het han @story.ExpiresAt.ToString("dd MMM, HH:mm")</span>
+                @if (story.HasMusic)
+                {
+                    <span><i class="fa-solid fa-music"></i> @story.MusicDisplayName</span>
+                }
+            </div>
+
+            <div class="story-viewer-actions">
+                @if (Model.PreviousStoryId.HasValue)
+                {
+                    <a asp-action="Viewer" asp-route-id="@Model.PreviousStoryId.Value" class="btn btn-outline">
+                        <i class="fa-solid fa-chevron-left"></i>
+                        <span>Cu hon</span>
+                    </a>
+                }
+
+                @if (Model.NextStoryId.HasValue)
+                {
+                    <a asp-action="Viewer" asp-route-id="@Model.NextStoryId.Value" class="btn btn-primary">
+                        <span>Moi hon</span>
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </a>
+                }
+            </div>
+        </div>
+
+        @if (story.HasMusic && !string.IsNullOrWhiteSpace(story.MusicUrl))
+        {
+            <div class="story-viewer-audio">
+                <div class="story-viewer-audio__label">
+                    <span>
+                        <i class="fa-solid fa-music"></i>
+                        <span>@(string.IsNullOrWhiteSpace(story.MusicDisplayName) ? "Nhac story" : story.MusicDisplayName)</span>
+                    </span>
+                    @if (!string.IsNullOrWhiteSpace(story.MusicSourceLabel))
+                    {
+                        <span class="status-pill is-muted">@story.MusicSourceLabel</span>
+                    }
+                </div>
+
+                @if (story.ShowInlineMusicPlayer)
+                {
+                    <audio controls preload="metadata" src="@story.MusicUrl" autoplay data-story-viewer-audio></audio>
+                }
+                else if (story.CanEmbedMusic && !string.IsNullOrWhiteSpace(story.MusicEmbedUrl))
+                {
+                    <div class="story-viewer-music-embed">
+                        <iframe src="@story.MusicEmbedUrl"
+                                title="@story.MusicDisplayName"
+                                loading="lazy"
+                                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                                referrerpolicy="strict-origin-when-cross-origin"></iframe>
+                    </div>
+                }
+                else
+                {
+                    <p class="field-hint">Bai nhac nay duoc mo ben ngoai de dung player chinh thuc.</p>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(story.MusicActionUrl))
+                {
+                    <div class="story-viewer-audio__actions">
+                        <a href="@story.MusicActionUrl"
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           class="btn btn-outline">
+                            @(string.IsNullOrWhiteSpace(story.MusicActionLabel) ? "Mo bai nhac" : story.MusicActionLabel)
+                        </a>
+                    </div>
+                }
+            </div>
+        }
+
+        @if (Model.CanManage)
+        {
+            <form asp-action="Delete" method="post" class="story-viewer-delete">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@story.Id" />
+                <input type="hidden" name="returnUrl" value="@Url.Action("Index", "Profile", new { tab = "stories" })" />
+                <button type="submit" class="btn btn-text">Xoa story nay</button>
+            </form>
+        }
+    </section>
+</div>
+
+@if (story.HasMusic && story.ShowInlineMusicPlayer && !string.IsNullOrWhiteSpace(story.MusicUrl))
+{
+    <script>
+        (() => {
+            const audio = document.querySelector('[data-story-viewer-audio]');
+            if (!(audio instanceof HTMLAudioElement)) {
+                return;
+            }
+
+            const tryAutoplay = () => {
+                audio.play().catch(() => {});
+            };
+
+            if (audio.readyState >= 2) {
+                tryAutoplay();
+                return;
+            }
+
+            audio.addEventListener('canplay', tryAutoplay, { once: true });
+        })();
+    </script>
+}

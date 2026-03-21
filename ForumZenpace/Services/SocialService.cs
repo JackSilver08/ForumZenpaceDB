@@ -520,6 +520,9 @@ namespace ForumZenpace.Services
                 ActorDisplayName = actorUser is null ? string.Empty : GetDisplayName(actorUser.FullName, actorUser.Username),
                 ActorAvatarUrl = actorUser?.Avatar,
                 FriendRequestId = friendRequest?.Id ?? notification.FriendRequestId,
+                StoryId = notification.StoryId,
+                TargetUrl = notification.StoryId.HasValue ? StoryService.GetStoryViewerUrl(notification.StoryId.Value) : string.Empty,
+                ActionLabel = notification.StoryId.HasValue ? "Mo story" : string.Empty,
                 FriendRequestStatus = friendRequest?.Status ?? string.Empty,
                 CanAcceptFriendRequest =
                     string.Equals(notification.Type, NotificationTypes.FriendRequest, StringComparison.OrdinalIgnoreCase) &&

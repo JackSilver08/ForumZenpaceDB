@@ -71,6 +71,8 @@ namespace ForumZenpace.Models
         public ICollection<Friendship> SecondaryFriendships { get; set; } = new List<Friendship>();
         public ICollection<MessageBlock> SentMessageBlocks { get; set; } = new List<MessageBlock>();
         public ICollection<MessageBlock> ReceivedMessageBlocks { get; set; } = new List<MessageBlock>();
+        public ICollection<Story> Stories { get; set; } = new List<Story>();
+        public ICollection<StoryView> StoryViews { get; set; } = new List<StoryView>();
     }
 
     public class PendingRegistration
@@ -221,6 +223,66 @@ namespace ForumZenpace.Models
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 
+    public class Story
+    {
+        public int Id { get; set; }
+
+        public int UserId { get; set; }
+        [ForeignKey("UserId")]
+        public User User { get; set; } = null!;
+
+        [MaxLength(1200)]
+        public string? TextContent { get; set; }
+
+        [Required, MaxLength(40)]
+        public string BackgroundStyle { get; set; } = StoryBackgroundStyles.Aurora;
+
+        [MaxLength(255)]
+        public string? ImageFileName { get; set; }
+
+        [MaxLength(255)]
+        public string? ImageOriginalFileName { get; set; }
+
+        [MaxLength(100)]
+        public string? ImageContentType { get; set; }
+
+        [MaxLength(255)]
+        public string? ImageUrl { get; set; }
+
+        [MaxLength(255)]
+        public string? MusicFileName { get; set; }
+
+        [MaxLength(255)]
+        public string? MusicOriginalFileName { get; set; }
+
+        [MaxLength(100)]
+        public string? MusicContentType { get; set; }
+
+        [MaxLength(255)]
+        public string? MusicUrl { get; set; }
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        public DateTime ExpiresAt { get; set; } = DateTime.UtcNow.AddHours(24);
+
+        public ICollection<StoryView> Views { get; set; } = new List<StoryView>();
+    }
+
+    public class StoryView
+    {
+        public int Id { get; set; }
+
+        public int StoryId { get; set; }
+        [ForeignKey("StoryId")]
+        public Story Story { get; set; } = null!;
+
+        public int ViewerUserId { get; set; }
+        [ForeignKey("ViewerUserId")]
+        public User ViewerUser { get; set; } = null!;
+
+        public DateTime ViewedAt { get; set; } = DateTime.UtcNow;
+    }
+
     public class Report
     {
         public int Id { get; set; }
@@ -260,6 +322,10 @@ namespace ForumZenpace.Models
         public int? FriendRequestId { get; set; }
         [ForeignKey("FriendRequestId")]
         public FriendRequest? FriendRequest { get; set; }
+
+        public int? StoryId { get; set; }
+        [ForeignKey("StoryId")]
+        public Story? Story { get; set; }
 
         public bool IsRead { get; set; } = false;
         
@@ -365,5 +431,14 @@ namespace ForumZenpace.Models
         public const string General = "General";
         public const string FriendRequest = "FriendRequest";
         public const string FriendAccepted = "FriendAccepted";
+        public const string StoryPublished = "StoryPublished";
+    }
+
+    public static class StoryBackgroundStyles
+    {
+        public const string Aurora = "aurora";
+        public const string Sunset = "sunset";
+        public const string Lagoon = "lagoon";
+        public const string Midnight = "midnight";
     }
 }

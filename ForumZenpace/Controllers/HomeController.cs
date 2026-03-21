@@ -10,11 +10,13 @@ namespace ForumZenpace.Controllers
     {
         private readonly ForumDbContext _context;
         private readonly SocialService _socialService;
+        private readonly StoryService _storyService;
 
-        public HomeController(ForumDbContext context, SocialService socialService)
+        public HomeController(ForumDbContext context, SocialService socialService, StoryService storyService)
         {
             _context = context;
             _socialService = socialService;
+            _storyService = storyService;
         }
 
         public async Task<IActionResult> Index(string searchString, int? categoryId, string sortOrder)
@@ -51,6 +53,15 @@ namespace ForumZenpace.Controllers
             }
 
             var currentUserId = GetCurrentUserId();
+            var friends = currentUserId.HasValue
+                ? await _socialService.GetFriendsAsync(currentUserId.Value)
+                : Array.Empty<FriendSummaryViewModel>();
+
+            if (currentUserId.HasValue && friends.Count > 0)
+            {
+                friends = await _storyService.PopulateActiveStoryStateAsync(currentUserId.Value, friends, HttpContext.RequestAborted);
+            }
+
             return View(new HomeIndexViewModel
             {
                 Posts = await posts.ToListAsync(),
@@ -59,9 +70,10 @@ namespace ForumZenpace.Controllers
                 CurrentCategoryId = categoryId,
                 SearchString = searchString,
                 CurrentUserId = currentUserId,
-                Friends = currentUserId.HasValue
-                    ? await _socialService.GetFriendsAsync(currentUserId.Value)
-                    : Array.Empty<FriendSummaryViewModel>(),
+                CurrentUserStory = currentUserId.HasValue
+                    ? await _storyService.GetCurrentUserStorySummaryAsync(currentUserId.Value, HttpContext.RequestAborted)
+                    : null,
+                Friends = friends,
                 UnreadNotificationCount = currentUserId.HasValue
                     ? await _socialService.GetUnreadNotificationCountAsync(currentUserId.Value)
                     : 0

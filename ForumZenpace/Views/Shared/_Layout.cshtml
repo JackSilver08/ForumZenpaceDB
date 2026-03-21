@@ -44,6 +44,11 @@
                 <div class="header-actions">
                     @if (User.Identity?.IsAuthenticated == true)
                     {
+                        <button type="button" class="btn btn-outline" data-open-story-modal>
+                            <i class="fa-solid fa-plus"></i>
+                            <span>Khoanh khac</span>
+                        </button>
+
                         <a asp-controller="Post" asp-action="Create" class="btn btn-primary">
                             <i class="fa-solid fa-plus"></i>
                             <span>Chu de moi</span>
@@ -90,6 +95,11 @@
         </div>
     </main>
 
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <partial name="_StoryComposerModal" />
+    }
+
     <footer class="footer">
         <div class="page-shell footer-shell">
             <p>&copy; @DateTime.Now.Year Zenpace</p>
@@ -105,6 +115,7 @@
     <script src="~/js/site.js" asp-append-version="true"></script>
     @if (currentUserId.HasValue)
     {
+        <script src="~/js/story.js" asp-append-version="true"></script>
         <script src="~/js/social.js" asp-append-version="true"></script>
     }
     @await RenderSectionAsync("Scripts", required: false)

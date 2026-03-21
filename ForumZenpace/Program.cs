@@ -17,6 +17,8 @@ builder.Services.AddScoped<PasswordSecurityService>();
 builder.Services.AddScoped<AuthFlowTokenService>();
 builder.Services.AddScoped<DirectMessageService>();
 builder.Services.AddScoped<SocialService>();
+builder.Services.AddScoped<StoryMusicLibraryService>();
+builder.Services.AddScoped<StoryService>();
 
 // Setup DbContext
 builder.Services.AddDbContext<ForumDbContext>(options =>
@@ -38,6 +40,10 @@ var uploadsRootPath = Path.Combine(webRootPath, "uploads");
 
 Directory.CreateDirectory(Path.Combine(uploadsRootPath, "avatars"));
 Directory.CreateDirectory(Path.Combine(uploadsRootPath, "posts"));
+Directory.CreateDirectory(Path.Combine(uploadsRootPath, "stories"));
+Directory.CreateDirectory(Path.Combine(uploadsRootPath, "story-music"));
+Directory.CreateDirectory(Path.Combine(webRootPath, "library", "story-music"));
+Directory.CreateDirectory(Path.Combine(app.Environment.ContentRootPath, "Data", "StoryMusic"));
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

@@ -9,8 +9,13 @@
     var avatarInitial = avatarSeed.Substring(0, 1).ToUpperInvariant();
     var hasAvatar = !string.IsNullOrWhiteSpace(Model.Avatar);
     var hasPosts = Model.Posts.Any();
+    var stories = Model.Stories.ToList();
+    var activeStories = stories.Where(story => !story.IsExpired).ToList();
+    var archivedStories = stories.Where(story => story.IsExpired).ToList();
+    var hasStories = stories.Any();
     var hasValidationErrors = Model.IsOwner && ViewData.ModelState.ErrorCount > 0;
     var isPostsTab = Model.ActiveTab == "posts";
+    var isStoriesTab = Model.ActiveTab == "stories";
     var isChatTab = Model.ActiveTab == "chat";
 }
 
@@ -107,14 +112,22 @@
                     <div>
                         <div class="panel-label">@(Model.IsOwner ? "Noi dung cua ban" : $"Trang ca nhan cua {displayName}")</div>
                         <h2 class="section-heading">
-                            @(isChatTab ? $"Chat voi {displayName}" : "Bai viet da dang")
+                            @(isStoriesTab
+                                ? "Khoanh khac da dang"
+                                : isChatTab
+                                    ? $"Chat voi {displayName}"
+                                    : "Bai viet da dang")
                         </h2>
                         <p class="surface-subtitle">
-                            @(isChatTab
-                                ? "Cuoc tro chuyen nay chi hien giua ban va nguoi dung duoc chon."
-                                : (Model.IsOwner
-                                    ? "Cac chu de cong khai duoc sap xep theo thoi gian moi nhat."
-                                    : "Cac bai viet cong khai cua thanh vien nay duoc sap xep theo thoi gian moi nhat."))
+                            @(isStoriesTab
+                                ? (Model.IsOwner
+                                    ? "Story moi se hien trong 24 gio, sau do duoc luu lai de ban quan ly trong profile."
+                                    : "Khoanh khac cua thanh vien nay chi hien voi ban be va duoc sap xep tu moi nhat den cu hon.")
+                                : (isChatTab
+                                    ? "Cuoc tro chuyen nay chi hien giua ban va nguoi dung duoc chon."
+                                    : (Model.IsOwner
+                                        ? "Cac chu de cong khai duoc sap xep theo thoi gian moi nhat."
+                                        : "Cac bai viet cong khai cua thanh vien nay duoc sap xep theo thoi gian moi nhat.")))
                         </p>
 
                         @if (!Model.IsOwner && Model.IsAuthenticatedViewer)
@@ -195,9 +208,19 @@
                     <div class="profile-tabs" aria-label="Dieu huong ho so">
                         @if (Model.IsOwner)
                         {
-                            <a asp-action="Index" class="profile-tab is-active" aria-selected="true">
+                            <a asp-action="Index"
+                               asp-route-tab="posts"
+                               class="profile-tab @(isPostsTab ? "is-active" : string.Empty)"
+                               aria-selected="@(isPostsTab.ToString().ToLowerInvariant())">
                                 Posts
                                 <span class="profile-tab-count">@Model.PostCount</span>
+                            </a>
+                            <a asp-action="Index"
+                               asp-route-tab="stories"
+                               class="profile-tab @(isStoriesTab ? "is-active" : string.Empty)"
+                               aria-selected="@(isStoriesTab.ToString().ToLowerInvariant())">
+                                Stories
+                                <span class="profile-tab-count">@Model.StoryCount</span>
                             </a>
                         }
                         else
@@ -210,6 +233,17 @@
                                 Posts
                                 <span class="profile-tab-count">@Model.PostCount</span>
                             </a>
+                            @if (Model.ShowStoriesTab)
+                            {
+                                <a asp-action="UserProfile"
+                                   asp-route-username="@Model.Username"
+                                   asp-route-tab="stories"
+                                   class="profile-tab @(isStoriesTab ? "is-active" : string.Empty)"
+                                   aria-selected="@(isStoriesTab.ToString().ToLowerInvariant())">
+                                    Stories
+                                    <span class="profile-tab-count">@Model.StoryCount</span>
+                                </a>
+                            }
                             <a asp-action="UserProfile"
                                asp-route-username="@Model.Username"
                                asp-route-tab="chat"
@@ -293,6 +327,182 @@
                             }
                         </div>
                     }
+                }
+                else if (isStoriesTab)
+                {
+                    <div class="profile-story-shell">
+                        <div class="profile-story-summary-row">
+                            <div class="glass-card profile-story-metric">
+                                <span class="profile-story-metric-label">Dang hien</span>
+                                <strong class="profile-story-metric-value">@Model.ActiveStoryCount</strong>
+                            </div>
+                            <div class="glass-card profile-story-metric">
+                                <span class="profile-story-metric-label">Archive</span>
+                                <strong class="profile-story-metric-value">@Model.ArchivedStoryCount</strong>
+                            </div>
+                            <div class="glass-card profile-story-metric">
+                                <span class="profile-story-metric-label">Tong story</span>
+                                <strong class="profile-story-metric-value">@Model.StoryCount</strong>
+                            </div>
+                        </div>
+
+                        @if (Model.IsOwner)
+                        {
+                            <div class="profile-story-cta">
+                                <button type="button" class="btn btn-primary" data-open-story-modal>
+                                    <i class="fa-solid fa-plus"></i>
+                                    <span>Dang khoanh khac moi</span>
+                                </button>
+                                <p class="field-hint">Story moi se duoc thong bao toi ban be va tu dong chuyen vao archive sau 24 gio.</p>
+                            </div>
+                        }
+
+                        @if (hasStories)
+                        {
+                            @if (activeStories.Any())
+                            {
+                                <div class="profile-story-section">
+                                    <div class="profile-story-section-header">
+                                        <div>
+                                            <div class="panel-label">Dang hoat dong</div>
+                                            <h3 class="section-heading">Story trong 24 gio</h3>
+                                        </div>
+                                        <span class="status-pill is-live">@activeStories.Count dang hien</span>
+                                    </div>
+
+                                    <div class="profile-story-grid">
+                                        @foreach (var story in activeStories)
+                                        {
+                                            <article class="glass-card profile-story-card @(story.HasBeenViewedByViewer ? string.Empty : "profile-story-card--fresh")">
+                                                <a asp-controller="Story"
+                                                   asp-action="Viewer"
+                                                   asp-route-id="@story.Id"
+                                                   class="profile-story-card-link">
+                                                    <div class="profile-story-card-preview story-surface story-surface--@story.BackgroundStyle">
+                                                        @if (story.HasImage && !string.IsNullOrWhiteSpace(story.ImageUrl))
+                                                        {
+                                                            <img class="story-surface__image" src="@story.ImageUrl" alt="@story.PreviewText" />
+                                                        }
+                                                        <div class="story-surface__overlay"></div>
+                                                        <div class="story-surface__copy">@story.PreviewText</div>
+                                                    </div>
+
+                                                    <div class="profile-story-card-body">
+                                                        <div class="profile-story-card-meta">
+                                                            <span>@story.CreatedAt.ToString("dd MMM yyyy, HH:mm")</span>
+                                                            @if (!story.HasBeenViewedByViewer)
+                                                            {
+                                                                <span class="status-pill is-live">Moi</span>
+                                                            }
+                                                            @if (story.HasMusic)
+                                                            {
+                                                                <span class="badge-tag"><i class="fa-solid fa-music"></i> Nhac</span>
+                                                            }
+                                                        </div>
+                                                        <p class="profile-story-card-caption">@story.PreviewText</p>
+                                                        <div class="profile-story-card-footer">
+                                                            <span><i class="fa-regular fa-eye"></i> @story.ViewCount luot xem</span>
+                                                            <span><i class="fa-regular fa-clock"></i> Het han @story.ExpiresAt.ToString("dd MMM, HH:mm")</span>
+                                                        </div>
+                                                    </div>
+                                                </a>
+
+                                                @if (Model.IsOwner)
+                                                {
+                                                    <form asp-controller="Story" asp-action="Delete" method="post" class="profile-story-delete">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="id" value="@story.Id" />
+                                                        <input type="hidden" name="returnUrl" value="@($"{Context.Request.Path}{Context.Request.QueryString}")" />
+                                                        <button type="submit" class="btn btn-text">Xoa</button>
+                                                    </form>
+                                                }
+                                            </article>
+                                        }
+                                    </div>
+                                </div>
+                            }
+
+                            @if (archivedStories.Any())
+                            {
+                                <div class="profile-story-section">
+                                    <div class="profile-story-section-header">
+                                        <div>
+                                            <div class="panel-label">Luu tru</div>
+                                            <h3 class="section-heading">Story da het han</h3>
+                                        </div>
+                                        <span class="status-pill is-muted">@archivedStories.Count trong archive</span>
+                                    </div>
+
+                                    <div class="profile-story-grid">
+                                        @foreach (var story in archivedStories)
+                                        {
+                                            <article class="glass-card profile-story-card profile-story-card--archived">
+                                                <a asp-controller="Story"
+                                                   asp-action="Viewer"
+                                                   asp-route-id="@story.Id"
+                                                   class="profile-story-card-link">
+                                                    <div class="profile-story-card-preview story-surface story-surface--@story.BackgroundStyle">
+                                                        @if (story.HasImage && !string.IsNullOrWhiteSpace(story.ImageUrl))
+                                                        {
+                                                            <img class="story-surface__image" src="@story.ImageUrl" alt="@story.PreviewText" />
+                                                        }
+                                                        <div class="story-surface__overlay"></div>
+                                                        <div class="story-surface__copy">@story.PreviewText</div>
+                                                    </div>
+
+                                                    <div class="profile-story-card-body">
+                                                        <div class="profile-story-card-meta">
+                                                            <span>@story.CreatedAt.ToString("dd MMM yyyy, HH:mm")</span>
+                                                            <span class="status-pill is-muted">Archive</span>
+                                                            @if (story.HasMusic)
+                                                            {
+                                                                <span class="badge-tag"><i class="fa-solid fa-music"></i> Nhac</span>
+                                                            }
+                                                        </div>
+                                                        <p class="profile-story-card-caption">@story.PreviewText</p>
+                                                        <div class="profile-story-card-footer">
+                                                            <span><i class="fa-regular fa-eye"></i> @story.ViewCount luot xem</span>
+                                                            <span><i class="fa-regular fa-clock"></i> Het han @story.ExpiresAt.ToString("dd MMM, HH:mm")</span>
+                                                        </div>
+                                                    </div>
+                                                </a>
+
+                                                @if (Model.IsOwner)
+                                                {
+                                                    <form asp-controller="Story" asp-action="Delete" method="post" class="profile-story-delete">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="id" value="@story.Id" />
+                                                        <input type="hidden" name="returnUrl" value="@($"{Context.Request.Path}{Context.Request.QueryString}")" />
+                                                        <button type="submit" class="btn btn-text">Xoa</button>
+                                                    </form>
+                                                }
+                                            </article>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="profile-empty-state">
+                                <div class="empty-icon">
+                                    <i class="fa-regular fa-images"></i>
+                                </div>
+                                <h3 class="section-heading">Chua co khoanh khac nao</h3>
+                                <p class="muted">
+                                    @(Model.IsOwner
+                                        ? "Dang story dau tien de hien tren trang chu cua ban be trong 24 gio va luu lai trong archive profile."
+                                        : "Thanh vien nay hien chua co story nao co the hien voi ban.")
+                                </p>
+                                @if (Model.IsOwner)
+                                {
+                                    <div>
+                                        <button type="button" class="btn btn-primary" data-open-story-modal>Dang story moi</button>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
                 }
                 else if (!Model.IsAuthenticatedViewer)
                 {

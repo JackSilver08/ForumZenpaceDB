@@ -91,6 +91,13 @@
                                 </button>
                             }
 
+                            @if (!string.IsNullOrWhiteSpace(notification.TargetUrl))
+                            {
+                                <a href="@notification.TargetUrl" class="btn btn-outline btn-sm">
+                                    @(string.IsNullOrWhiteSpace(notification.ActionLabel) ? "Mo" : notification.ActionLabel)
+                                </a>
+                            }
+
                             @if (!notification.IsRead)
                             {
                                 <form asp-action="MarkAsRead" method="post" data-mark-notification-read>

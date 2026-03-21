@@ -19,6 +19,8 @@ namespace ForumZenpace.Models
         public DbSet<Like> Likes { get; set; }
         public DbSet<CommentLike> CommentLikes { get; set; }
         public DbSet<PostImage> PostImages { get; set; }
+        public DbSet<Story> Stories { get; set; }
+        public DbSet<StoryView> StoryViews { get; set; }
         public DbSet<Report> Reports { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<FriendRequest> FriendRequests { get; set; }
@@ -49,6 +51,16 @@ namespace ForumZenpace.Models
 
             modelBuilder.Entity<PostImage>()
                 .HasIndex(postImage => postImage.DraftToken);
+
+            modelBuilder.Entity<Story>()
+                .HasIndex(story => new { story.UserId, story.CreatedAt });
+
+            modelBuilder.Entity<Story>()
+                .HasIndex(story => story.ExpiresAt);
+
+            modelBuilder.Entity<StoryView>()
+                .HasIndex(storyView => new { storyView.StoryId, storyView.ViewerUserId })
+                .IsUnique();
 
             modelBuilder.Entity<DirectConversation>()
                 .HasIndex(conversation => new { conversation.UserAId, conversation.UserBId })
@@ -99,12 +111,36 @@ namespace ForumZenpace.Models
                 .HasForeignKey(notification => notification.FriendRequestId);
 
             modelBuilder.Entity<Notification>()
+                .HasOne(notification => notification.Story)
+                .WithMany()
+                .HasForeignKey(notification => notification.StoryId);
+
+            modelBuilder.Entity<Notification>()
                 .Property(notification => notification.Type)
                 .HasDefaultValue(NotificationTypes.General);
+
+            modelBuilder.Entity<Story>()
+                .Property(story => story.BackgroundStyle)
+                .HasDefaultValue(StoryBackgroundStyles.Aurora);
 
             modelBuilder.Entity<User>()
                 .Property(user => user.IsEmailConfirmed)
                 .HasDefaultValue(false);
+
+            modelBuilder.Entity<Story>()
+                .HasOne(story => story.User)
+                .WithMany(user => user.Stories)
+                .HasForeignKey(story => story.UserId);
+
+            modelBuilder.Entity<StoryView>()
+                .HasOne(storyView => storyView.Story)
+                .WithMany(story => story.Views)
+                .HasForeignKey(storyView => storyView.StoryId);
+
+            modelBuilder.Entity<StoryView>()
+                .HasOne(storyView => storyView.ViewerUser)
+                .WithMany(user => user.StoryViews)
+                .HasForeignKey(storyView => storyView.ViewerUserId);
 
             modelBuilder.Entity<FriendRequest>()
                 .HasOne(friendRequest => friendRequest.Sender)

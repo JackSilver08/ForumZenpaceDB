@@ -29,6 +29,7 @@ namespace ForumZenpace.Controllers
         private readonly IWebHostEnvironment _environment;
         private readonly DirectMessageService _directMessageService;
         private readonly SocialService _socialService;
+        private readonly StoryService _storyService;
         private readonly EmailVerificationService _emailVerificationService;
         private readonly AuthFlowTokenService _authFlowTokenService;
         private readonly IHubContext<DirectMessageHub> _hubContext;
@@ -38,6 +39,7 @@ namespace ForumZenpace.Controllers
             IWebHostEnvironment environment,
             DirectMessageService directMessageService,
             SocialService socialService,
+            StoryService storyService,
             EmailVerificationService emailVerificationService,
             AuthFlowTokenService authFlowTokenService,
             IHubContext<DirectMessageHub> hubContext)
@@ -46,13 +48,14 @@ namespace ForumZenpace.Controllers
             _environment = environment;
             _directMessageService = directMessageService;
             _socialService = socialService;
+            _storyService = storyService;
             _emailVerificationService = emailVerificationService;
             _authFlowTokenService = authFlowTokenService;
             _hubContext = hubContext;
         }
 
         [HttpGet]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string? tab = null)
         {
             var userId = GetCurrentUserId();
             if (userId is null) return Challenge();
@@ -62,7 +65,7 @@ namespace ForumZenpace.Controllers
             if (user == null) return NotFound();
 
             ApplyFlashMessages();
-            return View(await BuildProfileViewModelAsync(user, userId.Value, "posts"));
+            return View(await BuildProfileViewModelAsync(user, userId.Value, tab ?? "posts"));
         }
 
         [AllowAnonymous]
@@ -89,7 +92,7 @@ namespace ForumZenpace.Controllers
             }
 
             ApplyFlashMessages();
-            return View("Index", await BuildProfileViewModelAsync(profileUser, viewerUserId, NormalizeProfileTab(tab)));
+            return View("Index", await BuildProfileViewModelAsync(profileUser, viewerUserId, tab ?? "posts"));
         }
 
         [HttpPost]
@@ -253,9 +256,14 @@ namespace ForumZenpace.Controllers
         {
             var isOwner = viewerUserId.HasValue && viewerUserId.Value == user.Id;
             var showChatTab = !isOwner;
-            var normalizedActiveTab = showChatTab && string.Equals(activeTab, "chat", StringComparison.OrdinalIgnoreCase)
-                ? "chat"
-                : "posts";
+            var relationshipStatus = new RelationshipStatusViewModel();
+            if (showChatTab && viewerUserId.HasValue)
+            {
+                relationshipStatus = await _socialService.GetRelationshipStatusAsync(viewerUserId.Value, user.Id);
+            }
+
+            var showStoriesTab = isOwner || relationshipStatus.IsFriend;
+            var normalizedActiveTab = NormalizeProfileTab(activeTab, showStoriesTab, showChatTab);
 
             var posts = await _context.Posts
                 .Where(p => p.UserId == user.Id && p.Status == "Active")
@@ -266,10 +274,8 @@ namespace ForumZenpace.Controllers
 
             IReadOnlyList<ProfileChatMessageViewModel> chatMessages = Array.Empty<ProfileChatMessageViewModel>();
             var chatMessageCount = 0;
-            var relationshipStatus = new RelationshipStatusViewModel();
             if (showChatTab && viewerUserId.HasValue)
             {
-                relationshipStatus = await _socialService.GetRelationshipStatusAsync(viewerUserId.Value, user.Id);
                 var conversation = await GetConversationQuery(viewerUserId.Value, user.Id)
                     .Include(c => c.Messages)
                         .ThenInclude(m => m.Sender)
@@ -312,6 +318,10 @@ namespace ForumZenpace.Controllers
                 }
             }
 
+            var stories = await _storyService.GetProfileStoriesAsync(user.Id, viewerUserId, showStoriesTab, HttpContext.RequestAborted);
+            var activeStoryCount = stories.Count(story => !story.IsExpired);
+            var archivedStoryCount = stories.Count - activeStoryCount;
+
             return new ProfileViewModel
             {
                 FullName = source?.FullName ?? user.FullName,
@@ -323,6 +333,7 @@ namespace ForumZenpace.Controllers
                 IsOwner = isOwner,
                 IsAuthenticatedViewer = viewerUserId.HasValue,
                 ActiveTab = normalizedActiveTab,
+                ShowStoriesTab = showStoriesTab,
                 ShowChatTab = showChatTab,
                 CanSendMessages = viewerUserId.HasValue && !isOwner && !relationshipStatus.IsConversationBlocked,
                 IsFriend = relationshipStatus.IsFriend,
@@ -341,6 +352,9 @@ namespace ForumZenpace.Controllers
                 ChatMessages = chatMessages,
                 JoinedAt = user.CreatedAt,
                 PostCount = posts.Count,
+                StoryCount = stories.Count,
+                ActiveStoryCount = activeStoryCount,
+                ArchivedStoryCount = archivedStoryCount,
                 TotalViewCount = posts.Sum(p => p.ViewCount),
                 TotalCommentCount = posts.Sum(p => p.Comments.Count),
                 Posts = posts.Select(p => new ProfilePostSummaryViewModel
@@ -352,7 +366,8 @@ namespace ForumZenpace.Controllers
                     CreatedAt = p.CreatedAt,
                     CommentCount = p.Comments.Count,
                     ViewCount = p.ViewCount
-                }).ToList()
+                }).ToList(),
+                Stories = stories
             };
         }
 
@@ -369,11 +384,19 @@ namespace ForumZenpace.Controllers
                 : (secondUserId, firstUserId);
         }
 
-        private static string NormalizeProfileTab(string? tab)
+        private static string NormalizeProfileTab(string? tab, bool allowStories = false, bool allowChat = false)
         {
-            return string.Equals(tab, "chat", StringComparison.OrdinalIgnoreCase)
-                ? "chat"
-                : "posts";
+            if (allowStories && string.Equals(tab, "stories", StringComparison.OrdinalIgnoreCase))
+            {
+                return "stories";
+            }
+
+            if (allowChat && string.Equals(tab, "chat", StringComparison.OrdinalIgnoreCase))
+            {
+                return "chat";
+            }
+
+            return "posts";
         }
 
         private void ApplyFlashMessages()

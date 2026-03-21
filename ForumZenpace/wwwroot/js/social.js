@@ -277,6 +277,15 @@
     const removeFriendEmptyState = () => friendList?.querySelector('[data-friend-empty]')?.remove();
 
     const getFriendCardState = (friend) => {
+        if (friend.hasActiveStory && friend.latestStoryId) {
+            return {
+                state: 'story',
+                label: `Xem khoanh khac cua @@${friend.username}`,
+                icon: 'fa-circle-play',
+                hidden: true
+            };
+        }
+
         if (friend.isMessageBlockedByViewer) {
             return {
                 state: 'blocked-by-viewer',
@@ -305,13 +314,23 @@
 
     const renderFriendCard = (friend) => {
         const friendState = getFriendCardState(friend);
+        const hasActiveStory = !!friend.hasActiveStory && Number.isInteger(Number.parseInt(`${friend.latestStoryId ?? ''}`, 10));
+        const targetUrl = hasActiveStory
+            ? `/Story/Viewer/${encodeURIComponent(friend.latestStoryId)}`
+            : `/Profile/user/${encodeURIComponent(friend.username)}`;
         const avatarMarkup = friend.avatarUrl
             ? `<img src="${escapeHtml(friend.avatarUrl)}" alt="${escapeHtml(friend.displayName)}" />`
             : `<span>${escapeHtml(getInitials(friend.displayName, friend.username))}</span>`;
+        const storyPill = hasActiveStory
+            ? `<span class="social-story-pill">${escapeHtml(`${friend.activeStoryCount || 1} story`)}</span>`
+            : '';
+        const storyMeta = hasActiveStory
+            ? `<span>${friend.hasUnviewedStory ? 'Chua xem' : 'Da xem'}</span>`
+            : '';
 
         return `
-            <a href="/Profile/user/${encodeURIComponent(friend.username)}"
-               class="glass-panel social-card social-card--friend"
+            <a href="${targetUrl}"
+               class="glass-panel social-card social-card--friend${hasActiveStory ? ' social-card--story' : ''}${friend.hasUnviewedStory ? ' social-card--story-fresh' : ''}"
                data-friend-card
                data-friend-user-id="${friend.userId}"
                data-friend-username="${escapeHtml(friend.username)}"
@@ -320,9 +339,11 @@
                 <span class="social-friend-badge${friendState.hidden ? ' is-hidden' : ''}" data-friend-status-badge aria-hidden="true">
                     <i class="fa-solid ${friendState.icon}"></i>
                 </span>
-                <span class="social-avatar">${avatarMarkup}</span>
+                ${storyPill}
+                <span class="social-avatar social-avatar--story${hasActiveStory ? ' has-story' : ''}">${avatarMarkup}</span>
                 <span class="social-card-copy">
                     <strong>@${escapeHtml(friend.username)}</strong>
+                    ${storyMeta}
                 </span>
             </a>`;
     };
@@ -573,6 +594,8 @@
                     ${notification.canAcceptFriendRequest && notification.friendRequestId ? `
                         <button type="button" class="btn btn-primary btn-sm" data-notification-accept data-friend-request-id="${notification.friendRequestId}">Chap nhan</button>
                         <button type="button" class="btn btn-text btn-sm" data-notification-decline data-friend-request-id="${notification.friendRequestId}">Tu choi</button>` : ''}
+                    ${notification.targetUrl ? `
+                        <a href="${escapeHtml(notification.targetUrl)}" class="btn btn-outline btn-sm">${escapeHtml(notification.actionLabel || 'Mo')}</a>` : ''}
                     ${!notification.isRead ? `
                         <form action="/Notification/MarkAsRead" method="post" data-mark-notification-read>
                             ${renderAntiForgeryTokenInput()}

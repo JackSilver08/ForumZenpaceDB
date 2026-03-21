@@ -13,6 +13,8 @@
     var sortRoute = string.IsNullOrEmpty(currentSort) ? null : currentSort;
     var searchRoute = string.IsNullOrWhiteSpace(searchString) ? null : searchString;
     var canUseSocial = Model.CurrentUserId.HasValue;
+    var ownStory = Model.CurrentUserStory;
+    var currentUsername = User.Identity?.Name ?? "ban";
 
     string GetInitials(string? name, string? fallback = null)
     {
@@ -64,6 +66,43 @@
                 </button>
 
                 <div id="homeFriendList" class="social-friend-list" data-friend-list>
+                    @if (canUseSocial)
+                    {
+                        if (ownStory?.HasActiveStory == true && ownStory.LatestStoryId.HasValue)
+                        {
+                            <a asp-controller="Story"
+                               asp-action="Viewer"
+                               asp-route-id="@ownStory.LatestStoryId.Value"
+                               class="glass-panel social-card social-card--friend social-card--story social-card--story-self"
+                               title="Xem khoanh khac cua ban">
+                                <span class="social-story-pill">@ownStory.ActiveStoryCount story</span>
+                                <span class="social-avatar social-avatar--story is-own-story">
+                                    <span>@GetInitials(currentUsername)</span>
+                                </span>
+                                <span class="social-card-copy">
+                                    <strong>Story cua ban</strong>
+                                    <span>Dang hien voi ban be</span>
+                                </span>
+                            </a>
+                        }
+                        else
+                        {
+                            <button type="button"
+                                    class="glass-panel social-card social-card--friend social-card--story social-card--story-self"
+                                    data-open-story-modal
+                                    title="Dang khoanh khac moi">
+                                <span class="social-story-pill is-create">Moi</span>
+                                <span class="social-avatar social-avatar--story is-own-story is-create">
+                                    <i class="fa-solid fa-plus"></i>
+                                </span>
+                                <span class="social-card-copy">
+                                    <strong>Tao story</strong>
+                                    <span>Dang khoanh khac trong 24 gio</span>
+                                </span>
+                            </button>
+                        }
+                    }
+
                     @if (friends.Any())
                     {
                         @foreach (var friend in friends)
@@ -74,16 +113,19 @@
                                     ? "blocked-by-other"
                                     : "connected";
 
-                            var friendTitle = friend.IsMessageBlockedByViewer
+                            var friendTitle = friend.HasActiveStory && friend.LatestStoryId.HasValue
+                                ? $"Xem khoanh khac cua @{friend.Username}"
+                                : friend.IsMessageBlockedByViewer
                                 ? "Ban dang chan tin nhan voi nguoi nay."
                                 : friend.IsMessageBlockedByOtherUser
                                     ? "Nguoi nay dang chan tin nhan voi ban."
                                     : $"Trang ca nhan cua @{friend.Username}";
 
-                            <a asp-controller="Profile"
-                               asp-action="UserProfile"
-                               asp-route-username="@friend.Username"
-                               class="glass-panel social-card social-card--friend"
+                            <a asp-controller="@(friend.HasActiveStory && friend.LatestStoryId.HasValue ? "Story" : "Profile")"
+                               asp-action="@(friend.HasActiveStory && friend.LatestStoryId.HasValue ? "Viewer" : "UserProfile")"
+                               asp-route-id="@(friend.HasActiveStory && friend.LatestStoryId.HasValue ? friend.LatestStoryId : null)"
+                               asp-route-username="@(friend.HasActiveStory && friend.LatestStoryId.HasValue ? null : friend.Username)"
+                               class="glass-panel social-card social-card--friend @(friend.HasActiveStory ? "social-card--story" : string.Empty) @(friend.HasUnviewedStory ? "social-card--story-fresh" : string.Empty)"
                                data-friend-card
                                data-friend-user-id="@friend.UserId"
                                data-friend-username="@friend.Username"
@@ -94,7 +136,12 @@
                                       aria-hidden="true">
                                     <i class="fa-solid @(friendState == "blocked-by-viewer" ? "fa-ban" : "fa-shield-halved")"></i>
                                 </span>
-                                <span class="social-avatar">
+                                @if (friend.HasActiveStory)
+                                {
+                                    <span class="social-story-pill">@friend.ActiveStoryCount story</span>
+                                }
+
+                                <span class="social-avatar social-avatar--story @(friend.HasActiveStory ? "has-story" : string.Empty)">
                                     @if (!string.IsNullOrWhiteSpace(friend.AvatarUrl))
                                     {
                                         <img src="@friend.AvatarUrl" alt="@friend.DisplayName" />
@@ -106,6 +153,10 @@
                                 </span>
                                 <span class="social-card-copy">
                                     <strong>@@@friend.Username</strong>
+                                    @if (friend.HasActiveStory)
+                                    {
+                                        <span>@(friend.HasUnviewedStory ? "Chua xem" : "Da xem")</span>
+                                    }
                                 </span>
                             </a>
                         }

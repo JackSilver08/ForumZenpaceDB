@@ -122,6 +122,7 @@ namespace ForumZenpace.Models
         public int? CurrentCategoryId { get; set; }
         public int? CurrentUserId { get; set; }
         public int UnreadNotificationCount { get; set; }
+        public CurrentUserStorySummaryViewModel? CurrentUserStory { get; set; }
         public IReadOnlyList<FriendSummaryViewModel> Friends { get; set; } = Array.Empty<FriendSummaryViewModel>();
     }
 
@@ -155,6 +156,7 @@ namespace ForumZenpace.Models
         public bool IsOwner { get; set; }
         public bool IsAuthenticatedViewer { get; set; }
         public string ActiveTab { get; set; } = "posts";
+        public bool ShowStoriesTab { get; set; }
         public bool ShowChatTab { get; set; }
         public bool CanSendMessages { get; set; }
         public bool IsFriend { get; set; }
@@ -169,9 +171,13 @@ namespace ForumZenpace.Models
         public IReadOnlyList<ProfileChatMessageViewModel> ChatMessages { get; set; } = Array.Empty<ProfileChatMessageViewModel>();
         public DateTime JoinedAt { get; set; }
         public int PostCount { get; set; }
+        public int StoryCount { get; set; }
+        public int ActiveStoryCount { get; set; }
+        public int ArchivedStoryCount { get; set; }
         public int TotalViewCount { get; set; }
         public int TotalCommentCount { get; set; }
         public IReadOnlyList<ProfilePostSummaryViewModel> Posts { get; set; } = Array.Empty<ProfilePostSummaryViewModel>();
+        public IReadOnlyList<ProfileStorySummaryViewModel> Stories { get; set; } = Array.Empty<ProfileStorySummaryViewModel>();
     }
 
     public class ProfileChatMessageViewModel
@@ -223,6 +229,10 @@ namespace ForumZenpace.Models
         public string? AvatarUrl { get; set; }
         public bool IsMessageBlockedByViewer { get; set; }
         public bool IsMessageBlockedByOtherUser { get; set; }
+        public bool HasActiveStory { get; set; }
+        public bool HasUnviewedStory { get; set; }
+        public int ActiveStoryCount { get; set; }
+        public int? LatestStoryId { get; set; }
     }
 
     public class FriendCandidateViewModel
@@ -273,6 +283,9 @@ namespace ForumZenpace.Models
         public string ActorDisplayName { get; set; } = string.Empty;
         public string? ActorAvatarUrl { get; set; }
         public int? FriendRequestId { get; set; }
+        public int? StoryId { get; set; }
+        public string TargetUrl { get; set; } = string.Empty;
+        public string ActionLabel { get; set; } = string.Empty;
         public string FriendRequestStatus { get; set; } = string.Empty;
         public bool CanAcceptFriendRequest { get; set; }
         public bool CanDeclineFriendRequest { get; set; }
@@ -354,5 +367,93 @@ namespace ForumZenpace.Models
         public DateTime CreatedAt { get; set; }
         public int CommentCount { get; set; }
         public int ViewCount { get; set; }
+    }
+
+    public class CreateStoryViewModel
+    {
+        [MaxLength(1200)]
+        public string? TextContent { get; set; }
+
+        [MaxLength(40)]
+        public string BackgroundStyle { get; set; } = StoryBackgroundStyles.Aurora;
+
+        public IFormFile? Image { get; set; }
+
+        [MaxLength(255)]
+        public string? SelectedMusicTrackKey { get; set; }
+
+        [MaxLength(500)]
+        public string? MusicExternalUrl { get; set; }
+
+        [MaxLength(120)]
+        public string? MusicExternalTitle { get; set; }
+
+        [MaxLength(120)]
+        public string? MusicExternalArtist { get; set; }
+    }
+
+    public class CurrentUserStorySummaryViewModel
+    {
+        public bool HasActiveStory { get; set; }
+        public int ActiveStoryCount { get; set; }
+        public int? LatestStoryId { get; set; }
+    }
+
+    public class ProfileStorySummaryViewModel
+    {
+        public int Id { get; set; }
+        public int AuthorUserId { get; set; }
+        public string AuthorUsername { get; set; } = string.Empty;
+        public string AuthorDisplayName { get; set; } = string.Empty;
+        public string? AuthorAvatarUrl { get; set; }
+        public string? TextContent { get; set; }
+        public string PreviewText { get; set; } = string.Empty;
+        public string BackgroundStyle { get; set; } = StoryBackgroundStyles.Aurora;
+        public string? ImageUrl { get; set; }
+        public bool HasImage { get; set; }
+        public string? MusicUrl { get; set; }
+        public string MusicDisplayName { get; set; } = string.Empty;
+        public bool HasMusic { get; set; }
+        public bool ShowInlineMusicPlayer { get; set; }
+        public bool CanEmbedMusic { get; set; }
+        public string MusicEmbedUrl { get; set; } = string.Empty;
+        public string MusicSourceLabel { get; set; } = string.Empty;
+        public string MusicActionUrl { get; set; } = string.Empty;
+        public string MusicActionLabel { get; set; } = string.Empty;
+        public DateTime CreatedAt { get; set; }
+        public DateTime ExpiresAt { get; set; }
+        public bool IsExpired { get; set; }
+        public bool HasBeenViewedByViewer { get; set; }
+        public int ViewCount { get; set; }
+    }
+
+    public class StoryViewerPageViewModel
+    {
+        public int CurrentUserId { get; set; }
+        public bool IsOwner { get; set; }
+        public bool CanManage { get; set; }
+        public string ReturnProfileUsername { get; set; } = string.Empty;
+        public ProfileStorySummaryViewModel Story { get; set; } = null!;
+        public IReadOnlyList<StorySequenceItemViewModel> Sequence { get; set; } = Array.Empty<StorySequenceItemViewModel>();
+        public int? PreviousStoryId { get; set; }
+        public int? NextStoryId { get; set; }
+    }
+
+    public class StorySequenceItemViewModel
+    {
+        public int Id { get; set; }
+        public bool IsCurrent { get; set; }
+        public bool IsExpired { get; set; }
+        public bool HasBeenViewedByViewer { get; set; }
+    }
+
+    public class StoryMusicTrackOptionViewModel
+    {
+        public string Key { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+        public string Artist { get; set; } = string.Empty;
+        public string DisplayLabel { get; set; } = string.Empty;
+        public string AudioUrl { get; set; } = string.Empty;
+        public string ContentType { get; set; } = "application/octet-stream";
     }
 }
