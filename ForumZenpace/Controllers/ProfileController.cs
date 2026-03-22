@@ -277,19 +277,22 @@ namespace ForumZenpace.Controllers
             if (showChatTab && viewerUserId.HasValue)
             {
                 var conversation = await GetConversationQuery(viewerUserId.Value, user.Id)
-                    .Include(c => c.Messages)
-                        .ThenInclude(m => m.Sender)
+                    .Select(conversation => new { conversation.Id })
                     .FirstOrDefaultAsync();
 
                 if (conversation != null)
                 {
-                    chatMessageCount = conversation.Messages.Count;
+                    chatMessageCount = await _context.DirectMessages
+                        .CountAsync(message => message.ConversationId == conversation.Id);
 
                     if (normalizedActiveTab == "chat")
                     {
-                        var unreadMessages = conversation.Messages
-                            .Where(message => message.SenderId != viewerUserId.Value && !message.IsRead)
-                            .ToList();
+                        var unreadMessages = await _context.DirectMessages
+                            .Where(message =>
+                                message.ConversationId == conversation.Id &&
+                                message.SenderId != viewerUserId.Value &&
+                                !message.IsRead)
+                            .ToListAsync();
 
                         if (unreadMessages.Count > 0)
                         {
@@ -301,17 +304,23 @@ namespace ForumZenpace.Controllers
                             await _context.SaveChangesAsync();
                         }
 
-                        chatMessages = conversation.Messages
+                        var messages = await _context.DirectMessages
+                            .Where(message => message.ConversationId == conversation.Id)
+                            .Include(message => message.Sender)
+                            .Include(message => message.ReplyToMessage)
+                                .ThenInclude(reply => reply!.Sender)
                             .OrderBy(message => message.CreatedAt)
+                            .ToListAsync();
+
+                        chatMessages = messages
                             .Select(message => new ProfileChatMessageViewModel
                             {
                                 Id = message.Id,
                                 Content = message.Content,
                                 CreatedAt = message.CreatedAt,
                                 IsOwnMessage = message.SenderId == viewerUserId.Value,
-                                SenderDisplayName = string.IsNullOrWhiteSpace(message.Sender.FullName)
-                                    ? message.Sender.Username
-                                    : message.Sender.FullName
+                                SenderDisplayName = DirectMessageService.GetDisplayName(message.Sender.Username, message.Sender.FullName),
+                                ReplyTo = DirectMessageService.MapReplyPreview(message.ReplyToMessage)
                             })
                             .ToList();
                     }

@@ -188,6 +188,15 @@ namespace ForumZenpace.Models
         public DateTime CreatedAt { get; set; }
         public bool IsOwnMessage { get; set; }
         public string SenderDisplayName { get; set; } = string.Empty;
+        public DirectMessageReplyPreviewViewModel? ReplyTo { get; set; }
+    }
+
+    public class DirectMessageReplyPreviewViewModel
+    {
+        public int MessageId { get; set; }
+        public int SenderId { get; set; }
+        public string SenderDisplayName { get; set; } = string.Empty;
+        public string Content { get; set; } = string.Empty;
     }
 
     public class SendDirectMessageViewModel
@@ -199,6 +208,8 @@ namespace ForumZenpace.Models
 
         [Required, MaxLength(1000)]
         public string Content { get; set; } = string.Empty;
+
+        public int? ReplyToMessageId { get; set; }
     }
 
     public class DirectMessageRealtimeViewModel
@@ -210,6 +221,7 @@ namespace ForumZenpace.Models
         public string Content { get; set; } = string.Empty;
         public string CreatedAtDisplay { get; set; } = string.Empty;
         public string CreatedAtIso { get; set; } = string.Empty;
+        public DirectMessageReplyPreviewViewModel? ReplyTo { get; set; }
     }
 
     public class DirectMessageSendResult
@@ -220,6 +232,33 @@ namespace ForumZenpace.Models
         public string TargetUsername { get; set; } = string.Empty;
         public string TargetDisplayName { get; set; } = string.Empty;
         public DirectMessageRealtimeViewModel? Message { get; set; }
+    }
+
+    public class VoiceChatSessionCommandViewModel
+    {
+        public int TargetUserId { get; set; }
+
+        [Required, MaxLength(64)]
+        public string SessionId { get; set; } = string.Empty;
+
+        [MaxLength(200)]
+        public string Reason { get; set; } = string.Empty;
+    }
+
+    public class VoiceChatSignalViewModel
+    {
+        public int TargetUserId { get; set; }
+
+        [Required, MaxLength(64)]
+        public string SessionId { get; set; } = string.Empty;
+
+        [Required, MaxLength(20)]
+        public string Type { get; set; } = string.Empty;
+
+        public string? Sdp { get; set; }
+        public string? Candidate { get; set; }
+        public string? SdpMid { get; set; }
+        public int? SdpMLineIndex { get; set; }
     }
 
     public class FriendSummaryViewModel

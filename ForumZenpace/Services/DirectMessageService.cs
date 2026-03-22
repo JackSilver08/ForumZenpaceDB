@@ -1,11 +1,13 @@
 using ForumZenpace.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Text.RegularExpressions;
 
 namespace ForumZenpace.Services
 {
     public sealed class DirectMessageService
     {
         private const int MaxMessageLength = 1000;
+        private const int ReplyPreviewMaxLength = 120;
         private readonly ForumDbContext _context;
 
         public DirectMessageService(ForumDbContext context)
@@ -76,12 +78,37 @@ namespace ForumZenpace.Services
             var conversation = await GetOrCreateConversationAsync(senderUserId, targetUser.Id, cancellationToken);
             var createdAt = DateTime.UtcNow;
             conversation.UpdatedAt = createdAt;
+            DirectMessageReplyPreviewViewModel? replyTo = null;
+
+            if (model.ReplyToMessageId.HasValue)
+            {
+                replyTo = await _context.DirectMessages
+                    .Where(message =>
+                        message.Id == model.ReplyToMessageId.Value &&
+                        message.ConversationId == conversation.Id)
+                    .Select(message => new DirectMessageReplyPreviewViewModel
+                    {
+                        MessageId = message.Id,
+                        SenderId = message.SenderId,
+                        SenderDisplayName = string.IsNullOrWhiteSpace(message.Sender.FullName)
+                            ? message.Sender.Username
+                            : message.Sender.FullName,
+                        Content = CreateReplyExcerpt(message.Content)
+                    })
+                    .FirstOrDefaultAsync(cancellationToken);
+
+                if (replyTo is null)
+                {
+                    return Failure("Khong tim thay tin nhan de tra loi trong cuoc tro chuyen nay.");
+                }
+            }
 
             var message = new DirectMessage
             {
                 ConversationId = conversation.Id,
                 SenderId = senderUserId,
                 Content = content,
+                ReplyToMessageId = replyTo?.MessageId,
                 CreatedAt = createdAt
             };
 
@@ -93,17 +120,39 @@ namespace ForumZenpace.Services
                 Success = true,
                 ConversationGroupName = DirectMessageChannel.GetConversationGroupName(senderUserId, targetUser.Id),
                 TargetUsername = targetUser.Username,
-                TargetDisplayName = string.IsNullOrWhiteSpace(targetUser.FullName) ? targetUser.Username : targetUser.FullName,
+                TargetDisplayName = GetDisplayName(targetUser.Username, targetUser.FullName),
                 Message = new DirectMessageRealtimeViewModel
                 {
                     Id = message.Id,
                     ConversationId = conversation.Id,
                     SenderId = senderUserId,
-                    SenderDisplayName = string.IsNullOrWhiteSpace(sender.FullName) ? sender.Username : sender.FullName,
+                    SenderDisplayName = GetDisplayName(sender.Username, sender.FullName),
                     Content = content,
                     CreatedAtDisplay = createdAt.ToString("dd MMM, HH:mm"),
-                    CreatedAtIso = createdAt.ToString("O")
+                    CreatedAtIso = createdAt.ToString("O"),
+                    ReplyTo = replyTo
                 }
+            };
+        }
+
+        public static string GetDisplayName(string username, string? fullName)
+        {
+            return string.IsNullOrWhiteSpace(fullName) ? username : fullName;
+        }
+
+        public static DirectMessageReplyPreviewViewModel? MapReplyPreview(DirectMessage? message)
+        {
+            if (message is null || message.Sender is null)
+            {
+                return null;
+            }
+
+            return new DirectMessageReplyPreviewViewModel
+            {
+                MessageId = message.Id,
+                SenderId = message.SenderId,
+                SenderDisplayName = GetDisplayName(message.Sender.Username, message.Sender.FullName),
+                Content = CreateReplyExcerpt(message.Content)
             };
         }
 
@@ -129,6 +178,41 @@ namespace ForumZenpace.Services
             }
 
             await _context.SaveChangesAsync(cancellationToken);
+        }
+
+        public async Task<string?> GetConversationAccessErrorAsync(int currentUserId, int targetUserId, CancellationToken cancellationToken = default)
+        {
+            if (targetUserId <= 0 || targetUserId == currentUserId)
+            {
+                return "Khong tim thay cuoc tro chuyen hop le.";
+            }
+
+            var activeUserIds = await _context.Users
+                .Where(user =>
+                    user.IsActive &&
+                    (user.Id == currentUserId || user.Id == targetUserId))
+                .Select(user => user.Id)
+                .ToListAsync(cancellationToken);
+
+            if (!activeUserIds.Contains(currentUserId))
+            {
+                return "Ban can dang nhap de su dung chat realtime.";
+            }
+
+            if (!activeUserIds.Contains(targetUserId))
+            {
+                return "Khong tim thay nguoi dung nhan tin.";
+            }
+
+            var isConversationBlocked = await _context.MessageBlocks
+                .AnyAsync(block =>
+                    (block.BlockerUserId == currentUserId && block.BlockedUserId == targetUserId) ||
+                    (block.BlockerUserId == targetUserId && block.BlockedUserId == currentUserId),
+                    cancellationToken);
+
+            return isConversationBlocked
+                ? "Tin nhan da bi chan boi mot trong hai ben."
+                : null;
         }
 
         private async Task<DirectConversation> GetOrCreateConversationAsync(int userId, int targetUserId, CancellationToken cancellationToken)
@@ -193,6 +277,17 @@ namespace ForumZenpace.Services
                 Success = false,
                 ErrorMessage = errorMessage
             };
+        }
+
+        private static string CreateReplyExcerpt(string content)
+        {
+            var normalized = Regex.Replace(content ?? string.Empty, "\\s+", " ").Trim();
+            if (normalized.Length <= ReplyPreviewMaxLength)
+            {
+                return normalized;
+            }
+
+            return $"{normalized[..(ReplyPreviewMaxLength - 3)].TrimEnd()}...";
         }
     }
 

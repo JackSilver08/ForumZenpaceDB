@@ -80,6 +80,9 @@ namespace ForumZenpace.Models
             modelBuilder.Entity<DirectMessage>()
                 .HasIndex(message => new { message.ConversationId, message.CreatedAt });
 
+            modelBuilder.Entity<DirectMessage>()
+                .HasIndex(message => message.ReplyToMessageId);
+
             modelBuilder.Entity<DirectConversation>()
                 .HasOne(conversation => conversation.UserA)
                 .WithMany(user => user.PrimaryDirectConversations)
@@ -99,6 +102,11 @@ namespace ForumZenpace.Models
                 .HasOne(message => message.Sender)
                 .WithMany(user => user.DirectMessages)
                 .HasForeignKey(message => message.SenderId);
+
+            modelBuilder.Entity<DirectMessage>()
+                .HasOne(message => message.ReplyToMessage)
+                .WithMany(message => message.Replies)
+                .HasForeignKey(message => message.ReplyToMessageId);
 
             modelBuilder.Entity<Notification>()
                 .HasOne(notification => notification.ActorUser)

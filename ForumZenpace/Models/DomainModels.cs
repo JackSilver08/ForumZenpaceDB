@@ -420,8 +420,14 @@ namespace ForumZenpace.Models
         [Required, MaxLength(1000)]
         public string Content { get; set; } = string.Empty;
 
+        public int? ReplyToMessageId { get; set; }
+        [ForeignKey("ReplyToMessageId")]
+        public DirectMessage? ReplyToMessage { get; set; }
+
         public bool IsRead { get; set; } = false;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        public ICollection<DirectMessage> Replies { get; set; } = new List<DirectMessage>();
     }
 
     public static class FriendRequestStatuses
