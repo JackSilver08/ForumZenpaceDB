@@ -14,12 +14,20 @@ namespace ForumZenpace.Services
         private readonly string _apiKey;
         private readonly ILogger<GeminiEmbeddingService> _logger;
         private const string ApiUrl = "https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent";
+        private const string ApiKeyEnvironmentVariable = "GeminiSettings__ApiKey";
 
         public GeminiEmbeddingService(HttpClient httpClient, IConfiguration configuration, ILogger<GeminiEmbeddingService> logger)
         {
             _httpClient = httpClient;
-            _apiKey = configuration.GetSection("GeminiSettings")["ApiKey"] ?? string.Empty;
             _logger = logger;
+            _apiKey = configuration["GeminiSettings:ApiKey"] ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(_apiKey))
+            {
+                _logger.LogWarning(
+                    "Gemini API key is not configured. Set the '{EnvironmentVariable}' environment variable.",
+                    ApiKeyEnvironmentVariable);
+            }
         }
 
         /// <summary>
@@ -29,6 +37,11 @@ namespace ForumZenpace.Services
         public async Task<float[]?> GetEmbeddingAsync(string textContent)
         {
             if (string.IsNullOrWhiteSpace(textContent))
+            {
+                return null;
+            }
+
+            if (string.IsNullOrWhiteSpace(_apiKey))
             {
                 return null;
             }
