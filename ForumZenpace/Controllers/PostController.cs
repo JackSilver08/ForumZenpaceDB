@@ -16,17 +16,20 @@ namespace ForumZenpace.Controllers
         private readonly RecommendationService _recommendationService;
         private readonly PostImageService _postImageService;
         private readonly IBackgroundTaskQueue _taskQueue;
+        private readonly GeminiEmbeddingService _geminiService;
 
         public PostController(
             ForumDbContext context, 
             RecommendationService recommendationService,
             PostImageService postImageService,
-            IBackgroundTaskQueue taskQueue)
+            IBackgroundTaskQueue taskQueue,
+            GeminiEmbeddingService geminiService)
         {
             _context = context;
             _recommendationService = recommendationService;
             _postImageService = postImageService;
             _taskQueue = taskQueue;
+            _geminiService = geminiService;
         }
 
         [HttpGet]
@@ -647,6 +650,18 @@ namespace ForumZenpace.Controllers
         private bool TryGetCurrentUserId(out int userId)
         {
             return int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out userId);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Suggestions(int id)
+        {
+            if (!TryGetCurrentUserId(out var userId)) return Challenge();
+
+            var post = await _context.Posts.FindAsync(id);
+            if (post == null) return NotFound(new { success = false, message = "Post not found." });
+
+            var suggestions = await _geminiService.GenerateCommentSuggestionsAsync(userId, post.Id, post.Title, post.Content, HttpContext.RequestAborted);
+            return Json(new { success = true, suggestions });
         }
     }
 }

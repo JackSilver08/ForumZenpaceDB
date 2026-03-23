@@ -78,6 +78,37 @@
         chatInput.style.height = `${Math.min(chatInput.scrollHeight, 180)}px`;
     };
 
+    let typingIndicatorElement = null;
+    let seenIndicatorElement = null;
+    let typingTimeoutId = 0;
+    let sendTypingTimeoutId = 0;
+
+    const showTypingIndicator = () => {
+        if (!typingIndicatorElement) {
+            typingIndicatorElement = document.createElement('div');
+            typingIndicatorElement.className = 'profile-chat-meta profile-chat-typing';
+            typingIndicatorElement.textContent = `${targetDisplayName} đang nhập...`;
+            chatThread.appendChild(typingIndicatorElement);
+        }
+        typingIndicatorElement.style.display = 'block';
+        chatThread.scrollTop = chatThread.scrollHeight;
+
+        clearTimeout(typingTimeoutId);
+        typingTimeoutId = window.setTimeout(() => {
+            if (typingIndicatorElement) typingIndicatorElement.style.display = 'none';
+        }, 3000);
+    };
+
+    const markAsSeen = () => {
+        if (!seenIndicatorElement) {
+            seenIndicatorElement = document.createElement('div');
+            seenIndicatorElement.className = 'profile-chat-meta profile-chat-seen';
+            seenIndicatorElement.textContent = 'Đã xem';
+        }
+        chatThread.appendChild(seenIndicatorElement);
+        chatThread.scrollTop = chatThread.scrollHeight;
+    };
+
     const setStatus = (message, isError = false) => {
         if (!(chatStatus instanceof HTMLElement)) {
             return;
@@ -949,6 +980,10 @@
 
         chatThread.appendChild(createMessageElement(message));
         chatThread.scrollTop = chatThread.scrollHeight;
+        if (typingIndicatorElement) typingIndicatorElement.style.display = 'none';
+        if (seenIndicatorElement && document.contains(seenIndicatorElement)) {
+            chatThread.appendChild(seenIndicatorElement);
+        }
 
         const badge = ensureCountBadge();
         if (badge instanceof HTMLElement) {
@@ -1043,7 +1078,20 @@
             .build();
 
         connection.on('DirectMessageReceived', (message) => {
+            if (typingIndicatorElement) typingIndicatorElement.style.display = 'none';
             appendMessage(message);
+        });
+
+        connection.on('TypingIndicatorReceived', (senderUserId) => {
+            if (senderUserId === targetUserId) {
+                showTypingIndicator();
+            }
+        });
+
+        connection.on('MessagesSeen', (viewerUserId) => {
+            if (viewerUserId === targetUserId) {
+                markAsSeen();
+            }
         });
 
         connection.on('VoiceChatIncoming', (payload) => {
@@ -1171,7 +1219,15 @@
         setStatus(chatPanel.dataset.chatBlockMessage, true);
     }
 
-    chatInput.addEventListener('input', updateComposerState);
+    chatInput.addEventListener('input', () => {
+        updateComposerState();
+        if (connection && realtimeReady) {
+            clearTimeout(sendTypingTimeoutId);
+            sendTypingTimeoutId = window.setTimeout(() => {
+                connection.invoke('SendTypingIndicator', targetUserId).catch(() => {});
+            }, 800);
+        }
+    });
     chatInput.addEventListener('keydown', (event) => {
         if (!getCanSendMessages()) {
             return;

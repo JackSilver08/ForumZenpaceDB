@@ -59,80 +59,105 @@ namespace ForumZenpace.Services
                 return Failure("Khong tim thay nguoi dung nhan tin.");
             }
 
-            var isConversationBlocked = await _context.MessageBlocks
-                .AnyAsync(block =>
-                    (block.BlockerUserId == senderUserId && block.BlockedUserId == targetUser.Id) ||
-                    (block.BlockerUserId == targetUser.Id && block.BlockedUserId == senderUserId),
-                    cancellationToken);
-
-            if (isConversationBlocked)
-            {
-                return Failure("Tin nhan da bi chan boi mot trong hai ben.");
-            }
-
             if (targetUser.Id == senderUserId)
             {
                 return Failure("Ban khong the tu nhan tin cho chinh minh.");
             }
 
-            var conversation = await GetOrCreateConversationAsync(senderUserId, targetUser.Id, cancellationToken);
-            var createdAt = DateTime.UtcNow;
-            conversation.UpdatedAt = createdAt;
-            DirectMessageReplyPreviewViewModel? replyTo = null;
-
-            if (model.ReplyToMessageId.HasValue)
+            if (model.IsStoryReply && model.StoryId.HasValue)
             {
-                replyTo = await _context.DirectMessages
-                    .Where(message =>
-                        message.Id == model.ReplyToMessageId.Value &&
-                        message.ConversationId == conversation.Id)
-                    .Select(message => new DirectMessageReplyPreviewViewModel
-                    {
-                        MessageId = message.Id,
-                        SenderId = message.SenderId,
-                        SenderDisplayName = string.IsNullOrWhiteSpace(message.Sender.FullName)
-                            ? message.Sender.Username
-                            : message.Sender.FullName,
-                        Content = CreateReplyExcerpt(message.Content)
-                    })
-                    .FirstOrDefaultAsync(cancellationToken);
-
-                if (replyTo is null)
+                var story = await _context.Stories.FindAsync(new object[] { model.StoryId.Value }, cancellationToken);
+                if (story == null || story.UserId != targetUser.Id || story.ExpiresAt < DateTime.UtcNow)
                 {
-                    return Failure("Khong tim thay tin nhan de tra loi trong cuoc tro chuyen nay.");
+                    return Failure("Story khong hop le hoac da het han.");
                 }
             }
 
-            var message = new DirectMessage
+            using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+            try
             {
-                ConversationId = conversation.Id,
-                SenderId = senderUserId,
-                Content = content,
-                ReplyToMessageId = replyTo?.MessageId,
-                CreatedAt = createdAt
-            };
+                var isConversationBlocked = await _context.MessageBlocks
+                    .AnyAsync(block =>
+                        (block.BlockerUserId == senderUserId && block.BlockedUserId == targetUser.Id) ||
+                        (block.BlockerUserId == targetUser.Id && block.BlockedUserId == senderUserId),
+                        cancellationToken);
 
-            _context.DirectMessages.Add(message);
-            await _context.SaveChangesAsync(cancellationToken);
-
-            return new DirectMessageSendResult
-            {
-                Success = true,
-                ConversationGroupName = DirectMessageChannel.GetConversationGroupName(senderUserId, targetUser.Id),
-                TargetUsername = targetUser.Username,
-                TargetDisplayName = GetDisplayName(targetUser.Username, targetUser.FullName),
-                Message = new DirectMessageRealtimeViewModel
+                if (isConversationBlocked)
                 {
-                    Id = message.Id,
+                    await transaction.RollbackAsync(cancellationToken);
+                    return Failure("Tin nhan da bi chan boi mot trong hai ben.");
+                }
+
+                var conversation = await GetOrCreateConversationAsync(senderUserId, targetUser.Id, cancellationToken);
+                var createdAt = DateTime.UtcNow;
+                conversation.UpdatedAt = createdAt;
+                DirectMessageReplyPreviewViewModel? replyTo = null;
+
+                if (model.ReplyToMessageId.HasValue)
+                {
+                    replyTo = await _context.DirectMessages
+                        .Where(message =>
+                            message.Id == model.ReplyToMessageId.Value &&
+                            message.ConversationId == conversation.Id)
+                        .Select(message => new DirectMessageReplyPreviewViewModel
+                        {
+                            MessageId = message.Id,
+                            SenderId = message.SenderId,
+                            SenderDisplayName = string.IsNullOrWhiteSpace(message.Sender.FullName)
+                                ? message.Sender.Username
+                                : message.Sender.FullName,
+                            Content = CreateReplyExcerpt(message.Content)
+                        })
+                        .FirstOrDefaultAsync(cancellationToken);
+
+                    if (replyTo is null)
+                    {
+                        await transaction.RollbackAsync(cancellationToken);
+                        return Failure("Khong tim thay tin nhan de tra loi trong cuoc tro chuyen nay.");
+                    }
+                }
+
+                var message = new DirectMessage
+                {
                     ConversationId = conversation.Id,
                     SenderId = senderUserId,
-                    SenderDisplayName = GetDisplayName(sender.Username, sender.FullName),
                     Content = content,
-                    CreatedAtDisplay = createdAt.ToString("dd MMM, HH:mm"),
-                    CreatedAtIso = createdAt.ToString("O"),
-                    ReplyTo = replyTo
-                }
-            };
+                    ReplyToMessageId = replyTo?.MessageId,
+                    StoryId = model.StoryId,
+                    IsStoryReply = model.IsStoryReply,
+                    CreatedAt = createdAt
+                };
+
+                _context.DirectMessages.Add(message);
+                await _context.SaveChangesAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+
+                return new DirectMessageSendResult
+                {
+                    Success = true,
+                    ConversationGroupName = DirectMessageChannel.GetConversationGroupName(senderUserId, targetUser.Id),
+                    TargetUsername = targetUser.Username,
+                    TargetDisplayName = GetDisplayName(targetUser.Username, targetUser.FullName),
+                    Message = new DirectMessageRealtimeViewModel
+                    {
+                        Id = message.Id,
+                        ConversationId = conversation.Id,
+                        SenderId = senderUserId,
+                        SenderDisplayName = GetDisplayName(sender.Username, sender.FullName),
+                        Content = content,
+                        CreatedAtDisplay = createdAt.ToString("dd MMM, HH:mm"),
+                        CreatedAtIso = createdAt.ToString("O"),
+                        ReplyTo = replyTo,
+                        StoryId = model.StoryId,
+                        IsStoryReply = model.IsStoryReply
+                    }
+                };
+            }
+            catch (Exception)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                throw;
+            }
         }
 
         public static string GetDisplayName(string username, string? fullName)

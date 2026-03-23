@@ -4,6 +4,9 @@ using Microsoft.Extensions.FileProviders;
 using ForumZenpace.Hubs;
 using ForumZenpace.Models;
 using ForumZenpace.Services;
+using DotNetEnv;
+
+Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 

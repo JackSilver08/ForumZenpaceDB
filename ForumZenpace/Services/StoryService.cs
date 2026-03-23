@@ -231,7 +231,9 @@ namespace ForumZenpace.Services
                         Id = item.Id,
                         IsCurrent = item.Id == storyId,
                         IsExpired = item.ExpiresAt <= DateTime.UtcNow,
-                        HasBeenViewedByViewer = item.UserId == viewerUserId || item.Views.Any(view => view.ViewerUserId == viewerUserId)
+                        HasBeenViewedByViewer = item.UserId == viewerUserId || item.Views.Any(view => view.ViewerUserId == viewerUserId),
+                        ImageUrl = item.ImageUrl,
+                        MusicUrl = item.MusicUrl
                     })
                     .ToList(),
                 PreviousStoryId = selectedIndex < authorStories.Count - 1 ? authorStories[selectedIndex + 1].Id : null,
@@ -286,47 +288,64 @@ namespace ForumZenpace.Services
                 imageContentType = model.Image.ContentType ?? "application/octet-stream";
             }
 
-            var externalMusicResult = TryResolveExternalMusic(
-                model.MusicExternalUrl,
-                model.MusicExternalTitle,
-                model.MusicExternalArtist);
-
-            if (!externalMusicResult.Success)
+            if (model.MusicFile is not null && model.MusicFile.Length > 0)
             {
-                if (!string.IsNullOrWhiteSpace(imageFileName))
+                var saveResult = await SaveAndTrimStoryMusicAsync(model.MusicFile, userId, cancellationToken);
+                if (!saveResult.Success)
                 {
-                    DeleteStoryImageFile(imageFileName);
+                    if (!string.IsNullOrWhiteSpace(imageFileName)) DeleteStoryImageFile(imageFileName);
+                    return CreateFailure(saveResult.ErrorMessage);
                 }
 
-                return CreateFailure(externalMusicResult.ErrorMessage);
-            }
-
-            if (externalMusicResult.Selection is not null)
-            {
-                musicFileName = externalMusicResult.Selection.FileName;
-                musicOriginalFileName = externalMusicResult.Selection.DisplayName;
-                musicContentType = externalMusicResult.Selection.ContentType;
-                musicUrl = externalMusicResult.Selection.Url;
+                musicFileName = saveResult.FileName;
+                musicUrl = saveResult.MusicUrl;
+                musicOriginalFileName = Path.GetFileName(model.MusicFile.FileName);
+                musicContentType = "audio/mpeg";
             }
             else
             {
-                var selectedTrack = _storyMusicLibraryService.FindTrack(model.SelectedMusicTrackKey);
-                if (!string.IsNullOrWhiteSpace(model.SelectedMusicTrackKey) && selectedTrack is null)
+                var externalMusicResult = TryResolveExternalMusic(
+                    model.MusicExternalUrl,
+                    model.MusicExternalTitle,
+                    model.MusicExternalArtist);
+
+                if (!externalMusicResult.Success)
                 {
                     if (!string.IsNullOrWhiteSpace(imageFileName))
                     {
                         DeleteStoryImageFile(imageFileName);
                     }
 
-                    return CreateFailure("Bai nhac da chon khong con ton tai trong thu vien.");
+                    return CreateFailure(externalMusicResult.ErrorMessage);
                 }
 
-                if (selectedTrack is not null)
+                if (externalMusicResult.Selection is not null)
                 {
-                    musicFileName = selectedTrack.Key;
-                    musicOriginalFileName = selectedTrack.DisplayLabel;
-                    musicContentType = selectedTrack.ContentType;
-                    musicUrl = selectedTrack.AudioUrl;
+                    musicFileName = externalMusicResult.Selection.FileName;
+                    musicOriginalFileName = externalMusicResult.Selection.DisplayName;
+                    musicContentType = externalMusicResult.Selection.ContentType;
+                    musicUrl = externalMusicResult.Selection.Url;
+                }
+                else
+                {
+                    var selectedTrack = _storyMusicLibraryService.FindTrack(model.SelectedMusicTrackKey);
+                    if (!string.IsNullOrWhiteSpace(model.SelectedMusicTrackKey) && selectedTrack is null)
+                    {
+                        if (!string.IsNullOrWhiteSpace(imageFileName))
+                        {
+                            DeleteStoryImageFile(imageFileName);
+                        }
+
+                        return CreateFailure("Bai nhac da chon khong con ton tai trong thu vien.");
+                    }
+
+                    if (selectedTrack is not null)
+                    {
+                        musicFileName = selectedTrack.Key;
+                        musicOriginalFileName = selectedTrack.DisplayLabel;
+                        musicContentType = selectedTrack.ContentType;
+                        musicUrl = selectedTrack.AudioUrl;
+                    }
                 }
             }
 
@@ -509,6 +528,73 @@ namespace ForumZenpace.Services
             await image.CopyToAsync(stream);
 
             return (fileName, $"/uploads/stories/{fileName}");
+        }
+
+        private async Task<(bool Success, string FileName, string MusicUrl, string ErrorMessage)> SaveAndTrimStoryMusicAsync(IFormFile musicFile, int userId, CancellationToken cancellationToken)
+        {
+            if (musicFile.Length > 20 * 1024 * 1024)
+            {
+                return (false, string.Empty, string.Empty, "File nhac khong duoc vuot qua 20MB.");
+            }
+
+            var extension = Path.GetExtension(musicFile.FileName).ToLowerInvariant();
+            if (extension != ".mp3" && extension != ".m4a" && extension != ".wav")
+            {
+                return (false, string.Empty, string.Empty, "Chi ho tro file MP3, M4A va WAV.");
+            }
+
+            var webRootPath = _environment.WebRootPath ?? Path.Combine(_environment.ContentRootPath, "wwwroot");
+            var storyMusicDirectory = Path.Combine(webRootPath, "uploads", "story-music");
+            Directory.CreateDirectory(storyMusicDirectory);
+
+            var tempFileName = $"temp-{userId}-{Guid.NewGuid():N}{extension}";
+            var tempFilePath = Path.Combine(storyMusicDirectory, tempFileName);
+
+            await using (var stream = new FileStream(tempFilePath, FileMode.Create))
+            {
+                await musicFile.CopyToAsync(stream, cancellationToken);
+            }
+
+            var finalFileName = $"story-music-{userId}-{Guid.NewGuid():N}.mp3";
+            var finalFilePath = Path.Combine(storyMusicDirectory, finalFileName);
+
+            try
+            {
+                var processInfo = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "ffmpeg",
+                    Arguments = $"-i \"{tempFilePath}\" -t 30 -b:a 128k -ar 44100 -map a \"{finalFilePath}\"",
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+
+                using var process = System.Diagnostics.Process.Start(processInfo);
+                if (process != null)
+                {
+                    await process.WaitForExitAsync(cancellationToken);
+                    if (process.ExitCode == 0 && File.Exists(finalFilePath))
+                    {
+                        File.Delete(tempFilePath);
+                        return (true, finalFileName, $"/uploads/story-music/{finalFileName}", string.Empty);
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                // Ignore FFmpeg failures (fallback to raw file upload)
+            }
+
+            var fallbackFileName = $"story-music-{userId}-{Guid.NewGuid():N}{extension}";
+            var fallbackFilePath = Path.Combine(storyMusicDirectory, fallbackFileName);
+            if (File.Exists(tempFilePath))
+            {
+                File.Move(tempFilePath, fallbackFilePath, true);
+                return (true, fallbackFileName, $"/uploads/story-music/{fallbackFileName}", string.Empty);
+            }
+
+            return (false, string.Empty, string.Empty, "Loi khi luu file nhac.");
         }
 
         private void DeleteStoryImageFile(string? fileName)

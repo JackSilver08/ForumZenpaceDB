@@ -210,6 +210,8 @@ namespace ForumZenpace.Models
         public string Content { get; set; } = string.Empty;
 
         public int? ReplyToMessageId { get; set; }
+        public int? StoryId { get; set; }
+        public bool IsStoryReply { get; set; }
     }
 
     public class DirectMessageRealtimeViewModel
@@ -222,6 +224,8 @@ namespace ForumZenpace.Models
         public string CreatedAtDisplay { get; set; } = string.Empty;
         public string CreatedAtIso { get; set; } = string.Empty;
         public DirectMessageReplyPreviewViewModel? ReplyTo { get; set; }
+        public int? StoryId { get; set; }
+        public bool IsStoryReply { get; set; }
     }
 
     public class DirectMessageSendResult
@@ -419,6 +423,8 @@ namespace ForumZenpace.Models
 
         public IFormFile? Image { get; set; }
 
+        public IFormFile? MusicFile { get; set; }
+
         [MaxLength(255)]
         public string? SelectedMusicTrackKey { get; set; }
 
@@ -489,6 +495,8 @@ namespace ForumZenpace.Models
         public bool IsCurrent { get; set; }
         public bool IsExpired { get; set; }
         public bool HasBeenViewedByViewer { get; set; }
+        public string? ImageUrl { get; set; }
+        public string? MusicUrl { get; set; }
     }
 
     public class StoryMusicTrackOptionViewModel

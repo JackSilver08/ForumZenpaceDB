@@ -424,6 +424,12 @@ namespace ForumZenpace.Models
         [ForeignKey("ReplyToMessageId")]
         public DirectMessage? ReplyToMessage { get; set; }
 
+        public int? StoryId { get; set; }
+        [ForeignKey("StoryId")]
+        public Story? Story { get; set; }
+
+        public bool IsStoryReply { get; set; }
+
         public bool IsRead { get; set; } = false;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

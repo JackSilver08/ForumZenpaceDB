@@ -8,3 +8,7 @@
 
 *.user
 *.suo
+
+# Environment variables
+.env
+.env.*

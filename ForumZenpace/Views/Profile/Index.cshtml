@@ -451,6 +451,41 @@
                 }
                 else
                 {
+                    <style>
+                        /* Messenger Chat UI Overrides */
+                        .profile-chat-panel { display: flex; flex-direction: column; height: 100%; border-radius: 12px; overflow: hidden; background: rgba(10,10,15,0.6); }
+                        .profile-chat-thread { flex: 1; display: flex; flex-direction: column; padding: 20px; gap: 6px; overflow-y: auto; scroll-behavior: smooth; }
+                        .profile-chat-message { display: flex; flex-direction: column; max-width: 75%; align-items: flex-start; }
+                        .profile-chat-message.profile-chat-message--own { align-self: flex-end; align-items: flex-end; }
+                        
+                        .profile-chat-bubble { padding: 10px 16px; border-radius: 20px; background: rgba(255,255,255,0.08); color: #fff; font-size: 0.95rem; line-height: 1.4; word-break: break-word; border-bottom-left-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+                        .profile-chat-message--own .profile-chat-bubble { background: linear-gradient(135deg, #a855f7, #3b82f6); border-bottom-right-radius: 4px; border-bottom-left-radius: 20px; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3); }
+                        
+                        .profile-chat-meta { font-size: 0.75rem; color: rgba(255,255,255,0.5); margin-top: 4px; display: flex; gap: 8px; opacity: 0.8; }
+                        
+                        .profile-chat-typing { align-self: flex-start; margin-left: 12px; margin-top: 2px; font-style: italic; animation: pulse 1.5s infinite; }
+                        .profile-chat-seen { align-self: flex-end; margin-right: 12px; font-size: 0.7rem; color: rgba(255,255,255,0.4); margin-bottom: 4px; }
+                        
+                        .profile-chat-composer { background: rgba(15,15,22,0.9); border-top: 1px solid rgba(255,255,255,0.05); padding: 12px 16px; display: flex; align-items: flex-end; gap: 12px; width: 100%; }
+                        
+                        .profile-chat-composer .field { flex: 1; margin: 0; }
+                        .profile-chat-composer .field-label, .profile-chat-composer .field-hint { display: none !important; }
+                        
+                        .profile-chat-textarea { border-radius: 24px !important; background: rgba(255,255,255,0.06) !important; border: 1px solid rgba(255,255,255,0.1) !important; padding: 12px 16px !important; resize: none; min-height: 44px !important; max-height: 120px; color: #fff; line-height: 1.4; transition: border-color 0.2s; }
+                        .profile-chat-textarea:focus { border-color: #a855f7 !important; background: rgba(255,255,255,0.1) !important; outline: none; }
+                        
+                        .profile-chat-actions { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
+                        .profile-chat-toolbar-controls { display: flex; gap: 4px; }
+                        .profile-chat-toolbar-note { display: none; }
+                        
+                        .profile-chat-toolbar-controls button { width: 40px; height: 40px; border-radius: 50%; background: transparent; border: none; color: #a855f7; font-size: 1.2rem; cursor: pointer; transition: background 0.2s; display: flex; justify-content: center; align-items: center; }
+                        .profile-chat-toolbar-controls button:hover { background: rgba(168,85,247,0.15); }
+                        .profile-chat-toolbar-controls button span { display: none; } /* hide text inside emoji btn */
+                        
+                        .profile-chat-submit .btn-primary { width: 44px; height: 44px; border-radius: 50%; padding: 0; display: flex; align-items: center; justify-content: center; color: transparent; background: linear-gradient(135deg, #a855f7, #3b82f6); border: none; transition: transform 0.2s; }
+                        .profile-chat-submit .btn-primary::after { content: '\f1d8'; font-family: "Font Awesome 6 Free"; font-weight: 900; color: #fff; font-size: 1.1rem; margin-left: -2px; }
+                        .profile-chat-submit .btn-primary:hover { transform: scale(1.05); }
+                    </style>
                     <div class="profile-chat-panel"
                          data-chat-panel
                          data-current-user-id="@Model.ViewerUserId"
@@ -572,43 +607,45 @@
                                 </button>
                             </div>
 
+                            <div class="profile-chat-actions">
+                                <div class="profile-chat-toolbar-controls">
+                                    <button type="button"
+                                        class="profile-chat-call-trigger"
+                                        data-voice-start
+                                        aria-label="Goi voice"
+                                        title="Goi voice">
+                                        <i class="fa-solid fa-phone"></i>
+                                    </button>
+                                </div>
+                            </div>
+
                             <div class="field">
                                 <label class="field-label" for="chatMessageBox">Tin nhan moi</label>
                                 <textarea id="chatMessageBox"
                                           name="Content"
                                           class="form-control profile-chat-textarea"
-                                          rows="2"
+                                          rows="1"
                                           maxlength="1000"
                                           data-chat-input
                                           data-emoji-input
-                                          placeholder="Viet loi nhan lich su, ro rang va dung trong chu de..."></textarea>
+                                          placeholder="Aa..."></textarea>
                                 <p class="field-hint">Nhan `Enter` de gui nhanh, `Shift + Enter` de xuong dong.</p>
                             </div>
 
                             <div class="profile-chat-actions">
-                                <div class="profile-chat-toolbar">
-                                    <div class="profile-chat-toolbar-controls">
-                                        <button
-                                            type="button"
-                                            class="comment-emoji-trigger"
-                                            data-emoji-trigger
-                                            title="Dang tai emoji"
-                                            aria-label="Chen emoji vao tin nhan"
-                                            aria-haspopup="dialog"
-                                            aria-expanded="false"
-                                            disabled>
-                                            <i class="fa-regular fa-face-smile"></i>
-                                            <span>Emoji</span>
-                                        </button>
-                                        <button type="button"
-                                                class="profile-chat-call-trigger"
-                                                data-voice-start
-                                                aria-label="Goi voice"
-                                                title="Goi voice">
-                                            <i class="fa-solid fa-phone"></i>
-                                        </button>
-                                    </div>
-                                    <span class="field-hint profile-chat-toolbar-note">Khong chia se mat khau, OTP hoac thong tin nhay cam qua chat.</span>
+                                <div class="profile-chat-toolbar-controls">
+                                    <button
+                                        type="button"
+                                        class="comment-emoji-trigger"
+                                        data-emoji-trigger
+                                        title="Dang tai emoji"
+                                        aria-label="Chen emoji vao tin nhan"
+                                        aria-haspopup="dialog"
+                                        aria-expanded="false"
+                                        disabled>
+                                        <i class="fa-regular fa-face-smile"></i>
+                                        <span>Emoji</span>
+                                    </button>
                                 </div>
 
                                 <div class="profile-chat-submit">

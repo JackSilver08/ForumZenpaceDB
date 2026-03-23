@@ -32,6 +32,22 @@ namespace ForumZenpace.Hubs
             }
 
             await _directMessageService.MarkConversationAsReadAsync(currentUserId, targetUserId);
+            var conversationGroup = await JoinConversationGroupAsync(currentUserId, targetUserId);
+            await Clients.GroupExcept(conversationGroup, Context.ConnectionId)
+                .SendAsync("MessagesSeen", currentUserId);
+        }
+
+        public async Task SendTypingIndicator(int targetUserId)
+        {
+            var currentUserId = GetCurrentUserId();
+            if (targetUserId <= 0 || targetUserId == currentUserId)
+            {
+                return;
+            }
+
+            var conversationGroup = await JoinConversationGroupAsync(currentUserId, targetUserId);
+            await Clients.GroupExcept(conversationGroup, Context.ConnectionId)
+                .SendAsync("TypingIndicatorReceived", currentUserId);
         }
 
         public async Task SendDirectMessage(SendDirectMessageViewModel model)

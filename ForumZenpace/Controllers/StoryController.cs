@@ -13,11 +13,13 @@ namespace ForumZenpace.Controllers
     {
         private readonly StoryService _storyService;
         private readonly IHubContext<SocialHub> _hubContext;
+        private readonly DirectMessageService _directMessageService;
 
-        public StoryController(StoryService storyService, IHubContext<SocialHub> hubContext)
+        public StoryController(StoryService storyService, IHubContext<SocialHub> hubContext, DirectMessageService directMessageService)
         {
             _storyService = storyService;
             _hubContext = hubContext;
+            _directMessageService = directMessageService;
         }
 
         [HttpGet("Story/Viewer/{id:int}")]
@@ -109,6 +111,37 @@ namespace ForumZenpace.Controllers
         private bool IsAjaxRequest()
         {
             return string.Equals(Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Reply(int id, string message)
+        {
+            if (!TryGetCurrentUserId(out var userId)) return Challenge();
+
+            if (string.IsNullOrWhiteSpace(message)) 
+                return BadRequest(new { success = false, message = "Noi dung khong duoc de trong." });
+
+            var story = await _storyService.GetViewerPageAsync(id, userId, HttpContext.RequestAborted);
+            if (story?.Story == null) 
+                return NotFound(new { success = false, message = "Story khong ton tai hoac ban khong co quyen xem." });
+            
+            if (story.IsOwner)
+                return BadRequest(new { success = false, message = "Ban khong the phan hoi Story cua chinh minh." });
+
+            var dto = new SendDirectMessageViewModel
+            {
+                TargetUserId = story.Story.AuthorUserId,
+                Username = story.Story.AuthorUsername,
+                Content = $"**Đã trả lời story: {(!string.IsNullOrWhiteSpace(story.Story.TextContent) ? story.Story.TextContent : "Hình ảnh/Video")}**\n" + message,
+                IsStoryReply = true,
+                StoryId = id
+            };
+
+            var result = await _directMessageService.SendMessageAsync(userId, dto, HttpContext.RequestAborted);
+            if (!result.Success) return BadRequest(new { success = false, message = result.ErrorMessage });
+
+            return Json(new { success = true });
         }
     }
 }
