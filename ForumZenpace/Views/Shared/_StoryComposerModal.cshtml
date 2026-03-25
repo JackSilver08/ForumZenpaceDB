@@ -148,7 +148,35 @@
                                accept=".mp3,.m4a,.wav"
                                class="form-control"
                                data-story-music-upload-input />
-                        <p class="field-hint">File dưới 20MB. Phía server sẽ tự động cắt 30s đầu.</p>
+                        <p class="field-hint">File dưới 20MB. Hệ thống sẽ cắt một đoạn ngắn để đính kèm.</p>
+                        
+                        <div class="story-music-trim-controls" data-story-music-trim-controls hidden style="margin-top: 12px; padding: 12px; background: rgba(0,0,0,0.1); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                            <div class="story-composer-inline-grid">
+                                <div class="field" style="margin-bottom: 0;">
+                                    <label class="field-label" for="storyMusicStartTime" style="font-size: 0.85rem;">Bắt đầu từ (giây)</label>
+                                    <input id="storyMusicStartTime"
+                                           name="MusicStartTime"
+                                           type="number"
+                                           min="0"
+                                           max="600"
+                                           value="0"
+                                           class="form-control"
+                                           data-story-music-start-input />
+                                </div>
+                                <div class="field" style="margin-bottom: 0;">
+                                    <label class="field-label" for="storyMusicDuration" style="font-size: 0.85rem;">Độ dài (giây)</label>
+                                    <input id="storyMusicDuration"
+                                           name="MusicDuration"
+                                           type="number"
+                                           min="5"
+                                           max="60"
+                                           value="30"
+                                           class="form-control"
+                                           data-story-music-duration-input />
+                                </div>
+                            </div>
+                            <p class="field-hint" style="margin-bottom: 0; margin-top: 8px;">Chọn vị trí bắt đầu và thời lượng (5-60s) của đoạn nhạc bạn muốn sử dụng.</p>
+                        </div>
                     </div>
                 </div>
             </div>

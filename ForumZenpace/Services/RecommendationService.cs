@@ -129,6 +129,7 @@ namespace ForumZenpace.Services
                             .Include(p => p.Category)
                             .Include(p => p.Likes)
                             .Include(p => p.Comments)
+                            .AsSplitQuery()
                             .Where(p => cachedIds.Contains(p.Id))
                             .ToListAsync();
 
@@ -169,26 +170,28 @@ namespace ForumZenpace.Services
                 return await GetFallbackPostsAsync();
             }
 
-            // Load recent posts that have vectors
-            var recentPosts = await _context.Posts
-                .Include(p => p.User)
-                .Include(p => p.Category)
-                .Include(p => p.Likes)
-                .Include(p => p.Comments)
+            // Load recent posts that have vectors (projected to avoid fetching giant tracking entities)
+            var recentPostsData = await _context.Posts
                 .Where(p => p.Status == "Active" && p.VectorData != null)
                 .OrderByDescending(p => p.CreatedAt)
-                .Take(500)
+                .Take(200)
+                .Select(p => new {
+                    p.Id,
+                    p.VectorData,
+                    p.CreatedAt,
+                    LikesCount = p.Likes.Count
+                })
                 .ToListAsync();
 
-            if (recentPosts.Count == 0)
+            if (recentPostsData.Count == 0)
             {
                 return await GetFallbackPostsAsync();
             }
 
             // Score each post
-            var scoredPosts = new List<(Post Post, double Score)>();
+            var scoredPosts = new List<(int PostId, double Score)>();
 
-            foreach (var post in recentPosts)
+            foreach (var post in recentPostsData)
             {
                 try
                 {
@@ -203,13 +206,12 @@ namespace ForumZenpace.Services
                     double timeDecay = Math.Exp(-hoursOld * 0.05);
 
                     // Popularity score
-                    int likesCount = post.Likes?.Count ?? 0;
-                    double popularity = likesCount * 0.01;
+                    double popularity = post.LikesCount * 0.01;
 
                     // Final heuristic score
                     double finalScore = (similarityScore * 0.6) + (timeDecay * 0.3) + (popularity * 0.1);
 
-                    scoredPosts.Add((post, finalScore));
+                    scoredPosts.Add((post.Id, finalScore));
                 }
                 catch
                 {
@@ -218,29 +220,49 @@ namespace ForumZenpace.Services
             }
 
             // Also include posts without vectors (sorted by recency, lower priority)
-            var postsWithoutVectors = await _context.Posts
+            var postsWithoutVectorsData = await _context.Posts
+                .Where(p => p.Status == "Active" && p.VectorData == null)
+                .OrderByDescending(p => p.CreatedAt)
+                .Take(50)
+                .Select(p => new {
+                    p.Id,
+                    p.CreatedAt,
+                    LikesCount = p.Likes.Count
+                })
+                .ToListAsync();
+
+            foreach (var post in postsWithoutVectorsData)
+            {
+                double hoursOld = (DateTime.UtcNow - post.CreatedAt).TotalHours;
+                double timeDecay = Math.Exp(-hoursOld * 0.05);
+                double finalScore = (timeDecay * 0.5) + (post.LikesCount * 0.01 * 0.5);
+                scoredPosts.Add((post.Id, finalScore));
+            }
+
+            // Get top 20 IDs
+            var topPostIds = scoredPosts
+                .OrderByDescending(x => x.Score)
+                .Select(x => x.PostId)
+                .Take(20)
+                .ToList();
+
+            if (topPostIds.Count == 0) return new List<Post>();
+
+            // Fetch fully populated posts for the top IDs using AsSplitQuery
+            var finalPostsUnordered = await _context.Posts
                 .Include(p => p.User)
                 .Include(p => p.Category)
                 .Include(p => p.Likes)
                 .Include(p => p.Comments)
-                .Where(p => p.Status == "Active" && p.VectorData == null)
-                .OrderByDescending(p => p.CreatedAt)
-                .Take(50)
+                .AsSplitQuery()
+                .Where(p => topPostIds.Contains(p.Id))
                 .ToListAsync();
 
-            foreach (var post in postsWithoutVectors)
-            {
-                double hoursOld = (DateTime.UtcNow - post.CreatedAt).TotalHours;
-                double timeDecay = Math.Exp(-hoursOld * 0.05);
-                int likesCount = post.Likes?.Count ?? 0;
-                // Lower base score for unvectorized posts
-                double finalScore = (timeDecay * 0.5) + (likesCount * 0.01 * 0.5);
-                scoredPosts.Add((post, finalScore));
-            }
-
-            var finalResults = scoredPosts
-                .OrderByDescending(x => x.Score)
-                .Select(x => x.Post)
+            // Restore score ordering
+            var finalResults = topPostIds
+                .Select(id => finalPostsUnordered.FirstOrDefault(p => p.Id == id))
+                .Where(p => p != null)
+                .Cast<Post>()
                 .ToList();
 
             if (finalResults.Count > 0)
@@ -273,6 +295,7 @@ namespace ForumZenpace.Services
                             .Include(p => p.Category)
                             .Include(p => p.Likes)
                             .Include(p => p.Comments)
+                            .AsSplitQuery()
                             .Where(p => cachedIds.Contains(p.Id))
                             .ToListAsync();
 
@@ -294,10 +317,11 @@ namespace ForumZenpace.Services
                 .Include(p => p.Category)
                 .Include(p => p.Likes)
                 .Include(p => p.Comments)
+                .AsSplitQuery()
                 .Where(p => p.Status == "Active")
                 .OrderByDescending(p => p.Likes.Count + p.ViewCount)
                 .ThenByDescending(p => p.CreatedAt)
-                .Take(50)
+                .Take(30)
                 .ToListAsync();
 
             if (fallbackResults.Count > 0)

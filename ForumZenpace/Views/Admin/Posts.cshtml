@@ -1,17 +1,17 @@
 @model IEnumerable<ForumZenpace.Models.Post>
 @{
-    ViewData["Title"] = "Quan ly bai viet";
+    ViewData["Title"] = "Quản lý bài viết";
 }
 
 <div class="admin-shell animated-entry">
     <div class="admin-header">
         <div>
-            <h1 class="admin-title">Noi dung thao luan</h1>
-            <p class="admin-subtitle">Bang bai viet da duoc toi uu lai padding, kich thuoc chu va action de dat mat do thong tin hop ly hon.</p>
+            <h1 class="admin-title">Nội dung thảo luận</h1>
+            <p class="admin-subtitle">Bảng bài viết đã được tối ưu lại padding, kích thước chữ và action để đạt mật độ thông tin hợp lý hơn.</p>
         </div>
 
         <a asp-action="Dashboard" class="btn btn-outline">
-            <i class="fa-solid fa-arrow-left"></i> Quay lai
+            <i class="fa-solid fa-arrow-left"></i> Quay lại
         </a>
     </div>
 
@@ -20,13 +20,13 @@
             <table class="table">
                 <thead>
                     <tr>
-                        <th>Tieu de</th>
-                        <th>Tac gia</th>
-                        <th>Chuyen muc</th>
-                        <th>Trang thai</th>
-                        <th>Ngay dang</th>
-                        <th>Luot xem</th>
-                        <th>Hanh dong</th>
+                        <th>Tiêu đề</th>
+                        <th>Tác giả</th>
+                        <th>Chuyên mục</th>
+                        <th>Trạng thái</th>
+                        <th>Ngày đăng</th>
+                        <th>Lượt xem</th>
+                        <th>Hành động</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -41,7 +41,7 @@
                             <td>
                                 <span class="status-pill @(post.Status == "Active" ? "is-live" : "is-muted")">
                                     <span class="dot" style="background: currentColor;"></span>
-                                    @(post.Status == "Active" ? "Cong khai" : "Da an")
+                                    @(post.Status == "Active" ? "Công khai" : "Đã ẩn")
                                 </span>
                             </td>
                             <td class="table-note">@post.CreatedAt.ToString("dd MMM yyyy")</td>
@@ -51,11 +51,11 @@
                                     <form asp-action="TogglePostStatus" method="post" class="inline-form">
                                         <input type="hidden" name="id" value="@post.Id" />
                                         <button type="submit" class="btn btn-outline">
-                                            @(post.Status == "Active" ? "An bai" : "Khoi phuc")
+                                            @(post.Status == "Active" ? "Ẩn bài" : "Khôi phục")
                                         </button>
                                     </form>
 
-                                    <form asp-action="DeletePost" method="post" class="inline-form" onsubmit="return confirm('Ban co chac chan muon xoa bai viet nay?');">
+                                    <form asp-action="DeletePost" method="post" class="inline-form" onsubmit="return confirm('Bạn có chắc chắn muốn xóa bài viết này?');">
                                         <input type="hidden" name="id" value="@post.Id" />
                                         <button type="submit" class="btn btn-danger-soft">
                                             <i class="fa-solid fa-trash-can"></i>

@@ -241,8 +241,8 @@ namespace ForumZenpace.Models
                 await using var command = connection.CreateCommand();
                 command.CommandText = """
                     SELECT 1
-                    FROM INFORMATION_SCHEMA.TABLES
-                    WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = @tableName
+                    FROM sys.tables WITH (NOLOCK)
+                    WHERE name = @tableName AND schema_id = SCHEMA_ID('dbo')
                     """;
 
                 var parameter = command.CreateParameter();

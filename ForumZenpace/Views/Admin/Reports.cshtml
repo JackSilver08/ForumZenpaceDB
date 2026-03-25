@@ -1,17 +1,17 @@
 @model IEnumerable<ForumZenpace.Models.Report>
 @{
-    ViewData["Title"] = "Bao cao vi pham";
+    ViewData["Title"] = "Báo cáo vi phạm";
 }
 
 <div class="admin-shell animated-entry">
     <div class="admin-header">
         <div>
-            <h1 class="admin-title">Bao cao vi pham</h1>
-            <p class="admin-subtitle">Trang xu ly bao cao da duoc dua ve bang compact, uu tien ly do va thao tac quan tri.</p>
+            <h1 class="admin-title">Báo cáo vi phạm</h1>
+            <p class="admin-subtitle">Trang xử lý báo cáo đã được đưa về bảng compact, ưu tiên lý do và thao tác quản trị.</p>
         </div>
 
         <a asp-action="Dashboard" class="btn btn-outline">
-            <i class="fa-solid fa-arrow-left"></i> Quay lai
+            <i class="fa-solid fa-arrow-left"></i> Quay lại
         </a>
     </div>
 
@@ -20,11 +20,11 @@
             <table class="table">
                 <thead>
                     <tr>
-                        <th>Noi dung bi bao cao</th>
-                        <th>Nguoi gui</th>
-                        <th>Ly do</th>
-                        <th>Thoi diem</th>
-                        <th>Xu ly</th>
+                        <th>Nội dung bị báo cáo</th>
+                        <th>Người gửi</th>
+                        <th>Lý do</th>
+                        <th>Thời điểm</th>
+                        <th>Xử lý</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -42,11 +42,11 @@
                                     <form asp-action="TogglePostStatus" method="post" class="inline-form">
                                         <input type="hidden" name="id" value="@report.PostId" />
                                         <button type="submit" class="btn btn-outline">
-                                            @(report.Post?.Status == "Active" ? "An noi dung" : "Khoi phuc")
+                                            @(report.Post?.Status == "Active" ? "Ẩn nội dung" : "Khôi phục")
                                         </button>
                                     </form>
 
-                                    <form asp-action="DeletePost" method="post" class="inline-form" onsubmit="return confirm('Ban co chac chan muon xoa noi dung nay?');">
+                                    <form asp-action="DeletePost" method="post" class="inline-form" onsubmit="return confirm('Bạn có chắc chắn muốn xóa nội dung này?');">
                                         <input type="hidden" name="id" value="@report.PostId" />
                                         <button type="submit" class="btn btn-danger-soft">
                                             <i class="fa-solid fa-trash-can"></i>

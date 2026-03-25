@@ -1,6 +1,6 @@
 @model ForumZenpace.Models.RegisterViewModel
 @{
-    ViewData["Title"] = "Dang ky";
+    ViewData["Title"] = "Đăng ký";
 }
 
 <div class="auth-shell auth-shell--wide animated-entry">
@@ -9,8 +9,8 @@
             <div class="auth-mark">
                 <i class="fa-solid fa-user-plus"></i>
             </div>
-            <h1 class="auth-title">Tao tai khoan moi</h1>
-            <p class="auth-subtitle">Sau khi nhap email va gui form, he thong se mo buoc xac thuc OTP. Chi khi nhap dung ma OTP, tai khoan moi duoc tao.</p>
+            <h1 class="auth-title">Tạo tài khoản mới</h1>
+            <p class="auth-subtitle">Sau khi nhập email và gửi form, hệ thống sẽ mở bước xác thực OTP. Chỉ khi nhập đúng mã OTP, tài khoản mới được tạo.</p>
         </div>
 
         @if (TempData["AuthSuccessMessage"] is string authSuccessMessage)
@@ -34,14 +34,14 @@
 
             <div class="form-grid-2">
                 <div class="field">
-                    <label asp-for="Username" class="field-label">Ten tai khoan</label>
+                    <label asp-for="Username" class="field-label">Tên tài khoản</label>
                     <input asp-for="Username" class="form-control" placeholder="username" />
                     <span asp-validation-for="Username" class="text-danger"></span>
                 </div>
 
                 <div class="field">
-                    <label asp-for="FullName" class="field-label">Ho ten</label>
-                    <input asp-for="FullName" class="form-control" placeholder="Ho ten cua ban" />
+                    <label asp-for="FullName" class="field-label">Họ tên</label>
+                    <input asp-for="FullName" class="form-control" placeholder="Họ tên của bạn" />
                     <span asp-validation-for="FullName" class="text-danger"></span>
                 </div>
             </div>
@@ -57,23 +57,23 @@
 
             <div class="form-grid-2">
                 <div class="field">
-                    <label asp-for="Password" class="field-label">Mat khau</label>
+                    <label asp-for="Password" class="field-label">Mật khẩu</label>
                     <input asp-for="Password" class="form-control" type="password" placeholder="••••••••" />
                     <span asp-validation-for="Password" class="text-danger"></span>
                 </div>
 
                 <div class="field">
-                    <label asp-for="ConfirmPassword" class="field-label">Xac nhan</label>
+                    <label asp-for="ConfirmPassword" class="field-label">Xác nhận</label>
                     <input asp-for="ConfirmPassword" class="form-control" type="password" placeholder="••••••••" />
                     <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
                 </div>
             </div>
 
-            <button type="submit" class="btn btn-primary" style="width: 100%;">Tao tai khoan</button>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Tạo tài khoản</button>
 
             <div class="auth-footer">
-                Da co tai khoan?
-                <a asp-action="Login">Dang nhap</a>
+                Đã có tài khoản?
+                <a asp-action="Login">Đăng nhập</a>
             </div>
         </form>
     </div>

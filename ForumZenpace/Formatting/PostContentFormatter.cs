@@ -16,6 +16,15 @@ namespace ForumZenpace.Formatting
         private static readonly Regex UnorderedMarkerRegex = new(@"^[-*+]\s+", RegexOptions.Compiled);
         private static readonly Regex OrderedMarkerRegex = new(@"^\d+\.\s+", RegexOptions.Compiled);
         private static readonly Regex WhitespaceRegex = new(@"\s+", RegexOptions.Compiled);
+        // Matches a bare URL (http/https) as the entire trimmed content of a paragraph line
+        private static readonly Regex BareUrlLineRegex = new(
+            @"^(https?://[^\s""'<>\[\]]{4,})$",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        // Matches bare URLs embedded anywhere inside inline text
+        private static readonly Regex InlineBareUrlRegex = new(
+            @"(?<!\()(?<!\]\()https?://[^\s""'<>\[\]]{4,}",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
 
         public static string ToHtml(string? markdown)
         {
@@ -133,6 +142,31 @@ namespace ForumZenpace.Formatting
                     return;
                 }
 
+                // If the paragraph is a single bare URL, render as a link card
+                if (paragraphLines.Count == 1)
+                {
+                    var singleLine = paragraphLines[0];
+                    var bareUrlMatch = BareUrlLineRegex.Match(singleLine);
+                    if (bareUrlMatch.Success && TryCreateSafeUrl(bareUrlMatch.Groups[1].Value, out var cardUrl))
+                    {
+                        var displayUrl = cardUrl.Length > 60 ? cardUrl[..57] + "..." : cardUrl;
+                        html.Append("<a class=\"markdown-link-card\" href=\"")
+                            .Append(HtmlEncoder.Default.Encode(cardUrl))
+                            .Append("\" target=\"_blank\" rel=\"noopener noreferrer\">")
+                            .Append("<span class=\"markdown-link-card__icon\"><i class=\"fa-solid fa-link\"></i></span>")
+                            .Append("<span class=\"markdown-link-card__body\">")
+                            .Append("<span class=\"markdown-link-card__url\">")
+                            .Append(HtmlEncoder.Default.Encode(displayUrl))
+                            .Append("</span>")
+                            .Append("<span class=\"markdown-link-card__hint\">Nhấn để mở liên kết</span>")
+                            .Append("</span>")
+                            .Append("<span class=\"markdown-link-card__arrow\"><i class=\"fa-solid fa-arrow-up-right-from-square\"></i></span>")
+                            .Append("</a>");
+                        paragraphLines.Clear();
+                        return;
+                    }
+                }
+
                 html.Append("<p>");
                 for (var index = 0; index < paragraphLines.Count; index++)
                 {
@@ -147,6 +181,7 @@ namespace ForumZenpace.Formatting
                 html.Append("</p>");
                 paragraphLines.Clear();
             }
+
 
             void FlushQuote()
             {

@@ -18,7 +18,7 @@
            asp-action="UserProfile"
            asp-route-username="@authorUsername"
            class="avatar-link"
-           aria-label="Xem trang ca nhan cua @authorName">
+           aria-label="Xem trang cá nhân của @authorName">
             <div class="avatar thread-avatar">
                 @if (!string.IsNullOrWhiteSpace(comment.User?.Avatar))
                 {
@@ -64,7 +64,7 @@
 
                     @if (!string.IsNullOrWhiteSpace(Model.ReplyingToAuthorName))
                     {
-                        <span class="comment-context-chip">Tra loi @Model.ReplyingToAuthorName</span>
+                        <span class="comment-context-chip">Trả lời @Model.ReplyingToAuthorName</span>
                     }
 
                     <span class="thread-meta-separator"></span>
@@ -75,7 +75,7 @@
                 {
                     <form asp-action="DeleteComment" method="post" class="inline-form ajax-postback">
                         <input type="hidden" name="id" value="@comment.Id" />
-                        <button type="submit" class="comment-utility" title="Xoa binh luan" aria-label="Xoa binh luan">
+                        <button type="submit" class="comment-utility" title="Xóa bình luận" aria-label="Xóa bình luận">
                             <i class="fa-solid fa-trash-can"></i>
                         </button>
                     </form>
@@ -90,7 +90,7 @@
             {
                 <button type="button" class="comment-action" onclick="toggleReplyBox(@comment.Id)">
                     <i class="fa-solid fa-reply"></i>
-                    <span>Phan hoi</span>
+                    <span>Phản hồi</span>
                 </button>
             }
 
@@ -102,17 +102,17 @@
                         type="submit"
                         class="comment-action @(hasLiked ? "is-active" : string.Empty)"
                         aria-pressed="@(hasLiked.ToString().ToLowerInvariant())"
-                        title="Tim binh luan">
+                        title="Tim bình luận">
                         <i class="@(hasLiked ? "fa-solid" : "fa-regular") fa-heart"></i>
-                        <span>@(likeCount > 0 ? $"Thich ({likeCount})" : "Thich")</span>
+                        <span>@(likeCount > 0 ? $"Thích ({likeCount})" : "Thích")</span>
                     </button>
                 </form>
             }
             else
             {
-                <button type="button" class="comment-action comment-action-disabled" disabled aria-disabled="true" title="Dang nhap de tim binh luan">
+                <button type="button" class="comment-action comment-action-disabled" disabled aria-disabled="true" title="Đăng nhập để tim bình luận">
                     <i class="fa-regular fa-heart"></i>
-                    <span>Thich</span>
+                    <span>Thích</span>
                 </button>
             }
         </div>
@@ -123,14 +123,14 @@
                 <form asp-action="AddComment" method="post" class="reply-form thread-reply-form ajax-postback">
                     <input type="hidden" name="PostId" value="@Model.PostId" />
                     <input type="hidden" name="ParentId" value="@comment.Id" />
-                    <textarea name="Content" class="form-control thread-reply-input" rows="3" placeholder="Viet phan hoi..." data-emoji-input required></textarea>
+                    <textarea name="Content" class="form-control thread-reply-input" rows="3" placeholder="Viết phản hồi..." data-emoji-input required></textarea>
                     <div class="reply-form-actions comment-editor-footer">
                         <button
                             type="button"
                             class="comment-emoji-trigger"
                             data-emoji-trigger
-                            title="Dang tai emoji"
-                            aria-label="Chen emoji vao phan hoi"
+                            title="Đang tải emoji"
+                            aria-label="Chèn emoji vào phản hồi"
                             aria-haspopup="dialog"
                             aria-expanded="false"
                             disabled>
@@ -139,8 +139,8 @@
                         </button>
 
                         <div class="comment-editor-submit-group">
-                            <button type="submit" class="btn btn-primary">Gui</button>
-                            <button type="button" class="btn btn-text" onclick="toggleReplyBox(@comment.Id)">Huy</button>
+                            <button type="submit" class="btn btn-primary">Gửi</button>
+                            <button type="button" class="btn btn-text" onclick="toggleReplyBox(@comment.Id)">Hủy</button>
                         </div>
                     </div>
                 </form>

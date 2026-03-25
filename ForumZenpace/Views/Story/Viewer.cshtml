@@ -170,6 +170,33 @@
         .nav-left { left: 0; width: 30%; }
         .nav-right { right: 0; width: 70%; }
         
+        .nav-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #fff;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            cursor: pointer;
+            z-index: 50;
+            backdrop-filter: blur(4px);
+            transition: all 0.2s ease;
+        }
+        .nav-arrow:hover {
+            background: rgba(0,0,0,0.6);
+            border-color: rgba(255,255,255,0.5);
+            transform: translateY(-50%) scale(1.1);
+        }
+        .nav-arrow-left { left: 16px; }
+        .nav-arrow-right { right: 16px; }
+        
         .reply-box {
             display: flex; align-items: center; gap: 12px; pointer-events: auto;
         }
@@ -252,6 +279,9 @@
 
         <div class="nav-zone nav-left" id="zoneLeft"></div>
         <div class="nav-zone nav-right" id="zoneRight"></div>
+        
+        <button class="nav-arrow nav-arrow-left" onclick="goPrev()"><i class="fa-solid fa-chevron-left"></i></button>
+        <button class="nav-arrow nav-arrow-right" onclick="goNext()"><i class="fa-solid fa-chevron-right"></i></button>
 
         <div class="overlay-top">
             <div class="progress-container">
@@ -401,9 +431,15 @@
         }
         
         function goPrev() {
-            const link = document.getElementById('linkPrev').href;
-            if(link && !link.includes('javascript:')) window.location.href = link;
-            else { elapsed = 0; }
+            const linkPrev = document.getElementById('linkPrev');
+            const link = linkPrev ? linkPrev.href : null;
+            if(link && !link.includes('javascript:')) {
+                window.location.href = link;
+            } else {
+                elapsed = 0;
+                if(AUDIO) AUDIO.currentTime = 0;
+                if(PROGRESS) PROGRESS.style.width = '0%';
+            }
         }
         function goNext() {
             const link = document.getElementById('linkNext').href;

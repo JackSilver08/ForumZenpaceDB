@@ -125,6 +125,8 @@ namespace ForumZenpace.Models
         public int UnreadNotificationCount { get; set; }
         public CurrentUserStorySummaryViewModel? CurrentUserStory { get; set; }
         public IReadOnlyList<FriendSummaryViewModel> Friends { get; set; } = Array.Empty<FriendSummaryViewModel>();
+        public IReadOnlyList<FriendCandidateViewModel> SuggestedFriends { get; set; } = Array.Empty<FriendCandidateViewModel>();
+        public int SuggestionInsertAfterPost { get; set; } = 3;
     }
 
     public class CommentItemViewModel
@@ -436,6 +438,14 @@ namespace ForumZenpace.Models
 
         [MaxLength(120)]
         public string? MusicExternalArtist { get; set; }
+
+        /// <summary>Start offset in seconds (for uploaded music files, passed to FFmpeg -ss).</summary>
+        [Range(0, 600)]
+        public int MusicStartTime { get; set; } = 0;
+
+        /// <summary>Duration (clip length) in seconds, clamped to 5–60 on the server.</summary>
+        [Range(5, 60)]
+        public int MusicDuration { get; set; } = 30;
     }
 
     public class CurrentUserStorySummaryViewModel

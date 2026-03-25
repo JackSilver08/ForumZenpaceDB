@@ -406,4 +406,100 @@ export const bindHomeSocial = () => {
     });
     
     scheduleFriendRailUpdate();
+
+    // ── Feed Suggestion Block ─────────────────────────────────────────────────
+
+    // Dismiss entire suggestion block
+    document.querySelectorAll('[data-dismiss-suggestion]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const block = btn.closest('[data-feed-suggestion-block]');
+            if (!(block instanceof HTMLElement)) return;
+            block.style.transition = 'opacity 0.25s ease, transform 0.25s ease, max-height 0.35s ease, margin 0.35s ease, padding 0.35s ease';
+            block.style.opacity = '0';
+            block.style.transform = 'scale(0.96)';
+            block.style.maxHeight = block.offsetHeight + 'px';
+            requestAnimationFrame(() => {
+                block.style.maxHeight = '0';
+                block.style.marginBottom = '0';
+                block.style.paddingTop = '0';
+                block.style.paddingBottom = '0';
+                block.style.overflow = 'hidden';
+            });
+            setTimeout(() => block.remove(), 380);
+        });
+    });
+
+    // Dismiss individual suggestion card
+    document.querySelectorAll('[data-dismiss-single]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const card = btn.closest('.feed-suggestion-card');
+            if (!(card instanceof HTMLElement)) return;
+            card.style.transition = 'opacity 0.2s, transform 0.2s';
+            card.style.opacity = '0';
+            card.style.transform = 'scale(0.85)';
+            setTimeout(() => card.remove(), 220);
+        });
+    });
+
+    // "See all" links inside feed blocks open the friend modal
+    document.querySelectorAll('[data-open-friend-modal]').forEach((link) => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            openFriendModal();
+        });
+    });
+
+    // Add friend from feed suggestion block
+    document.querySelectorAll('[data-feed-add-friend]').forEach((btn) => {
+        if (!(btn instanceof HTMLButtonElement)) return;
+        btn.addEventListener('click', async () => {
+            const targetUserId = Number.parseInt(btn.dataset.targetUserId || '', 10);
+            if (!Number.isInteger(targetUserId) || targetUserId <= 0) return;
+
+            btn.disabled = true;
+            try {
+                if (isRealtimeAvailable()) {
+                    await connection.invoke('SendFriendRequest', targetUserId);
+                } else {
+                    await postSocialAction('/Social/SendFriendRequest', { targetUserId, returnUrl: getCurrentReturnUrl() });
+                }
+                // Optimistic UI
+                setFeedSuggestionState(targetUserId, 'pending-sent');
+                setCandidateState(targetUserId, 'pending-sent');
+            } catch {
+                btn.disabled = false;
+            }
+        });
+    });
 };
+
+/**
+ * Updates all feed suggestion cards for the given userId when their relationship state changes.
+ * @param {number} userId
+ * @param {string} state - 'none' | 'pending-sent' | 'pending-received' | 'friend'
+ */
+export const setFeedSuggestionState = (userId, state) => {
+    document.querySelectorAll(`[data-feed-suggestion-block] [data-suggestion-user-id="${userId}"]`).forEach((card) => {
+        const btn = card.querySelector('[data-feed-add-friend]');
+        if (!(btn instanceof HTMLButtonElement)) return;
+
+        if (state === 'friend') {
+            btn.disabled = true;
+            btn.className = 'feed-suggestion-add btn btn-outline is-sent';
+            btn.innerHTML = '<i class="fa-solid fa-check"></i><span>Bạn bè</span>';
+        } else if (state === 'pending-sent') {
+            btn.disabled = true;
+            btn.className = 'feed-suggestion-add btn btn-outline is-sent';
+            btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i><span>Đã gửi</span>';
+        } else if (state === 'pending-received') {
+            btn.disabled = true;
+            btn.className = 'feed-suggestion-add btn btn-outline is-sent';
+            btn.innerHTML = '<i class="fa-solid fa-bell"></i><span>Xem lời mời</span>';
+        } else {
+            btn.disabled = false;
+            btn.className = 'btn btn-primary feed-suggestion-add';
+            btn.innerHTML = '<i class="fa-solid fa-user-plus"></i><span>Thêm bạn bè</span>';
+        }
+    });
+};
+

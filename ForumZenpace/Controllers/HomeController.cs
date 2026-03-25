@@ -46,6 +46,7 @@ namespace ForumZenpace.Controllers
                     .Include(p => p.Category)
                     .Include(p => p.Likes)
                     .Include(p => p.Comments)
+                    .AsSplitQuery()
                     .Where(p => p.Status == "Active")
                     .AsQueryable();
 
@@ -84,6 +85,13 @@ namespace ForumZenpace.Controllers
                 friends = await _storyService.PopulateActiveStoryStateAsync(currentUserId.Value, friends, HttpContext.RequestAborted);
             }
 
+            var suggestedFriends = currentUserId.HasValue
+                ? (await _socialService.SearchFriendCandidatesAsync(currentUserId.Value, null, 10, HttpContext.RequestAborted))
+                    .Where(c => c.RelationshipState == "none")
+                    .Take(10)
+                    .ToList()
+                : (IReadOnlyList<FriendCandidateViewModel>)Array.Empty<FriendCandidateViewModel>();
+
             return View(new HomeIndexViewModel
             {
                 Posts = postList,
@@ -97,6 +105,8 @@ namespace ForumZenpace.Controllers
                     ? await _storyService.GetCurrentUserStorySummaryAsync(currentUserId.Value, HttpContext.RequestAborted)
                     : null,
                 Friends = friends,
+                SuggestedFriends = suggestedFriends,
+                SuggestionInsertAfterPost = 3,
                 UnreadNotificationCount = currentUserId.HasValue
                     ? await _socialService.GetUnreadNotificationCountAsync(currentUserId.Value)
                     : 0

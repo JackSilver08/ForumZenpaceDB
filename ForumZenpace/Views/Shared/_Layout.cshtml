@@ -46,22 +46,22 @@
                     {
                         <button type="button" class="btn btn-outline" data-open-story-modal>
                             <i class="fa-solid fa-plus"></i>
-                            <span>Khoanh khac</span>
+                            <span>Khoảnh khắc</span>
                         </button>
 
                         <a asp-controller="Post" asp-action="Create" class="btn btn-primary">
                             <i class="fa-solid fa-plus"></i>
-                            <span>Chu de moi</span>
+                            <span>Chủ đề mới</span>
                         </a>
 
-                        <a asp-controller="Notification" asp-action="Index" class="btn btn-outline icon-btn notification-link" title="Thong bao" data-notification-link>
+                        <a asp-controller="Notification" asp-action="Index" class="btn btn-outline icon-btn notification-link" title="Thông báo" data-notification-link>
                             <i class="fa-solid fa-bell"></i>
                             <span class="notification-badge" data-notification-badge @(unreadNotificationCount > 0 ? null : "hidden")>@unreadNotificationCount</span>
                         </a>
 
                         @if (User.IsInRole("Admin"))
                         {
-                            <a asp-controller="Admin" asp-action="Dashboard" class="btn btn-outline icon-btn" title="Quan tri" aria-label="Quan tri">
+                            <a asp-controller="Admin" asp-action="Dashboard" class="btn btn-outline icon-btn" title="Quản trị" aria-label="Quản trị">
                                 <i class="fa-solid fa-gear"></i>
                             </a>
                         }
@@ -75,15 +75,15 @@
                         </a>
 
                         <form asp-controller="Auth" asp-action="Logout" method="post">
-                            <button type="submit" class="btn btn-text icon-btn" title="Dang xuat">
+                            <button type="submit" class="btn btn-text icon-btn" title="Đăng xuất">
                                 <i class="fa-solid fa-arrow-right-from-bracket"></i>
                             </button>
                         </form>
                     }
                     else
                     {
-                        <a asp-controller="Auth" asp-action="Login" class="btn btn-text">Dang nhap</a>
-                        <a asp-controller="Auth" asp-action="Register" class="btn btn-primary">Tao tai khoan</a>
+                        <a asp-controller="Auth" asp-action="Login" class="btn btn-text">Đăng nhập</a>
+                        <a asp-controller="Auth" asp-action="Register" class="btn btn-primary">Tạo tài khoản</a>
                     }
                 </div>
             </div>

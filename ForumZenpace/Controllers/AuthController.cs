@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ForumZenpace.Controllers
 {
+    [Microsoft.AspNetCore.Authorization.AllowAnonymous]
     public class AuthController : Controller
     {
         private readonly ForumDbContext _context;
@@ -68,7 +69,7 @@ namespace ForumZenpace.Controllers
                 var otpResult = await IssueAndSendOtpAsync(user);
                 var flowToken = CreateEmailVerificationFlowToken(user.Id);
                 TempData[otpResult.Success ? "AuthSuccessMessage" : "AuthErrorMessage"] = otpResult.Success
-                    ? "Tai khoan chua xac thuc email. Chung toi da gui ma OTP moi, vui long nhap ma de tiep tuc."
+                    ? "Tài khoản chưa xác thực email. Chúng tôi đã gửi mã OTP mới, vui lòng nhập mã để tiếp tục."
                     : BuildOtpFailureMessage(otpResult.ErrorMessage);
                 return RedirectToAction(nameof(VerifyEmail), new { token = flowToken });
             }
@@ -112,7 +113,7 @@ namespace ForumZenpace.Controllers
 
             if (await _context.Users.AnyAsync(user => user.Email == model.Email))
             {
-                ModelState.AddModelError(nameof(RegisterViewModel.Email), "Email da duoc su dung cho mot tai khoan khac.");
+                ModelState.AddModelError(nameof(RegisterViewModel.Email), "Email đã được sử dụng cho một tài khoản khác.");
                 return View(model);
             }
 
@@ -134,14 +135,14 @@ namespace ForumZenpace.Controllers
                 if (!string.Equals(pendingRegistration.Username, model.Username, StringComparison.OrdinalIgnoreCase)
                     && string.Equals(pendingRegistration.Email, model.Email, StringComparison.OrdinalIgnoreCase))
                 {
-                    ModelState.AddModelError(nameof(RegisterViewModel.Email), "Email nay dang duoc dung cho mot yeu cau dang ky khac.");
+                    ModelState.AddModelError(nameof(RegisterViewModel.Email), "Email này đang được dùng cho một yêu cầu đăng ký khác.");
                     return View(model);
                 }
 
                 if (!string.Equals(pendingRegistration.Email, model.Email, StringComparison.OrdinalIgnoreCase)
                     && string.Equals(pendingRegistration.Username, model.Username, StringComparison.OrdinalIgnoreCase))
                 {
-                    ModelState.AddModelError(nameof(RegisterViewModel.Username), "Ten tai khoan nay dang duoc dung cho mot yeu cau dang ky khac.");
+                    ModelState.AddModelError(nameof(RegisterViewModel.Username), "Tên tài khoản này đang được dùng cho một yêu cầu đăng ký khác.");
                     return View(model);
                 }
 
@@ -155,7 +156,7 @@ namespace ForumZenpace.Controllers
             var otpResult = await IssueAndSendOtpAsync(pendingRegistration);
             var flowToken = CreateRegistrationVerificationFlowToken(pendingRegistration.Id);
             TempData[otpResult.Success ? "AuthSuccessMessage" : "AuthErrorMessage"] = otpResult.Success
-                ? "He thong da gui ma OTP toi email cua ban. Hay nhap dung ma de hoan tat dang ky tai khoan."
+                ? "Hệ thống đã gửi mã OTP tới email của bạn. Hãy nhập đúng mã để hoàn tất đăng ký tài khoản."
                 : BuildOtpFailureMessage(otpResult.ErrorMessage);
 
             return RedirectToAction(nameof(VerifyRegistration), new { token = flowToken });
@@ -166,14 +167,14 @@ namespace ForumZenpace.Controllers
         {
             if (!_authFlowTokenService.TryReadRegistrationVerificationToken(token, out var pendingRegistrationId))
             {
-                TempData["AuthErrorMessage"] = "Lien ket xac thuc dang ky khong hop le hoac da het han.";
+                TempData["AuthErrorMessage"] = "Liên kết xác thực đăng ký không hợp lệ hoặc đã hết hạn.";
                 return RedirectToAction(nameof(Register));
             }
 
             var pendingRegistration = await _context.PendingRegistrations.FindAsync(pendingRegistrationId);
             if (pendingRegistration == null)
             {
-                TempData["AuthErrorMessage"] = "Khong tim thay yeu cau dang ky can xac thuc.";
+                TempData["AuthErrorMessage"] = "Không tìm thấy yêu cầu đăng ký cần xác thực.";
                 return RedirectToAction(nameof(Register));
             }
 

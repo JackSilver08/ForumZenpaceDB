@@ -3,12 +3,12 @@
 <div class="admin-shell animated-entry">
     <div class="admin-header">
         <div>
-            <h1 class="admin-title">Quan ly chuyen muc</h1>
-            <p class="admin-subtitle">Bang danh muc va form tao moi duoc rut gon de thao tac nhanh hon.</p>
+            <h1 class="admin-title">Quản lý chuyên mục</h1>
+            <p class="admin-subtitle">Bảng danh mục và form tạo mới được rút gọn để thao tác nhanh hơn.</p>
         </div>
 
         <a asp-action="Dashboard" class="btn btn-outline">
-            <i class="fa-solid fa-arrow-left"></i> Quay lai
+            <i class="fa-solid fa-arrow-left"></i> Quay lại
         </a>
     </div>
 
@@ -18,9 +18,9 @@
                 <table class="table">
                     <thead>
                         <tr>
-                            <th>Ma</th>
-                            <th>Ten danh muc</th>
-                            <th>So bai viet</th>
+                            <th>Mã</th>
+                            <th>Tên danh mục</th>
+                            <th>Số bài viết</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -29,7 +29,7 @@
                             <tr>
                                 <td class="table-note">#@category.Id.ToString("D2")</td>
                                 <td><strong>@category.Name</strong></td>
-                                <td><span class="badge-tag">@category.Posts.Count bai</span></td>
+                                <td><span class="badge-tag">@category.Posts.Count bài</span></td>
                             </tr>
                         }
                     </tbody>
@@ -39,21 +39,21 @@
 
         <div class="admin-sidecard">
             <div class="surface">
-                <div class="panel-label">Them moi</div>
-                <h2 class="section-heading" style="margin-bottom: 16px;">Tao chuyen muc</h2>
+                <div class="panel-label">Thêm mới</div>
+                <h2 class="section-heading" style="margin-bottom: 16px;">Tạo chuyên mục</h2>
 
                 <form asp-action="AddCategory" method="post" class="stack-md">
                     <div class="field">
-                        <label class="field-label">Ten danh muc</label>
-                        <input type="text" name="name" class="form-control" required placeholder="Nhap ten danh muc..." />
+                        <label class="field-label">Tên danh mục</label>
+                        <input type="text" name="name" class="form-control" required placeholder="Nhập tên danh mục..." />
                     </div>
 
-                    <button type="submit" class="btn btn-primary" style="width: 100%;">Them danh muc</button>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Thêm danh mục</button>
                 </form>
             </div>
 
             <div class="admin-note">
-                Nen dat ten ngan, ro rang va phan biet tot giua cac nhom thao luan.
+                Nên đặt tên ngắn, rõ ràng và phân biệt tốt giữa các nhóm thảo luận.
             </div>
         </div>
     </div>

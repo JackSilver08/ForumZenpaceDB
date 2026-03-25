@@ -1,5 +1,5 @@
 import { connection, currentUserId, setRealtimeReady } from './state.js';
-import { bindHomeSocial, setCandidateState, upsertFriendCard, removeFriendCard, updateFriendCardBlockState } from './friends.js';
+import { bindHomeSocial, setCandidateState, upsertFriendCard, removeFriendCard, updateFriendCardBlockState, setFeedSuggestionState } from './friends.js';
 import { bindNotificationPage, setUnreadCount, prependNotification, updateNotificationResolution } from './notifications.js';
 import { bindProfileSocial, syncProfileState } from './profile.js';
 import { updateChatState } from './chat.js';
@@ -29,6 +29,7 @@ if (Number.isInteger(currentUserId) && currentUserId > 0) {
             if (!Number.isInteger(targetUserId) || targetUserId <= 0) return;
 
             setCandidateState(targetUserId, state);
+            setFeedSuggestionState(targetUserId, state);
             if (getProfileTargetUserId() === targetUserId) {
                 syncProfileState({
                     isFriend: state === 'friend',
@@ -41,6 +42,7 @@ if (Number.isInteger(currentUserId) && currentUserId > 0) {
         connection.on('FriendshipAdded', (friend) => {
             upsertFriendCard(friend);
             setCandidateState(friend.userId, 'friend');
+            setFeedSuggestionState(friend.userId, 'friend');
             if (getProfileTargetUserId() === friend.userId) {
                 syncProfileState({
                     isFriend: true,

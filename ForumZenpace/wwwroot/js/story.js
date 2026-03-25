@@ -14,6 +14,8 @@
     const musicLinkInput = modal.querySelector('[data-story-music-link-input]');
     const musicTitleInput = modal.querySelector('[data-story-music-title-input]');
     const musicArtistInput = modal.querySelector('[data-story-music-artist-input]');
+    const musicUploadInput = modal.querySelector('[data-story-music-upload-input]');
+    const trimControls = modal.querySelector('[data-story-music-trim-controls]');
     const musicName = modal.querySelector('[data-story-music-name]');
     const preview = modal.querySelector('[data-story-preview]');
     const previewCopy = modal.querySelector('[data-story-preview-copy]');
@@ -287,6 +289,15 @@
 
     if (musicArtistInput instanceof HTMLInputElement) {
         musicArtistInput.addEventListener('input', () => updatePreviewAudio());
+    }
+
+    if (musicUploadInput instanceof HTMLInputElement) {
+        musicUploadInput.addEventListener('change', () => {
+            if (trimControls instanceof HTMLElement) {
+                const hasFile = musicUploadInput.files && musicUploadInput.files.length > 0;
+                trimControls.hidden = !hasFile;
+            }
+        });
     }
 
     if (form instanceof HTMLFormElement) {

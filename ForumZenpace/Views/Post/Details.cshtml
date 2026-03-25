@@ -26,7 +26,7 @@
                     <span class="dot"></span>
                     <span>@Model.CreatedAt.ToString("dd MMM yyyy")</span>
                     <span class="dot"></span>
-                    <span>@Model.ViewCount luot xem</span>
+                    <span>@Model.ViewCount lượt xem</span>
                 </div>
             </div>
 
@@ -41,12 +41,12 @@
                     <input type="hidden" name="postId" value="@Model.Id" />
                     <button type="submit" class="btn @(ViewBag.HasLiked == true ? "btn-primary" : "btn-outline")">
                         <i class="fa-solid fa-fire-flame-curved"></i>
-                        @(ViewBag.HasLiked == true ? "Da de xuat" : "De xuat") (@Model.Likes.Count)
+                        @(ViewBag.HasLiked == true ? "Đã đề xuất" : "Đề xuất") (@Model.Likes.Count)
                     </button>
                 </form>
 
                 <button type="button" class="btn btn-outline" onclick="toggleReport()">
-                    <i class="fa-solid fa-flag"></i> Bao cao
+                    <i class="fa-solid fa-flag"></i> Báo cáo
                 </button>
             </div>
 
@@ -54,13 +54,13 @@
             {
                 <div class="detail-action-group">
                     <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline">
-                        <i class="fa-solid fa-pen"></i> Chinh sua
+                        <i class="fa-solid fa-pen"></i> Chỉnh sửa
                     </a>
 
-                    <form asp-action="Delete" method="post" class="inline-form" onsubmit="return confirm('Ban co chac chan muon xoa chu de nay?');">
+                    <form asp-action="Delete" method="post" class="inline-form" onsubmit="return confirm('Bạn có chắc chắn muốn xóa chủ đề này?');">
                         <input type="hidden" name="id" value="@Model.Id" />
                         <button type="submit" class="btn btn-danger-soft">
-                            <i class="fa-solid fa-trash-can"></i> Xoa
+                            <i class="fa-solid fa-trash-can"></i> Xóa
                         </button>
                     </form>
                 </div>
@@ -73,14 +73,14 @@
             <input type="hidden" name="postId" value="@Model.Id" />
 
             <div>
-                <h2 class="section-heading">Bao cao noi dung</h2>
-                <p class="muted" style="margin-top: 6px;">Mo ta ly do de quan tri vien co them boi canh khi xu ly.</p>
+                <h2 class="section-heading">Báo cáo nội dung</h2>
+                <p class="muted" style="margin-top: 6px;">Mô tả lý do để quản trị viên có thêm bối cảnh khi xử lý.</p>
             </div>
 
             <div class="report-form-row">
-                <input type="text" name="reason" class="form-control" placeholder="Nhap ly do bao cao..." required />
+                <input type="text" name="reason" class="form-control" placeholder="Nhập lý do báo cáo..." required />
                 <div style="display: flex; justify-content: flex-end;">
-                    <button type="submit" class="btn btn-primary">Gui bao cao</button>
+                    <button type="submit" class="btn btn-primary">Gửi báo cáo</button>
                 </div>
             </div>
         </form>
@@ -89,8 +89,8 @@
     <div class="surface comment-card">
         <div class="surface-header">
             <div>
-                <h2 class="surface-title">Binh luan (@Model.Comments.Count)</h2>
-                <p class="surface-subtitle">Luong trao doi duoc sap xep gon, de doc va de theo doi hon o ca desktop lan mobile.</p>
+                <h2 class="section-title">Bình luận (@Model.Comments.Count)</h2>
+                <p class="surface-subtitle">Luồng trao đổi được sắp xếp gọn, dễ đọc và dễ theo dõi hơn ở cả desktop lẫn mobile.</p>
             </div>
         </div>
 
@@ -117,14 +117,14 @@
                     <div class="avatar thread-avatar">@currentUserInitial</div>
 
                     <div class="comment-composer-panel">
-                        <textarea id="mainCommentInput" name="Content" class="form-control comment-composer-input" rows="3" placeholder="Dong gop y kien cua ban..." data-emoji-input required onfocus="fetchAiSuggestions(@Model.Id)"></textarea>
+                        <textarea id="mainCommentInput" name="Content" class="form-control comment-composer-input" rows="3" placeholder="Đóng góp ý kiến của bạn..." data-emoji-input required onfocus="fetchAiSuggestions(@Model.Id)"></textarea>
                         <div class="comment-composer-actions comment-editor-footer">
                             <button
                                 type="button"
                                 class="comment-emoji-trigger"
                                 data-emoji-trigger
-                                title="Dang tai emoji"
-                                aria-label="Chen emoji vao binh luan"
+                                title="Đang tải emoji"
+                                aria-label="Chèn emoji vào bình luận"
                                 aria-haspopup="dialog"
                                 aria-expanded="false"
                                 disabled>
@@ -133,7 +133,7 @@
                             </button>
 
                             <div class="comment-editor-submit-group">
-                                <button type="submit" class="btn btn-primary">Gui binh luan</button>
+                                <button type="submit" class="btn btn-primary">Gửi bình luận</button>
                             </div>
                         </div>
                     </div>
@@ -144,9 +144,9 @@
         {
             <div class="comment-login-prompt">
                 <p class="muted">
-                    Ban can
-                    <a asp-controller="Auth" asp-action="Login" style="color: var(--accent-blue); font-weight: 800;">dang nhap</a>
-                    de tham gia thao luan.
+                    Bạn cần
+                    <a asp-controller="Auth" asp-action="Login" style="color: var(--accent-blue); font-weight: 800;">đăng nhập</a>
+                    để tham gia thảo luận.
                 </p>
             </div>
         }
@@ -162,7 +162,7 @@
             else
             {
                 <div class="comment-empty-state">
-                    Chua co binh luan nao. Hay mo dau chuoi thao luan dau tien.
+                    Chưa có bình luận nào. Hãy mở đầu chuỗi thảo luận đầu tiên.
                 </div>
             }
         </div>
@@ -171,7 +171,7 @@
             class="comment-emoji-popover"
             data-emoji-popover
             role="dialog"
-            aria-label="Bang chon emoji"
+            aria-label="Bảng chọn emoji"
             aria-hidden="true"
             hidden>
             <emoji-picker class="comment-emoji-picker dark" data-emoji-picker></emoji-picker>
@@ -218,8 +218,8 @@
 
             button.setAttribute('aria-expanded', (!isExpanded).ToString().toLowerCase());
             button.textContent = isExpanded
-                ? (button.dataset.collapsedLabel || 'Xem them phan hoi')
-                : (button.dataset.expandedLabel || 'An bot phan hoi');
+                ? (button.dataset.collapsedLabel || 'Xem thêm phản hồi')
+                : (button.dataset.expandedLabel || 'Ẩn bớt phản hồi');
         }
 
         function toggleReport() {
@@ -263,18 +263,18 @@
                 });
 
                 if (!response.ok) {
-                    alert('Khong the xu ly yeu cau luc nay.');
+                    alert('Không thể xử lý yêu cầu lúc này.');
                     return;
                 }
 
                 const data = await response.json();
                 if (!data.success) {
-                    alert(data.message || 'Yeu cau khong thanh cong.');
+                    alert(data.message || 'Yêu cầu không thành công.');
                     return;
                 }
 
                 if (form.action.includes('Report')) {
-                    alert(data.message || 'Da gui bao cao.');
+                    alert(data.message || 'Đã gửi báo cáo.');
                     form.reset();
                     document.getElementById('reportBox')?.setAttribute('hidden', 'hidden');
                     return;
@@ -332,11 +332,11 @@
                     });
                     aiSuggestionsFetched = true;
                 } else {
-                    list.innerHTML = '<span class="muted" style="font-size: 0.85rem;">Hien khong co goi y nao phu hop.</span>';
+                    list.innerHTML = '<span class="muted" style="font-size: 0.85rem;">Hiện không có gợi ý nào phù hợp.</span>';
                     aiSuggestionsFetched = true; // Still mark as fetched so we don't spam
                 }
             } catch (err) {
-                list.innerHTML = '<span class="muted" style="font-size: 0.85rem;">Khong the tai goi y luc nay.</span>';
+                list.innerHTML = '<span class="muted" style="font-size: 0.85rem;">Không thể tải gợi ý lúc này.</span>';
             } finally {
                 isFetchingAi = false;
             }

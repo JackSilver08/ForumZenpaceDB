@@ -1,17 +1,17 @@
 @model IEnumerable<ForumZenpace.Models.User>
 @{
-    ViewData["Title"] = "Quan ly nguoi dung";
+    ViewData["Title"] = "Quản lý người dùng";
 }
 
 <div class="admin-shell animated-entry">
     <div class="admin-header">
         <div>
-            <h1 class="admin-title">Quan ly hoi vien</h1>
-            <p class="admin-subtitle">Bang user da duoc dua ve compact table de hien thi duoc nhieu dong hon tren man hinh desktop.</p>
+            <h1 class="admin-title">Quản lý hội viên</h1>
+            <p class="admin-subtitle">Bảng user đã được đưa về compact table để hiển thị được nhiều dòng hơn trên màn hình desktop.</p>
         </div>
 
         <a asp-action="Dashboard" class="btn btn-outline">
-            <i class="fa-solid fa-arrow-left"></i> Quay lai
+            <i class="fa-solid fa-arrow-left"></i> Quay lại
         </a>
     </div>
 
@@ -20,12 +20,12 @@
             <table class="table">
                 <thead>
                     <tr>
-                        <th>Danh tinh</th>
-                        <th>Ho ten</th>
-                        <th>Vai tro</th>
-                        <th>Trang thai</th>
-                        <th>Gia nhap</th>
-                        <th>Dieu khien</th>
+                        <th>Danh tính</th>
+                        <th>Họ tên</th>
+                        <th>Vai trò</th>
+                        <th>Trạng thái</th>
+                        <th>Gia nhập</th>
+                        <th>Điều khiển</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -40,7 +40,7 @@
                             <td>
                                 <span class="status-pill @(user.IsActive ? "is-live" : "is-muted")">
                                     <span class="dot" style="background: currentColor;"></span>
-                                    @(user.IsActive ? "Kich hoat" : "Bi khoa")
+                                    @(user.IsActive ? "Kích hoạt" : "Bị khóa")
                                 </span>
                             </td>
                             <td class="table-note">@user.CreatedAt.ToString("dd MMM yyyy")</td>
@@ -50,7 +50,7 @@
                                     <form asp-action="ToggleUserStatus" method="post" class="inline-form">
                                         <input type="hidden" name="id" value="@user.Id" />
                                         <button type="submit" class="btn btn-outline">
-                                            @(user.IsActive ? "Vo hieu hoa" : "Kich hoat")
+                                            @(user.IsActive ? "Vô hiệu hóa" : "Kích hoạt")
                                         </button>
                                     </form>
                                 }

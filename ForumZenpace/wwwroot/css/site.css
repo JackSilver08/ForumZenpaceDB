@@ -3192,6 +3192,74 @@ body.profile-modal-open {
     color: var(--text-secondary);
 }
 
+.markdown-link-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    margin: 1rem 0;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    text-decoration: none !important;
+    transition: all 0.2s ease;
+    overflow: hidden;
+}
+
+.markdown-link-card:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(168, 85, 247, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.markdown-link-card__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    background: rgba(168, 85, 247, 0.15);
+    color: #a855f7;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.markdown-link-card__body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.markdown-link-card__url {
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.markdown-link-card__hint {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.markdown-link-card__arrow {
+    color: var(--text-muted);
+    font-size: 1rem;
+    transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.markdown-link-card:hover .markdown-link-card__arrow {
+    color: #a855f7;
+    transform: translate(2px, -2px);
+}
+
+
 .markdown-rendered pre {
     padding: 14px 16px;
     overflow-x: auto;
@@ -5391,3 +5459,236 @@ body.profile-modal-open {
         padding-left: 12px;
     }
 }
+
+/* ============================================================
+   Feed Suggestion Block (Những người bạn có thể biết)
+   Facebook-style horizontal scroll insertion in post feed
+   ============================================================ */
+
+.feed-suggestion-block {
+    padding: 20px 20px 16px;
+    border-radius: 16px;
+    margin-bottom: 0;
+    animation: fadeSlideUp 0.35s cubic-bezier(0.22, 0.68, 0, 1.2) both;
+}
+
+@keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(12px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.feed-suggestion-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.feed-suggestion-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.feed-suggestion-title i {
+    color: #a855f7;
+    font-size: 0.85rem;
+}
+
+.feed-suggestion-dismiss {
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border-radius: 50%;
+    color: var(--text-muted);
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.06);
+    font-size: 0.8rem;
+    transition: background 0.2s, color 0.2s;
+    cursor: pointer;
+}
+
+.feed-suggestion-dismiss:hover {
+    background: rgba(255,255,255,0.12);
+    color: var(--text-primary);
+}
+
+.feed-suggestion-rail {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+}
+
+.feed-suggestion-rail::-webkit-scrollbar {
+    display: none;
+}
+
+.feed-suggestion-card {
+    flex: 0 0 150px;
+    width: 150px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 16px 12px 12px;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.07);
+    background: rgba(255,255,255,0.035);
+    scroll-snap-align: start;
+    position: relative;
+    transition: background 0.2s, border-color 0.2s, transform 0.2s;
+}
+
+.feed-suggestion-card:hover {
+    background: rgba(255,255,255,0.06);
+    border-color: rgba(168,85,247,0.18);
+    transform: translateY(-2px);
+}
+
+.feed-suggestion-dismiss-single {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 22px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(0,0,0,0.3);
+    color: var(--text-muted);
+    font-size: 0.65rem;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s, background 0.15s, color 0.15s;
+}
+
+.feed-suggestion-card:hover .feed-suggestion-dismiss-single {
+    opacity: 1;
+}
+
+.feed-suggestion-dismiss-single:hover {
+    background: rgba(0,0,0,0.55);
+    color: #fff;
+}
+
+.feed-suggestion-avatar-link {
+    display: block;
+    flex-shrink: 0;
+    text-decoration: none;
+}
+
+.feed-suggestion-avatar {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(168,85,247,0.35);
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.feed-suggestion-card:hover .feed-suggestion-avatar {
+    border-color: rgba(168,85,247,0.7);
+    box-shadow: 0 0 14px rgba(168,85,247,0.3);
+}
+
+.feed-suggestion-initials {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #7c3aed, #3b82f6);
+    color: #fff;
+    font-weight: 800;
+    font-size: 1.3rem;
+    letter-spacing: -0.02em;
+}
+
+.feed-suggestion-name {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-align: center;
+    text-decoration: none;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: block;
+    width: 100%;
+}
+
+.feed-suggestion-name:hover {
+    color: #c084fc;
+}
+
+.feed-suggestion-mutual {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    text-align: center;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.feed-suggestion-mutual i {
+    color: #a855f7;
+    font-size: 0.68rem;
+}
+
+.feed-suggestion-add {
+    width: 100%;
+    font-size: 0.78rem !important;
+    padding: 7px 10px !important;
+    margin-top: 4px;
+    gap: 5px;
+    white-space: nowrap;
+}
+
+.feed-suggestion-add.is-sent {
+    background: rgba(255,255,255,0.06) !important;
+    border-color: rgba(255,255,255,0.1) !important;
+    color: var(--text-muted) !important;
+    cursor: default;
+}
+
+.feed-suggestion-see-all {
+    display: block;
+    text-align: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #a855f7;
+    margin-top: 14px;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.feed-suggestion-see-all:hover {
+    color: #c084fc;
+}
+
+@media (max-width: 600px) {
+    .feed-suggestion-card {
+        flex: 0 0 130px;
+        width: 130px;
+    }
+    .feed-suggestion-avatar {
+        width: 60px;
+        height: 60px;
+    }
+}
+

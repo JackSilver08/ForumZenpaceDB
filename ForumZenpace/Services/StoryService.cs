@@ -204,12 +204,26 @@ namespace ForumZenpace.Services
                 await _context.SaveChangesAsync(cancellationToken);
             }
 
-            var authorStories = await _context.Stories
+            var isStoryExpired = story.ExpiresAt <= DateTime.UtcNow;
+            var authorStoriesQuery = _context.Stories
                 .AsNoTracking()
                 .Include(item => item.User)
                 .Include(item => item.Views)
-                .Where(item => item.UserId == story.UserId)
-                .OrderByDescending(item => item.CreatedAt)
+                .Where(item => item.UserId == story.UserId);
+
+            if (isStoryExpired)
+            {
+                // If viewing an expired story from archive, just show it as a standalone story
+                authorStoriesQuery = authorStoriesQuery.Where(item => item.Id == storyId);
+            }
+            else
+            {
+                // If viewing an active story, queue all active stories of the user
+                authorStoriesQuery = authorStoriesQuery.Where(item => item.ExpiresAt > DateTime.UtcNow);
+            }
+
+            var authorStories = await authorStoriesQuery
+                .OrderBy(item => item.CreatedAt)
                 .ToListAsync(cancellationToken);
 
             var selectedIndex = authorStories.FindIndex(item => item.Id == storyId);
@@ -290,7 +304,7 @@ namespace ForumZenpace.Services
 
             if (model.MusicFile is not null && model.MusicFile.Length > 0)
             {
-                var saveResult = await SaveAndTrimStoryMusicAsync(model.MusicFile, userId, cancellationToken);
+                var saveResult = await SaveAndTrimStoryMusicAsync(model.MusicFile, userId, cancellationToken, model.MusicStartTime, model.MusicDuration);
                 if (!saveResult.Success)
                 {
                     if (!string.IsNullOrWhiteSpace(imageFileName)) DeleteStoryImageFile(imageFileName);
@@ -530,7 +544,7 @@ namespace ForumZenpace.Services
             return (fileName, $"/uploads/stories/{fileName}");
         }
 
-        private async Task<(bool Success, string FileName, string MusicUrl, string ErrorMessage)> SaveAndTrimStoryMusicAsync(IFormFile musicFile, int userId, CancellationToken cancellationToken)
+        private async Task<(bool Success, string FileName, string MusicUrl, string ErrorMessage)> SaveAndTrimStoryMusicAsync(IFormFile musicFile, int userId, CancellationToken cancellationToken, int startSeconds = 0, int durationSeconds = 30)
         {
             if (musicFile.Length > 20 * 1024 * 1024)
             {
@@ -547,23 +561,31 @@ namespace ForumZenpace.Services
             var storyMusicDirectory = Path.Combine(webRootPath, "uploads", "story-music");
             Directory.CreateDirectory(storyMusicDirectory);
 
-            var tempFileName = $"temp-{userId}-{Guid.NewGuid():N}{extension}";
+            var uniqueId = Guid.NewGuid().ToString("N");
+            var tempFileName = $"temp-{userId}-{uniqueId}{extension}";
             var tempFilePath = Path.Combine(storyMusicDirectory, tempFileName);
 
+            // Save uploaded file to temp path first (will be used as fallback if FFmpeg fails)
             await using (var stream = new FileStream(tempFilePath, FileMode.Create))
             {
                 await musicFile.CopyToAsync(stream, cancellationToken);
             }
 
-            var finalFileName = $"story-music-{userId}-{Guid.NewGuid():N}.mp3";
+            // Clamp values to safe range
+            startSeconds = Math.Max(0, startSeconds);
+            durationSeconds = Math.Clamp(durationSeconds, 5, 60);
+
+            var finalFileName = $"story-music-{userId}-{uniqueId}.mp3";
             var finalFilePath = Path.Combine(storyMusicDirectory, finalFileName);
 
+            var trimmedByFfmpeg = false;
             try
             {
+                var ssArg = startSeconds > 0 ? $"-ss {startSeconds} " : string.Empty;
                 var processInfo = new System.Diagnostics.ProcessStartInfo
                 {
                     FileName = "ffmpeg",
-                    Arguments = $"-i \"{tempFilePath}\" -t 30 -b:a 128k -ar 44100 -map a \"{finalFilePath}\"",
+                    Arguments = $"-y -i \"{tempFilePath}\" {ssArg}-t {durationSeconds} -b:a 128k -ar 44100 -map a \"{finalFilePath}\"",
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     UseShellExecute = false,
@@ -574,23 +596,33 @@ namespace ForumZenpace.Services
                 if (process != null)
                 {
                     await process.WaitForExitAsync(cancellationToken);
-                    if (process.ExitCode == 0 && File.Exists(finalFilePath))
+                    if (process.ExitCode == 0 && File.Exists(finalFilePath) && new FileInfo(finalFilePath).Length > 0)
                     {
-                        File.Delete(tempFilePath);
-                        return (true, finalFileName, $"/uploads/story-music/{finalFileName}", string.Empty);
+                        trimmedByFfmpeg = true;
                     }
                 }
             }
             catch (Exception)
             {
-                // Ignore FFmpeg failures (fallback to raw file upload)
+                // FFmpeg not available; will fall back to raw file
             }
 
-            var fallbackFileName = $"story-music-{userId}-{Guid.NewGuid():N}{extension}";
-            var fallbackFilePath = Path.Combine(storyMusicDirectory, fallbackFileName);
+            if (trimmedByFfmpeg)
+            {
+                // Clean up temp file - FFmpeg output is the keeper
+                try { File.Delete(tempFilePath); } catch { /* ignore */ }
+                return (true, finalFileName, $"/uploads/story-music/{finalFileName}", string.Empty);
+            }
+
+            // FFmpeg failed or unavailable — use the temp file as-is (rename it to final name)
+            // Clean up any partial FFmpeg output first
+            try { if (File.Exists(finalFilePath)) File.Delete(finalFilePath); } catch { /* ignore */ }
+
             if (File.Exists(tempFilePath))
             {
-                File.Move(tempFilePath, fallbackFilePath, true);
+                var fallbackFileName = $"story-music-{userId}-{uniqueId}{extension}";
+                var fallbackFilePath = Path.Combine(storyMusicDirectory, fallbackFileName);
+                File.Move(tempFilePath, fallbackFilePath, overwrite: true);
                 return (true, fallbackFileName, $"/uploads/story-music/{fallbackFileName}", string.Empty);
             }
 
