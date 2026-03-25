@@ -1,5 +1,7 @@
 @using System.Linq
 @using ForumZenpace.Models
+@using Microsoft.EntityFrameworkCore
+@inject ForumDbContext DbContext
 @model HomeIndexViewModel
 @{
     ViewData["Title"] = "Bảng tin";
@@ -15,6 +17,9 @@
     var canUseSocial = Model.CurrentUserId.HasValue;
     var ownStory = Model.CurrentUserStory;
     var currentUsername = User.Identity?.Name ?? "bạn";
+    var currentUserAvatar = Model.CurrentUserId.HasValue 
+        ? await DbContext.Users.Where(u => u.Id == Model.CurrentUserId.Value).Select(u => u.Avatar).FirstOrDefaultAsync() 
+        : null;
 
     string GetInitials(string? name, string? fallback = null)
     {
@@ -46,7 +51,7 @@
         .home-social-rail { padding: 20px 24px; max-width: 100%; overflow: hidden; background: rgba(0,0,0,0.25); border-radius: 16px; backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
         .social-friend-list { display: flex; gap: 20px; overflow-x: auto; padding-bottom: 8px; scrollbar-width: none; align-items: flex-start; }
         .social-friend-list::-webkit-scrollbar { display: none; }
-        .social-card { background: transparent !important; border: none !important; box-shadow: none !important; display: flex; flex-direction: column; align-items: center; width: 84px; padding: 0; cursor: pointer; transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .social-card { background: transparent !important; border: none !important; box-shadow: none !important; display: flex; flex-direction: column; align-items: center; width: 84px; padding: 0; cursor: pointer; transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275); flex-shrink: 0; }
         .social-card:hover { transform: scale(1.08); }
         .social-avatar.social-avatar--story { width: 74px !important; height: 74px !important; border-radius: 50% !important; padding: 3px; background: linear-gradient(45deg, #a855f7, #3b82f6); display: flex; align-items: center; justify-content: center; margin-bottom: 8px; transition: box-shadow 0.3s ease; }
         .social-card:hover .social-avatar.social-avatar--story { box-shadow: 0 0 16px rgba(168, 85, 247, 0.6); }
@@ -105,8 +110,15 @@
                                class="glass-panel social-card social-card--friend social-card--story social-card--story-self"
                                title="Xem khoảnh khắc của bạn">
                                 <span class="social-story-pill">@ownStory.ActiveStoryCount story</span>
-                                <span class="social-avatar social-avatar--story is-own-story">
-                                    <span>@GetInitials(currentUsername)</span>
+                                <span class="social-avatar social-avatar--story is-own-story" style="position: relative;">
+                                    @if (!string.IsNullOrWhiteSpace(currentUserAvatar))
+                                    {
+                                        <img src="@Url.Content("~" + currentUserAvatar)" alt="Your story" />
+                                    }
+                                    else
+                                    {
+                                        <span>@GetInitials(currentUsername)</span>
+                                    }
                                 </span>
                                 <span class="social-card-copy">
                                     <strong>Story của bạn</strong>
@@ -120,8 +132,16 @@
                                     data-open-story-modal
                                     title="Đăng khoảnh khắc mới">
                                 <span class="social-story-pill is-create">Mới</span>
-                                <span class="social-avatar social-avatar--story is-own-story is-create">
-                                    <i class="fa-solid fa-plus"></i>
+                                <span class="social-avatar social-avatar--story is-own-story is-create" style="position: relative;">
+                                    @if (!string.IsNullOrWhiteSpace(currentUserAvatar))
+                                    {
+                                        <img src="@Url.Content("~" + currentUserAvatar)" alt="Tạo story" />
+                                        <span class="story-create-plus" style="position: absolute; bottom: 0; right: 0; background: var(--mc-primary); color: #fff; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; border: 2px solid var(--bg-base);"><i class="fa-solid fa-plus"></i></span>
+                                    }
+                                    else
+                                    {
+                                        <i class="fa-solid fa-plus"></i>
+                                    }
                                 </span>
                                 <span class="social-card-copy">
                                     <strong>Tạo story</strong>
@@ -129,12 +149,9 @@
                             </button>
                         }
 
-                        <button type="button" class="glass-panel social-card social-card--add" data-open-friend-modal title="Tìm và thêm bạn bè">
-                            <span class="social-avatar social-avatar--story">
-                                <i class="fa-solid fa-user-plus"></i>
-                            </span>
-                            <span class="social-card-copy">
-                                <strong>Thêm bạn</strong>
+                        <button type="button" class="social-card social-card--add" data-open-friend-modal title="Tìm và thêm bạn bè" style="justify-content: center;">
+                            <span class="social-avatar social-avatar--story" style="background: rgba(255, 255, 255, 0.05); border: 2px dashed rgba(255, 255, 255, 0.3);">
+                                <i class="fa-solid fa-user-plus" style="font-size: 1.25rem;"></i>
                             </span>
                         </button>
                     }
@@ -177,16 +194,19 @@
                                     <span class="social-story-pill">@friend.ActiveStoryCount story</span>
                                 }
 
-                                <span class="social-avatar social-avatar--story @(friend.HasActiveStory ? "has-story" : string.Empty)">
-                                    @if (!string.IsNullOrWhiteSpace(friend.AvatarUrl))
-                                    {
-                                        <img src="@friend.AvatarUrl" alt="@friend.DisplayName" />
-                                    }
-                                    else
-                                    {
-                                        <span>@GetInitials(friend.DisplayName, friend.Username)</span>
-                                    }
-                                </span>
+                                <div style="position: relative; display: inline-block;">
+                                    <span class="social-avatar social-avatar--story @(friend.HasActiveStory ? "has-story" : string.Empty)">
+                                        @if (!string.IsNullOrWhiteSpace(friend.AvatarUrl))
+                                        {
+                                            <img src="@Url.Content("~" + friend.AvatarUrl)" alt="@friend.DisplayName" />
+                                        }
+                                        else
+                                        {
+                                            <span>@GetInitials(friend.DisplayName, friend.Username)</span>
+                                        }
+                                    </span>
+                                    <span class="presence-dot" data-presence-user-id="@friend.UserId" style="position: absolute; bottom: 10px; right: -2px; border: 2px solid var(--bg-base); width: 14px; height: 14px; z-index: 2;"></span>
+                                </div>
                                 <span class="social-card-copy">
                                     <strong>@@@friend.Username</strong>
                                     @if (friend.HasActiveStory)
@@ -360,7 +380,7 @@
                                 <div class="avatar">
                                     @if (!string.IsNullOrWhiteSpace(post.User.Avatar))
                                     {
-                                        <img src="@post.User.Avatar" alt="@post.User.FullName" />
+                                        <img src="@Url.Content("~" + post.User.Avatar)" alt="@post.User.FullName" />
                                     }
                                     else
                                     {
@@ -430,7 +450,7 @@
                                         <a href="/Profile/user/@s.Username" class="feed-suggestion-avatar-link">
                                             @if (!string.IsNullOrWhiteSpace(s.AvatarUrl))
                                             {
-                                                <img src="@s.AvatarUrl" alt="@s.DisplayName" class="feed-suggestion-avatar" />
+                                                <img src="@Url.Content("~" + s.AvatarUrl)" alt="@s.DisplayName" class="feed-suggestion-avatar" />
                                             }
                                             else
                                             {
@@ -481,7 +501,7 @@
                                     <a href="/Profile/user/@s.Username" class="feed-suggestion-avatar-link">
                                         @if (!string.IsNullOrWhiteSpace(s.AvatarUrl))
                                         {
-                                            <img src="@s.AvatarUrl" alt="@s.DisplayName" class="feed-suggestion-avatar" />
+                                            <img src="@Url.Content("~" + s.AvatarUrl)" alt="@s.DisplayName" class="feed-suggestion-avatar" />
                                         }
                                         else
                                         {

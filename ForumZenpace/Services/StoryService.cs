@@ -302,65 +302,27 @@ namespace ForumZenpace.Services
                 imageContentType = model.Image.ContentType ?? "application/octet-stream";
             }
 
-            if (model.MusicFile is not null && model.MusicFile.Length > 0)
+            var externalMusicResult = TryResolveExternalMusic(
+                model.MusicExternalUrl,
+                model.MusicExternalTitle,
+                model.MusicExternalArtist);
+
+            if (!externalMusicResult.Success)
             {
-                var saveResult = await SaveAndTrimStoryMusicAsync(model.MusicFile, userId, cancellationToken, model.MusicStartTime, model.MusicDuration);
-                if (!saveResult.Success)
+                if (!string.IsNullOrWhiteSpace(imageFileName))
                 {
-                    if (!string.IsNullOrWhiteSpace(imageFileName)) DeleteStoryImageFile(imageFileName);
-                    return CreateFailure(saveResult.ErrorMessage);
+                    DeleteStoryImageFile(imageFileName);
                 }
 
-                musicFileName = saveResult.FileName;
-                musicUrl = saveResult.MusicUrl;
-                musicOriginalFileName = Path.GetFileName(model.MusicFile.FileName);
-                musicContentType = "audio/mpeg";
+                return CreateFailure(externalMusicResult.ErrorMessage);
             }
-            else
+
+            if (externalMusicResult.Selection is not null)
             {
-                var externalMusicResult = TryResolveExternalMusic(
-                    model.MusicExternalUrl,
-                    model.MusicExternalTitle,
-                    model.MusicExternalArtist);
-
-                if (!externalMusicResult.Success)
-                {
-                    if (!string.IsNullOrWhiteSpace(imageFileName))
-                    {
-                        DeleteStoryImageFile(imageFileName);
-                    }
-
-                    return CreateFailure(externalMusicResult.ErrorMessage);
-                }
-
-                if (externalMusicResult.Selection is not null)
-                {
-                    musicFileName = externalMusicResult.Selection.FileName;
-                    musicOriginalFileName = externalMusicResult.Selection.DisplayName;
-                    musicContentType = externalMusicResult.Selection.ContentType;
-                    musicUrl = externalMusicResult.Selection.Url;
-                }
-                else
-                {
-                    var selectedTrack = _storyMusicLibraryService.FindTrack(model.SelectedMusicTrackKey);
-                    if (!string.IsNullOrWhiteSpace(model.SelectedMusicTrackKey) && selectedTrack is null)
-                    {
-                        if (!string.IsNullOrWhiteSpace(imageFileName))
-                        {
-                            DeleteStoryImageFile(imageFileName);
-                        }
-
-                        return CreateFailure("Bai nhac da chon khong con ton tai trong thu vien.");
-                    }
-
-                    if (selectedTrack is not null)
-                    {
-                        musicFileName = selectedTrack.Key;
-                        musicOriginalFileName = selectedTrack.DisplayLabel;
-                        musicContentType = selectedTrack.ContentType;
-                        musicUrl = selectedTrack.AudioUrl;
-                    }
-                }
+                musicFileName = externalMusicResult.Selection.FileName;
+                musicOriginalFileName = externalMusicResult.Selection.DisplayName;
+                musicContentType = externalMusicResult.Selection.ContentType;
+                musicUrl = externalMusicResult.Selection.Url;
             }
 
             var story = new Story

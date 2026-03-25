@@ -1,13 +1,4 @@
 @using ForumZenpace.Models
-@inject ForumZenpace.Services.StoryMusicLibraryService StoryMusicLibrary
-@{
-    var musicTracks = StoryMusicLibrary.GetAvailableTracks();
-    var hasMusicTracks = musicTracks.Count > 0;
-    var musicLibraryHint = hasMusicTracks
-        ? $"Chon 1 bai trong thu vien co san ({musicTracks.Count} bai)."
-        : "Chua co bai nhac nao trong thu vien. Them file vao wwwroot/library/story-music va cap nhat Data/StoryMusic/catalog.json.";
-    var emptyLibraryOptionLabel = hasMusicTracks ? "Khong them nhac" : "Thu vien dang trong";
-}
 
 <div class="story-modal" data-story-modal hidden aria-hidden="true">
     <div class="story-modal-backdrop" data-close-story-modal></div>
@@ -114,70 +105,6 @@
                         </div>
                     </div>
 
-                    <div class="field">
-                        <label class="field-label" for="storyMusicTrack">Nhac cho story</label>
-                        <div class="select-shell">
-                            <select id="storyMusicTrack"
-                                    name="SelectedMusicTrackKey"
-                                    class="form-control"
-                                    data-story-music-select>
-                                <option value="">@emptyLibraryOptionLabel</option>
-                                @foreach (var track in musicTracks)
-                                {
-                                    <option value="@track.Key"
-                                            data-track-audio-url="@track.AudioUrl"
-                                            data-track-label="@track.DisplayLabel">
-                                        @track.DisplayLabel
-                                    </option>
-                                }
-                            </select>
-                        </div>
-                        <p class="field-hint"
-                           data-story-music-name
-                           data-story-music-library-hint="@musicLibraryHint"
-                           data-story-music-empty-hint="Bo trong neu ban muon dang story khong kem nhac.">
-                            @musicLibraryHint
-                        </p>
-                    </div>
-
-                    <div class="field">
-                        <label class="field-label" for="storyMusicUpload" style="font-weight: 600; color: #a855f7;">Hoặc tải nhạc lên (MP3, M4A, WAV)</label>
-                        <input id="storyMusicUpload"
-                               name="MusicFile"
-                               type="file"
-                               accept=".mp3,.m4a,.wav"
-                               class="form-control"
-                               data-story-music-upload-input />
-                        <p class="field-hint">File dưới 20MB. Hệ thống sẽ cắt một đoạn ngắn để đính kèm.</p>
-                        
-                        <div class="story-music-trim-controls" data-story-music-trim-controls hidden style="margin-top: 12px; padding: 12px; background: rgba(0,0,0,0.1); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
-                            <div class="story-composer-inline-grid">
-                                <div class="field" style="margin-bottom: 0;">
-                                    <label class="field-label" for="storyMusicStartTime" style="font-size: 0.85rem;">Bắt đầu từ (giây)</label>
-                                    <input id="storyMusicStartTime"
-                                           name="MusicStartTime"
-                                           type="number"
-                                           min="0"
-                                           max="600"
-                                           value="0"
-                                           class="form-control"
-                                           data-story-music-start-input />
-                                </div>
-                                <div class="field" style="margin-bottom: 0;">
-                                    <label class="field-label" for="storyMusicDuration" style="font-size: 0.85rem;">Độ dài (giây)</label>
-                                    <input id="storyMusicDuration"
-                                           name="MusicDuration"
-                                           type="number"
-                                           min="5"
-                                           max="60"
-                                           value="30"
-                                           class="form-control"
-                                           data-story-music-duration-input />
-                                </div>
-                            </div>
-                            <p class="field-hint" style="margin-bottom: 0; margin-top: 8px;">Chọn vị trí bắt đầu và thời lượng (5-60s) của đoạn nhạc bạn muốn sử dụng.</p>
-                        </div>
-                    </div>
                 </div>
             </div>
 
