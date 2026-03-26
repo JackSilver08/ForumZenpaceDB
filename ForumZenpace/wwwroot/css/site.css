@@ -1522,11 +1522,10 @@ select.form-control {
 }
 
 .post-footer {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
-    justify-content: space-between;
     gap: var(--space-3);
-    flex-wrap: wrap;
     padding-top: var(--space-2);
     border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
@@ -1535,6 +1534,11 @@ select.form-control {
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-3);
+    min-width: 0;
+}
+
+.post-footer > .btn {
+    justify-self: end;
 }
 
 .metric {
@@ -5370,6 +5374,15 @@ body.profile-modal-open {
         transform: rotate(-5deg);
     }
 
+    .post-footer {
+        grid-template-columns: 1fr;
+        align-items: flex-start;
+    }
+
+    .post-footer > .btn {
+        justify-self: start;
+    }
+
     .abstract-background__wave--top {
         top: 5vh;
         left: -28vw;
@@ -5691,4 +5704,3 @@ body.profile-modal-open {
         height: 60px;
     }
 }
-
