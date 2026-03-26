@@ -17,7 +17,7 @@ namespace ForumZenpace.Services
         private readonly IDistributedCache _cache;
         
         private const string EmbedApiUrl = "https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent";
-        private const string GenerateApiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+        private const string GenerateApiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent";
         private const string ApiKeyEnvironmentVariable = "GeminiSettings__ApiKey";
 
         public GeminiEmbeddingService(HttpClient httpClient, IConfiguration configuration, ILogger<GeminiEmbeddingService> logger, IDistributedCache cache)

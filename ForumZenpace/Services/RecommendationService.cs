@@ -239,14 +239,14 @@ namespace ForumZenpace.Services
                 scoredPosts.Add((post.Id, finalScore));
             }
 
-            // Get top 20 IDs
+            // Get top 50 IDs
             var topPostIds = scoredPosts
                 .OrderByDescending(x => x.Score)
                 .Select(x => x.PostId)
-                .Take(20)
+                .Take(50)
                 .ToList();
 
-            if (topPostIds.Count == 0) return new List<Post>();
+            if (topPostIds.Count == 0) return await GetFallbackPostsAsync();
 
             // Fetch fully populated posts for the top IDs using AsSplitQuery
             var finalPostsUnordered = await _context.Posts
@@ -321,7 +321,7 @@ namespace ForumZenpace.Services
                 .Where(p => p.Status == "Active")
                 .OrderByDescending(p => p.Likes.Count + p.ViewCount)
                 .ThenByDescending(p => p.CreatedAt)
-                .Take(30)
+                .Take(50)
                 .ToListAsync();
 
             if (fallbackResults.Count > 0)

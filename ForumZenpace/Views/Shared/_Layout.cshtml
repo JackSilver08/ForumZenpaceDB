@@ -1,6 +1,8 @@
 @using System.Security.Claims
+@using Microsoft.EntityFrameworkCore
 @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 @inject ForumZenpace.Services.SocialService SocialService
+@inject ForumZenpace.Models.ForumDbContext DbContext
 @{
     var currentUserName = User.Identity?.Name ?? "User";
     var currentUserInitial = currentUserName.Substring(0, 1).ToUpperInvariant();
@@ -10,6 +12,9 @@
     var unreadNotificationCount = currentUserId.HasValue
         ? await SocialService.GetUnreadNotificationCountAsync(currentUserId.Value)
         : 0;
+    var currentUserAvatar = currentUserId.HasValue 
+        ? await DbContext.Users.Where(u => u.Id == currentUserId.Value).Select(u => u.Avatar).FirstOrDefaultAsync() 
+        : null;
     var antiforgeryToken = Antiforgery.GetAndStoreTokens(Context).RequestToken;
 }
 <!DOCTYPE html>
@@ -68,9 +73,14 @@
 
                         <a asp-controller="Profile" asp-action="Index" class="user-badge avatar-link">
                             <span class="user-name">@currentUserName</span>
-                            <span class="avatar-badge">
-                                @currentUserInitial
-                            </span>
+                            @if (!string.IsNullOrWhiteSpace(currentUserAvatar))
+                            {
+                                <img src="@Url.Content("~" + currentUserAvatar)" class="avatar-badge" alt="@currentUserName" style="padding:0; object-fit:cover;" />
+                            }
+                            else
+                            {
+                                <span class="avatar-badge">@currentUserInitial</span>
+                            }
                             <span class="presence-dot" data-presence-user-id="@currentUserId"></span>
                         </a>
 
