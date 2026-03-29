@@ -61,13 +61,19 @@
         .social-card-copy span, .social-story-pill, .social-friend-badge { display: none !important; }
         
         /* Add Button Friend */
-        .social-card--add .social-avatar { background: transparent !important; border: 2px dashed rgba(255,255,255,0.4); padding: 0; }
-        .social-card--add .social-avatar i { font-size: 1.4rem; color: rgba(255,255,255,0.8); transform: translateY(-2px); }
-        .social-card--add:hover .social-avatar { border-color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.05) !important; box-shadow: none !important; }
+        .social-card--add { justify-content: center; gap: 8px; }
+        .social-card--add .social-avatar { background: linear-gradient(135deg, #0b1220, #172554) !important; border: 2px solid rgba(255,255,255,0.62); padding: 0; box-shadow: 0 0 0 2px rgba(255,255,255,0.22), 0 10px 24px rgba(4, 10, 30, 0.5); margin-top: 8px; }
+        .social-card--add .social-avatar i { font-size: 1.3rem; color: #fff; transform: translateY(1px); }
+        .social-card--add .social-card-copy strong { font-size: 0.78rem; color: rgba(255,255,255,0.95); letter-spacing: 0.02em; }
+        .social-card--add:hover .social-avatar { transform: translateY(-2px) scale(1.02); box-shadow: 0 0 0 2px rgba(255,255,255,0.35), 0 14px 28px rgba(4, 10, 30, 0.62); border-color: rgba(255,255,255,0.78); }
         
         /* Create Story Addon */
-        .social-card--story-self .social-avatar.is-create { background: linear-gradient(45deg, #f59e0b, #ec4899); }
+        .social-card--story-self-active { justify-content: center; }
+        .social-card--story-self .social-avatar.is-create { background: linear-gradient(45deg, #f59e0b, #ec4899); margin-top: 14px; }
         .social-card--story-self:hover .social-avatar.is-create { box-shadow: 0 0 16px rgba(236, 72, 153, 0.6); }
+        .social-card--story-self .social-avatar.is-create > i { transform: translateY(6px); }
+        .social-card--story-self .story-create-plus { bottom: -3px !important; transform: translateY(2px); }
+        .social-card--story-self .social-avatar.is-create + .social-card-copy { margin-top: 12px; }
         
         /* Post Card Refinements */
         .post-card { background: rgba(20,20,30,0.85) !important; border: 1px solid rgba(255,255,255,0.08) !important; border-radius: 12px !important; transition: transform 0.2s, box-shadow 0.2s !important; box-shadow: 0 4px 16px rgba(0,0,0,0.4) !important; }
@@ -107,7 +113,7 @@
                             <a asp-controller="Story"
                                asp-action="Viewer"
                                asp-route-id="@ownStory.LatestStoryId.Value"
-                               class="glass-panel social-card social-card--friend social-card--story social-card--story-self"
+                               class="glass-panel social-card social-card--friend social-card--story social-card--story-self social-card--story-self-active"
                                title="Xem khoảnh khắc của bạn">
                                 <span class="social-story-pill">@ownStory.ActiveStoryCount story</span>
                                 <span class="social-avatar social-avatar--story is-own-story" style="position: relative;">
@@ -149,9 +155,12 @@
                             </button>
                         }
 
-                        <button type="button" class="social-card social-card--add" data-open-friend-modal title="Tìm và thêm bạn bè" style="justify-content: center;">
-                            <span class="social-avatar social-avatar--story" style="background: rgba(255, 255, 255, 0.05); border: 2px dashed rgba(255, 255, 255, 0.3);">
-                                <i class="fa-solid fa-user-plus" style="font-size: 1.25rem;"></i>
+                        <button type="button" class="social-card social-card--add" data-open-friend-modal title="Tìm và thêm bạn bè">
+                            <span class="social-avatar social-avatar--story">
+                                <i class="fa-solid fa-plus"></i>
+                            </span>
+                            <span class="social-card-copy">
+                                <strong>Thêm bạn</strong>
                             </span>
                         </button>
                     }
@@ -565,3 +574,5 @@
         </div>
     </aside>
 </div>
+
+

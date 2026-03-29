@@ -586,6 +586,23 @@ select.form-control {
     appearance: none;
 }
 
+.story-composer-form select.form-control {
+    color-scheme: dark;
+}
+
+.story-composer-form select.form-control option,
+.story-composer-form select.form-control optgroup {
+    background: #161d29;
+    color: rgba(245, 247, 255, 0.96);
+}
+
+.story-composer-form select.form-control option:checked,
+.story-composer-form select.form-control option:hover,
+.story-composer-form select.form-control option:focus {
+    background: #273248;
+    color: #ffffff;
+}
+
 .select-shell {
     position: relative;
 }
@@ -1029,8 +1046,10 @@ select.form-control {
 .social-card--empty {
     min-width: 172px;
     padding: 18px;
-    align-items: flex-start;
-    justify-content: flex-end;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     background: rgba(31, 24, 62, 0.82);
     border-style: dashed;
     border-color: rgba(255, 255, 255, 0.12);
@@ -4521,6 +4540,7 @@ body.profile-modal-open {
 
 .social-card--story-self {
     cursor: pointer;
+    padding-top: 10px; /* Đẩy block tạo story xuống một chút */
 }
 
 .social-avatar--story {

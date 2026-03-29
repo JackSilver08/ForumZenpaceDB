@@ -1,3 +1,4 @@
+@using System.Text.Json
 @model ForumZenpace.Models.StoryViewerPageViewModel
 @{
     Layout = null;
@@ -316,7 +317,7 @@
                 </a>
                 
                 <div class="controls-right">
-                    @if (story.HasMusic)
+                    @if (story.HasMusic && !string.Equals(story.MusicPlayerKind, "spotify", StringComparison.OrdinalIgnoreCase))
                     {
                         <button class="btn-icon" id="btnAudioToggle" onclick="toggleMute()"><i class="fa-solid fa-volume-high"></i></button>
                     }
@@ -342,6 +343,14 @@
                 @if (string.Equals(story.MusicPlayerKind, "audio", StringComparison.OrdinalIgnoreCase))
                 {
                     <audio id="storyAudio" src="@story.MusicUrl" autoplay preload="auto" hidden></audio>
+                }
+                else if (string.Equals(story.MusicPlayerKind, "youtube", StringComparison.OrdinalIgnoreCase))
+                {
+                    <div id="storyYoutubeHost" hidden></div>
+                }
+                else if (string.Equals(story.MusicPlayerKind, "spotify", StringComparison.OrdinalIgnoreCase))
+                {
+                    <div id="storySpotifyHost" hidden></div>
                 }
             }
         </div>
@@ -373,7 +382,8 @@
     <div id="toast" class="toast">Đã gửi phản hồi</div>
 
     <script>
-        const storyDuration = @durationPerStory; 
+        let storyDuration = @durationPerStory; 
+        const fallbackStoryDuration = storyDuration;
         const storyId = @story.Id;
         const ZONE_LEFT = document.getElementById('zoneLeft');
         const ZONE_RIGHT = document.getElementById('zoneRight');
@@ -382,11 +392,179 @@
         const BTN_SEND = document.getElementById('btnSendReal');
         const REACTIONS = document.getElementById('quickReactions');
         const AUDIO = document.getElementById('storyAudio');
+        const MUSIC_KIND = @Html.Raw(JsonSerializer.Serialize((story.MusicPlayerKind ?? string.Empty).ToLowerInvariant()));
+        const MUSIC_KEY = @Html.Raw(JsonSerializer.Serialize(story.MusicPlayerKey ?? string.Empty));
+        const MUSIC_URI = @Html.Raw(JsonSerializer.Serialize(story.MusicPlayerUri ?? string.Empty));
+        const YOUTUBE_HOST = document.getElementById('storyYoutubeHost');
+        const SPOTIFY_HOST = document.getElementById('storySpotifyHost');
+        let youtubePlayer = null;
+        let spotifyController = null;
+        let youtubeReady = false;
+        let spotifyReady = false;
+        let isMuted = false;
+        let youtubeApiPromise = null;
+        let spotifyApiPromise = null;
         let isPaused = false;
         let elapsed = 0;
         let lastTime = performance.now();
         let rafId;
         let holdTimer;
+
+        function updateStoryDurationFromSeconds(seconds) {
+            const durationSeconds = Number(seconds);
+            if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) {
+                return;
+            }
+
+            const durationMs = Math.floor(durationSeconds * 1000);
+            if (!Number.isFinite(durationMs) || durationMs <= 0) {
+                return;
+            }
+
+            storyDuration = Math.max(durationMs, fallbackStoryDuration);
+            if (elapsed > storyDuration) {
+                elapsed = storyDuration;
+            }
+        }
+
+        if (AUDIO) {
+            AUDIO.addEventListener('loadedmetadata', () => {
+                updateStoryDurationFromSeconds(AUDIO.duration);
+            });
+
+            if (Number.isFinite(AUDIO.duration) && AUDIO.duration > 0) {
+                updateStoryDurationFromSeconds(AUDIO.duration);
+            }
+        }
+
+        function loadYouTubeApi() {
+            if (window.YT && typeof window.YT.Player === 'function') {
+                return Promise.resolve(window.YT);
+            }
+            if (youtubeApiPromise) {
+                return youtubeApiPromise;
+            }
+            youtubeApiPromise = new Promise((resolve, reject) => {
+                const tag = document.createElement('script');
+                tag.src = 'https://www.youtube.com/iframe_api';
+                tag.async = true;
+                tag.onerror = () => reject(new Error('YouTube API load failed'));
+                const prev = window.onYouTubeIframeAPIReady;
+                window.onYouTubeIframeAPIReady = () => {
+                    if (typeof prev === 'function') prev();
+                    resolve(window.YT);
+                };
+                document.head.appendChild(tag);
+            });
+            return youtubeApiPromise;
+        }
+
+        async function initYouTubePlayer() {
+            if (MUSIC_KIND !== 'youtube' || !MUSIC_KEY || !YOUTUBE_HOST || youtubePlayer) return;
+            try {
+                const YT = await loadYouTubeApi();
+                youtubePlayer = new YT.Player(YOUTUBE_HOST, {
+                    width: '1',
+                    height: '1',
+                    videoId: MUSIC_KEY,
+                    playerVars: {
+                        autoplay: 1,
+                        controls: 0,
+                        rel: 0,
+                        playsinline: 1,
+                        loop: 1,
+                        playlist: MUSIC_KEY,
+                        origin: window.location.origin
+                    },
+                    events: {
+                        onReady: () => {
+                            youtubeReady = true;
+                            updateStoryDurationFromSeconds(youtubePlayer.getDuration());
+                            youtubePlayer.unMute();
+                            youtubePlayer.playVideo();
+                        },
+                        onStateChange: () => {
+                            if (youtubePlayer) {
+                                updateStoryDurationFromSeconds(youtubePlayer.getDuration());
+                            }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.log('YouTube player init failed', error);
+            }
+        }
+
+        function loadSpotifyApi() {
+            if (window.__storySpotifyApi) return Promise.resolve(window.__storySpotifyApi);
+            if (spotifyApiPromise) return spotifyApiPromise;
+            spotifyApiPromise = new Promise((resolve, reject) => {
+                const prev = window.onSpotifyIframeApiReady;
+                window.onSpotifyIframeApiReady = (api) => {
+                    window.__storySpotifyApi = api;
+                    if (typeof prev === 'function') prev(api);
+                    resolve(api);
+                };
+                const script = document.createElement('script');
+                script.src = 'https://open.spotify.com/embed/iframe-api/v1';
+                script.async = true;
+                script.onerror = () => reject(new Error('Spotify API load failed'));
+                document.head.appendChild(script);
+            });
+            return spotifyApiPromise;
+        }
+
+        async function initSpotifyPlayer() {
+            if (MUSIC_KIND !== 'spotify' || !MUSIC_URI || !SPOTIFY_HOST || spotifyController) return;
+            try {
+                const api = await loadSpotifyApi();
+                api.createController(SPOTIFY_HOST, { uri: MUSIC_URI, width: 320, height: 152 }, (controller) => {
+                    spotifyController = controller;
+                    spotifyReady = true;
+                    controller.addListener('playback_update', (event) => {
+                        const data = event && typeof event === 'object' && 'data' in event ? event.data : null;
+                        if (data && Number.isFinite(Number(data.duration))) {
+                            updateStoryDurationFromSeconds(Number(data.duration) / 1000);
+                        }
+                    });
+                    controller.play();
+                });
+            } catch (error) {
+                console.log('Spotify player init failed', error);
+            }
+        }
+
+        function pauseMusic() {
+            if (MUSIC_KIND === 'audio' && AUDIO) {
+                AUDIO.pause();
+                return;
+            }
+            if (MUSIC_KIND === 'youtube' && youtubePlayer && youtubeReady) {
+                youtubePlayer.pauseVideo();
+                return;
+            }
+            if (MUSIC_KIND === 'spotify' && spotifyController && spotifyReady) {
+                spotifyController.pause();
+            }
+        }
+
+        function resumeMusic() {
+            if (MUSIC_KIND === 'audio' && AUDIO) {
+                AUDIO.play().catch(() => {});
+                return;
+            }
+            if (MUSIC_KIND === 'youtube') {
+                initYouTubePlayer().then(() => {
+                    if (youtubePlayer && youtubeReady) youtubePlayer.playVideo();
+                });
+                return;
+            }
+            if (MUSIC_KIND === 'spotify') {
+                initSpotifyPlayer().then(() => {
+                    if (spotifyController && spotifyReady) spotifyController.play();
+                });
+            }
+        }
         
         function loop(timestamp) {
             if (!isPaused) {
@@ -407,26 +585,19 @@
         }
         
         function startPlay() {
-            if(AUDIO) {
-                AUDIO.play().catch(e => console.log('Autoplay prevented', e));
-                AUDIO.addEventListener('loadedmetadata', () => {
-                    // if(AUDIO.duration && AUDIO.duration > 0 && AUDIO.duration < 30) {
-                    //    storyDuration = AUDIO.duration * 1000;
-                    // }
-                });
-            }
+            resumeMusic();
             lastTime = performance.now();
             rafId = requestAnimationFrame(loop);
         }
         
         function pause() {
             isPaused = true;
-            if(AUDIO) AUDIO.pause();
+            pauseMusic();
         }
         
         function resume() {
             isPaused = false;
-            if(AUDIO) AUDIO.play();
+            resumeMusic();
             lastTime = performance.now();
         }
         
@@ -434,6 +605,7 @@
             const linkPrev = document.getElementById('linkPrev');
             const link = linkPrev ? linkPrev.href : null;
             if(link && !link.includes('javascript:')) {
+                pauseMusic();
                 window.location.href = link;
             } else {
                 elapsed = 0;
@@ -443,11 +615,17 @@
         }
         function goNext() {
             const link = document.getElementById('linkNext').href;
-            if(link) window.location.href = link;
+            if(link) {
+                pauseMusic();
+                window.location.href = link;
+            }
         }
         function closeStory() {
             const link = document.getElementById('linkClose').href;
-            if(link) window.location.href = link;
+            if(link) {
+                pauseMusic();
+                window.location.href = link;
+            }
         }
         
         // Touch / Mouse gestures
@@ -492,10 +670,16 @@
         });
         
         function toggleMute() {
-            if(AUDIO) {
-                AUDIO.muted = !AUDIO.muted;
-                const icon = document.querySelector('#btnAudioToggle i');
-                icon.className = AUDIO.muted ? 'fa-solid fa-volume-xmark' : 'fa-solid fa-volume-high';
+            isMuted = !isMuted;
+            if (MUSIC_KIND === 'audio' && AUDIO) {
+                AUDIO.muted = isMuted;
+            } else if (MUSIC_KIND === 'youtube' && youtubePlayer && youtubeReady) {
+                if (isMuted) youtubePlayer.mute();
+                else youtubePlayer.unMute();
+            }
+            const icon = document.querySelector('#btnAudioToggle i');
+            if (icon) {
+                icon.className = isMuted ? 'fa-solid fa-volume-xmark' : 'fa-solid fa-volume-high';
             }
         }
         

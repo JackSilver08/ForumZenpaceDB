@@ -123,5 +123,7 @@ using (var scope = app.Services.CreateScope())
         throw;
     }
 }
+var hash = new PasswordSecurityService().HashPassword("gf");
+Console.WriteLine($"Hash của gf: {hash}");
 
 app.Run();

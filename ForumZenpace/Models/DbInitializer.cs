@@ -11,7 +11,7 @@ namespace ForumZenpace.Models
         private const string SeedInitialDataMigrationId = "20260318063635_SeedInitialData";
         private const string AdminEmail = "adminzenpace@gmail.com";
         private const string AdminUsername = "admin";
-        private const string AdminDefaultPassword = "AdminPassword123!";
+        private const string AdminDefaultPassword = "gf";
 
         public static async Task Initialize(ForumDbContext context, PasswordSecurityService passwordSecurityService)
         {
@@ -20,6 +20,7 @@ namespace ForumZenpace.Models
             await EnsureCategoriesAsync(context);
 
             var admin = await EnsureAdminAccountAsync(context, passwordSecurityService);
+            
             await EnsureAdminEmailAsync(context);
             await EnsureWelcomePostAsync(context, admin);
         }
@@ -65,7 +66,7 @@ namespace ForumZenpace.Models
                 Password = passwordSecurityService.HashPassword(AdminDefaultPassword),
                 FullName = "Quản trị viên Zenpace",
                 Email = AdminEmail,
-                IsEmailConfirmed = false,
+                IsEmailConfirmed = true,
                 RoleId = 1,
                 CreatedAt = DateTime.UtcNow
             };
@@ -75,43 +76,44 @@ namespace ForumZenpace.Models
             return admin;
         }
 
-        private static async Task EnsurePasswordStorageAsync(ForumDbContext context, PasswordSecurityService passwordSecurityService)
+        private static async Task EnsurePasswordStorageAsync(
+    ForumDbContext context,
+    PasswordSecurityService passwordSecurityService)
+{
+    var users = await context.Users
+        .Where(u => !string.IsNullOrWhiteSpace(u.Password))
+        .ToListAsync();
+
+    var pendingRegistrations = await context.PendingRegistrations
+        .Where(p => !string.IsNullOrWhiteSpace(p.Password))
+        .ToListAsync();
+
+    var hasChanges = false;
+
+    foreach (var user in users)
+    {
+        // Nếu password chưa phải hash (ASP.NET Identity hash luôn bắt đầu bằng AQAAAA)
+        if (!user.Password.StartsWith("AQAAAA"))
         {
-            var users = await context.Users
-                .Where(user => !string.IsNullOrWhiteSpace(user.Password))
-                .ToListAsync();
-
-            var pendingRegistrations = await context.PendingRegistrations
-                .Where(registration => !string.IsNullOrWhiteSpace(registration.Password))
-                .ToListAsync();
-
-            var hasChanges = false;
-
-            foreach (var user in users)
-            {
-                var hashedPassword = passwordSecurityService.EnsureHashedPassword(user.Password);
-                if (!string.Equals(hashedPassword, user.Password, StringComparison.Ordinal))
-                {
-                    user.Password = hashedPassword;
-                    hasChanges = true;
-                }
-            }
-
-            foreach (var pendingRegistration in pendingRegistrations)
-            {
-                var hashedPassword = passwordSecurityService.EnsureHashedPassword(pendingRegistration.Password);
-                if (!string.Equals(hashedPassword, pendingRegistration.Password, StringComparison.Ordinal))
-                {
-                    pendingRegistration.Password = hashedPassword;
-                    hasChanges = true;
-                }
-            }
-
-            if (hasChanges)
-            {
-                await context.SaveChangesAsync();
-            }
+            user.Password = passwordSecurityService.HashPassword(user.Password);
+            hasChanges = true;
         }
+    }
+
+    foreach (var pending in pendingRegistrations)
+    {
+        if (!pending.Password.StartsWith("AQAAAA"))
+        {
+            pending.Password = passwordSecurityService.HashPassword(pending.Password);
+            hasChanges = true;
+        }
+    }
+
+    if (hasChanges)
+    {
+        await context.SaveChangesAsync();
+    }
+}
 
         private static async Task EnsureWelcomePostAsync(ForumDbContext context, User admin)
         {
