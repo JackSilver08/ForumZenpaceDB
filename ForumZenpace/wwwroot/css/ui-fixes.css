@@ -1,0 +1,436 @@
+/* =====================================================
+   UI FIXES — ForumZenpace
+   Sửa 8 lỗi layout/UX mà không thay đổi design gốc
+   ===================================================== */
+
+/* ─────────────────────────────────────────────────────
+   FIX 1: Story / Social Rail — overflow & scroll đúng
+   ───────────────────────────────────────────────────── */
+
+/* Đảm bảo rail không tràn ra ngoài container */
+.home-social-band {
+    /* Override inline style khi canUseSocial */
+    max-width: 100% !important;
+    margin-bottom: var(--space-4) !important;
+}
+
+.home-social-rail {
+    /* Ngăn rail tràn ra ngoài grid cell */
+    min-width: 0;
+    overflow: hidden;
+}
+
+.social-friend-list {
+    /* Scroll ngang mượt + snap */
+    display: flex;
+    align-items: stretch;
+    gap: var(--space-3);
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;   /* mandatory thay proximity cho chắc */
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    padding-bottom: 4px;             /* tránh bị cắt shadow dưới */
+    padding-left: 2px;
+    padding-right: 2px;
+}
+
+.social-friend-list::-webkit-scrollbar {
+    display: none;
+}
+
+/* Mỗi card snap chính xác */
+.social-card--friend,
+.social-card--empty {
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+    flex-shrink: 0;                  /* không bị co lại */
+}
+
+/* Inline style trong Index.cshtml override lại scroll — fix lại */
+.home-social-band .social-friend-list {
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+}
+
+
+/* ─────────────────────────────────────────────────────
+   FIX 2: Alignment — avatar & card thẳng hàng
+   ───────────────────────────────────────────────────── */
+
+/* Post card header: avatar thẳng top với body */
+.post-card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+}
+
+/* Avatar cố định kích thước, không bị kéo giãn */
+.post-card-header > .avatar-link {
+    flex-shrink: 0;
+    align-self: flex-start;
+}
+
+/* Body chiếm phần còn lại, min-width 0 để không tràn */
+.post-card-body {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: grid;
+    gap: var(--space-2);
+}
+
+/* Social friend list — các card cùng chiều cao */
+.social-card--friend {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+/* Sidebar items — dùng gap nhất quán */
+.sidebar-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0;                          /* gap xử lý bằng margin bên dưới */
+    padding: var(--space-4);
+}
+
+.sidebar-link {
+    /* Đã có gap: 9px trong site.css, giữ nguyên */
+    margin-bottom: 2px;             /* spacing nhất quán 8px scale */
+}
+
+.sidebar-link:last-child {
+    margin-bottom: 0;
+}
+
+
+/* ─────────────────────────────────────────────────────
+   FIX 3: Text truncate đúng + tooltip
+   ───────────────────────────────────────────────────── */
+
+/* Username trong header badge — không bị cắt vô lý */
+.user-name {
+    max-width: 120px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    /* Tooltip native qua title attr đã đủ, không cần custom */
+}
+
+/* Username trong social card — line-clamp 2 dòng, tooltip qua title */
+.social-card--friend .social-card-copy strong {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+    white-space: normal;            /* Cho phép xuống dòng trước khi clamp */
+    word-break: break-word;
+    max-width: 100%;
+}
+
+/* Post author — 1 dòng + ellipsis */
+.post-author {
+    display: inline-block;
+    max-width: 200px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    vertical-align: bottom;
+}
+
+/* Post title — tối đa 2 dòng */
+.post-title {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+}
+
+/* Social card copy trong Index.cshtml inline style — override max-width */
+.social-card-copy strong {
+    max-width: 100%;                 /* đừng bị inline max-width cắt cứng */
+}
+
+
+/* ─────────────────────────────────────────────────────
+   FIX 4: Contrast — text trên nền gradient tím-xanh
+   ───────────────────────────────────────────────────── */
+
+/* Social friend card: tăng opacity nền để contrast tốt hơn */
+.social-card--friend {
+    background:
+        linear-gradient(180deg, rgba(70, 40, 120, 0.98), rgba(30, 18, 68, 0.98)),
+        rgba(255, 255, 255, 0.03);
+}
+
+/* Text trong card — đảm bảo đủ sáng */
+.social-card--friend .social-card-copy strong {
+    color: rgba(255, 255, 255, 0.97);   /* gần trắng hoàn toàn */
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+}
+
+/* Inline style trong Index.cshtml cho .social-card-copy strong dùng text-shadow */
+/* Thêm overlay cho story avatar khu vực text */
+.social-card--friend .social-avatar {
+    /* Thêm viền nhẹ để tách avatar khỏi nền */
+    outline: 1.5px solid rgba(255, 255, 255, 0.12);
+    outline-offset: 0;
+}
+
+/* Social rail container:
+   Giữ fix overflow/layout, nhưng không override màu nền ở Home/Index.cshtml. */
+.home-social-rail {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Đảm bảo wave background không che text quá nhiều */
+.abstract-background__wave {
+    opacity: 0.18 !important;       /* giảm xuống từ 0.44 */
+}
+
+
+/* ─────────────────────────────────────────────────────
+   FIX 5: Header buttons & notification badge — alignment
+   ───────────────────────────────────────────────────── */
+
+/* Header actions — tất cả item căn giữa trục dọc */
+.header-actions {
+    display: flex;
+    align-items: center;             /* đã có, giữ chắc */
+    gap: var(--space-2);
+    flex-shrink: 0;
+}
+
+/* Tất cả btn trong header cùng chiều cao */
+.header-actions .btn {
+    min-height: 34px;
+    height: 34px;                    /* thống nhất height */
+}
+
+/* Icon-only button — vuông, không bị méo */
+.header-actions .icon-btn {
+    width: 34px;
+    min-width: 34px;
+    height: 34px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Notification link — position: relative để badge absolute đúng chỗ */
+.notification-link {
+    position: relative;
+    overflow: visible;              /* badge không bị crop */
+}
+
+/* Badge góc phải-trên của icon, không bị lệch */
+.notification-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    min-width: 17px;
+    height: 17px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    border-radius: 999px;
+    font-size: 0.625rem;
+    font-weight: 800;
+    line-height: 1;
+    /* Giữ màu gradient gốc */
+    background: linear-gradient(135deg, #ff5be1, #7cc3ff);
+    color: #fff;
+    border: 1.5px solid var(--bg-base, #070717);  /* tách khỏi nền */
+    box-shadow: 0 2px 8px rgba(255, 91, 225, 0.4);
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* User badge trong header — height nhất quán */
+.user-badge {
+    min-height: 34px;
+    height: 34px;
+    padding: 0 6px 0 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+/* Logout form/button không làm lệch alignment */
+.header-actions form {
+    display: contents;              /* form không chiếm không gian flex */
+}
+
+.header-actions form .btn {
+    margin: 0;
+}
+
+
+/* ─────────────────────────────────────────────────────
+   FIX 6: Shadow & blur — giảm bớt, phân cấp rõ hơn
+   ───────────────────────────────────────────────────── */
+
+/* Override --shadow-soft: đơn giản hơn */
+:root {
+    --shadow-soft:
+        0 4px 16px rgba(5, 7, 18, 0.28),
+        0 0 12px rgba(160, 85, 255, 0.06);
+    --shadow-hover:
+        0 8px 28px rgba(5, 7, 18, 0.38),
+        0 0 18px rgba(160, 85, 255, 0.10);
+}
+
+/* Card chính (post-card) — shadow vừa phải */
+.post-card {
+    box-shadow:
+        0 2px 8px rgba(0, 0, 0, 0.22),
+        0 0 0 1px rgba(255, 255, 255, 0.04) !important;
+}
+
+.post-card:hover {
+    box-shadow:
+        0 6px 20px rgba(0, 0, 0, 0.35),
+        0 0 16px rgba(160, 85, 255, 0.09) !important;
+}
+
+/* Card phụ (social-card--friend) — nhẹ hơn */
+.social-card--friend {
+    box-shadow:
+        0 4px 12px rgba(9, 12, 28, 0.18),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* Navbar — giữ nhưng đơn giản hơn */
+.navbar.glass-panel {
+    box-shadow:
+        0 8px 22px rgba(0, 0, 0, 0.28),
+        0 0 16px rgba(160, 85, 255, 0.08);
+}
+
+/* Glass panel chung — nhẹ hơn */
+.glass-panel {
+    box-shadow:
+        0 4px 14px rgba(5, 7, 18, 0.24),
+        0 0 8px rgba(160, 85, 255, 0.05);
+}
+
+/* Loại bỏ blur quá nhiều layer trên mobile */
+@media (max-width: 600px) {
+    .glass-panel,
+    .glass-card {
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+    }
+}
+
+
+/* ─────────────────────────────────────────────────────
+   FIX 7: Sidebar active state — nổi bật hơn
+   ───────────────────────────────────────────────────── */
+
+/* Active state: indicator bar trái + nền rõ ràng */
+.sidebar-link.active {
+    color: #fff !important;
+    background: rgba(160, 85, 255, 0.18) !important;
+    border-color: rgba(160, 133, 255, 0.35) !important;
+    border-left: 3px solid #a855f7 !important;
+    padding-left: 13px !important;   /* bù 3px border-left */
+    font-weight: 700;
+    box-shadow:
+        0 0 12px rgba(160, 85, 255, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* Active icon theo màu accent */
+.sidebar-link.active i {
+    color: #c084fc;                  /* lighter purple */
+}
+
+/* Hover state — riêng biệt, không trùng active */
+.sidebar-link:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.07) !important;
+    border-color: rgba(255, 255, 255, 0.10) !important;
+    color: var(--text-primary) !important;
+    transform: translateX(3px);
+}
+
+/* Override inline styles từ Index.cshtml */
+.sidebar-link {
+    padding: 8px 10px !important;    /* đồng nhất với site.css 7px+1px border */
+    border-radius: 8px !important;
+    transition: all 150ms ease !important;
+    border-left-width: 0;            /* reset để active mới đặt */
+}
+
+.sidebar-link.active {
+    border-left-width: 3px !important;
+}
+
+
+/* ─────────────────────────────────────────────────────
+   FIX 8: Spacing nhất quán — 8px/4px scale
+   ───────────────────────────────────────────────────── */
+
+/* Social band cách main content */
+.home-social-band {
+    margin-bottom: var(--space-4) !important;  /* 16px */
+}
+
+/* Toolbar cách feed */
+.home-toolbar {
+    margin-bottom: var(--space-4);             /* 16px */
+}
+
+/* Khoảng cách giữa các post */
+.post-list {
+    gap: var(--space-3);           /* 12px — đã có, giữ vững */
+}
+
+/* Post card padding nhất quán */
+.post-card {
+    padding: var(--space-4) var(--space-4) var(--space-3); /* top/side/bottom */
+}
+
+/* Sidebar panel gap */
+.sidebar-panel {
+    gap: var(--space-2);           /* 8px giữa label và links */
+}
+
+/* Panel label bên trái — bottom margin đồng nhất */
+.sidebar-panel .panel-label {
+    margin-bottom: var(--space-2); /* 8px */
+}
+
+/* Side panel (right) */
+.side-panel {
+    padding: var(--space-4);
+}
+
+/* Search form */
+.search-row {
+    margin-top: var(--space-2);    /* 8px thay vì 10px tuỳ tiện */
+}
+
+/* Post footer padding-top */
+.post-footer {
+    padding-top: var(--space-2);   /* 8px */
+    margin-top: var(--space-2);    /* 8px trên top border */
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Vertical rhythm: main content top padding */
+.main-content {
+    padding-top: var(--space-4);   /* 16px */
+    padding-bottom: var(--space-8); /* 32px */
+}
+
+/* Section break giữa story band và toolbar */
+.home-toolbar.animated-entry {
+    margin-top: 0;
+}
