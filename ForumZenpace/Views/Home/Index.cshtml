@@ -59,9 +59,11 @@
         .social-avatar.social-avatar--story img, .social-avatar.social-avatar--story span { width: 100% !important; height: 100% !important; border-radius: 50% !important; object-fit: cover; background: var(--bg-elevated); border: 2px solid var(--bg-base); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.25rem; color: #fff; }
         .social-card-copy strong { font-size: 0.85rem; color: #fff; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 84px; display: block; text-align: center; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
         .social-card-copy span, .social-story-pill, .social-friend-badge { display: none !important; }
+        .social-card[data-friend-card] { justify-content: center; }
         
         /* Add Button Friend */
-        .social-card--add { justify-content: center; gap: 8px; }
+        .social-card--add { justify-content: center; gap: 8px; background: linear-gradient(180deg, rgba(85, 55, 144, 0.94), rgba(44, 29, 97, 0.94)), rgba(255, 255, 255, 0.03) !important; border: 1px solid rgba(255,255,255,0.08) !important; box-shadow: 0 18px 32px rgba(9, 12, 28, 0.22), inset 0 1px 0 rgba(255,255,255,0.05) !important; }
+        .social-card--add::after { display: none; }
         .social-card--add .social-avatar { background: linear-gradient(135deg, #0b1220, #172554) !important; border: 2px solid rgba(255,255,255,0.62); padding: 0; box-shadow: 0 0 0 2px rgba(255,255,255,0.22), 0 10px 24px rgba(4, 10, 30, 0.5); margin-top: 8px; }
         .social-card--add .social-avatar i { font-size: 1.3rem; color: #fff; transform: translateY(1px); }
         .social-card--add .social-card-copy strong { font-size: 0.78rem; color: rgba(255,255,255,0.95); letter-spacing: 0.02em; }
@@ -574,5 +576,3 @@
         </div>
     </aside>
 </div>
-
-
