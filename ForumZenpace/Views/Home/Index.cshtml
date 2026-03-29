@@ -20,6 +20,9 @@
     var currentUserAvatar = Model.CurrentUserId.HasValue 
         ? await DbContext.Users.Where(u => u.Id == Model.CurrentUserId.Value).Select(u => u.Avatar).FirstOrDefaultAsync() 
         : null;
+    var currentUserStoryCoverStyle = !string.IsNullOrWhiteSpace(currentUserAvatar)
+        ? $"--story-cover-image: url('{Url.Content("~" + currentUserAvatar)}');"
+        : null;
 
     string GetInitials(string? name, string? fallback = null)
     {
@@ -47,51 +50,398 @@
 @if (canUseSocial)
 {
     <style>
-        .home-social-band { display: block !important; width: 100% !important; max-width: 860px; margin: 0 auto 32px auto !important; }
-        .home-social-rail { padding: 20px 24px; max-width: 100%; overflow: hidden; background: rgba(0,0,0,0.25); border-radius: 16px; backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
-        .social-friend-list { display: flex; gap: 20px; overflow-x: auto; padding-bottom: 8px; scrollbar-width: none; align-items: flex-start; }
-        .social-friend-list::-webkit-scrollbar { display: none; }
-        .social-card { background: transparent !important; border: none !important; box-shadow: none !important; display: flex; flex-direction: column; align-items: center; width: 84px; padding: 0; cursor: pointer; transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275); flex-shrink: 0; }
-        .social-card:hover { transform: scale(1.08); }
-        .social-avatar.social-avatar--story { width: 74px !important; height: 74px !important; border-radius: 50% !important; padding: 3px; background: linear-gradient(45deg, #a855f7, #3b82f6); display: flex; align-items: center; justify-content: center; margin-bottom: 8px; transition: box-shadow 0.3s ease; }
-        .social-card:hover .social-avatar.social-avatar--story { box-shadow: 0 0 16px rgba(168, 85, 247, 0.6); }
-        .social-avatar.social-avatar--story.has-story { background: linear-gradient(45deg, #a855f7, #f16ee0); }
-        .social-avatar.social-avatar--story img, .social-avatar.social-avatar--story span { width: 100% !important; height: 100% !important; border-radius: 50% !important; object-fit: cover; background: var(--bg-elevated); border: 2px solid var(--bg-base); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.25rem; color: #fff; }
-        .social-card-copy strong { font-size: 0.85rem; color: #fff; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 84px; display: block; text-align: center; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
-        .social-card-copy span, .social-story-pill, .social-friend-badge { display: none !important; }
-        
-        /* Add Button Friend */
-        .social-card--add { justify-content: center; gap: 8px; }
-        .social-card--add .social-avatar { background: linear-gradient(135deg, #0b1220, #172554) !important; border: 2px solid rgba(255,255,255,0.62); padding: 0; box-shadow: 0 0 0 2px rgba(255,255,255,0.22), 0 10px 24px rgba(4, 10, 30, 0.5); margin-top: 8px; }
-        .social-card--add .social-avatar i { font-size: 1.3rem; color: #fff; transform: translateY(1px); }
-        .social-card--add .social-card-copy strong { font-size: 0.78rem; color: rgba(255,255,255,0.95); letter-spacing: 0.02em; }
-        .social-card--add:hover .social-avatar { transform: translateY(-2px) scale(1.02); box-shadow: 0 0 0 2px rgba(255,255,255,0.35), 0 14px 28px rgba(4, 10, 30, 0.62); border-color: rgba(255,255,255,0.78); }
-        
-        /* Create Story Addon */
-        .social-card--story-self-active { justify-content: center; }
-        .social-card--story-self .social-avatar.is-create { background: linear-gradient(45deg, #f59e0b, #ec4899); margin-top: 14px; }
-        .social-card--story-self:hover .social-avatar.is-create { box-shadow: 0 0 16px rgba(236, 72, 153, 0.6); }
-        .social-card--story-self .social-avatar.is-create > i { transform: translateY(6px); }
-        .social-card--story-self .story-create-plus { bottom: -3px !important; transform: translateY(2px); }
-        .social-card--story-self .social-avatar.is-create + .social-card-copy { margin-top: 12px; }
-        
-        /* Post Card Refinements */
-        .post-card { background: rgba(20,20,30,0.85) !important; border: 1px solid rgba(255,255,255,0.08) !important; border-radius: 12px !important; transition: transform 0.2s, box-shadow 0.2s !important; box-shadow: 0 4px 16px rgba(0,0,0,0.4) !important; }
-        .post-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.6) !important; border-color: rgba(255,255,255,0.15) !important; }
-        .post-title { font-size: 1.35rem !important; font-weight: 700 !important; color: #fff !important; margin-bottom: 8px !important; display: block; line-height: 1.4 !important; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
-        .post-excerpt { color: rgba(255,255,255,0.7) !important; font-size: 0.95rem; }
-        .post-metrics { display: flex; gap: 20px; margin-top: 0; }
-        .metric { font-weight: 600; font-size: 0.95rem; color: var(--text-secondary); display: flex; gap: 6px; align-items: center; }
+        /* === STORY / SOCIAL RAIL (facebook-like vertical story cards) === */
+        .home-social-band {
+            width: 100%;
+            max-width: none;
+            margin: 0 0 var(--space-4) 0;
+            min-width: 0;
+        }
+        .home-social-band .home-social-rail {
+            width: 100%;
+            min-width: 0;
+            display: block;
+            padding: 16px 18px;
+            overflow: hidden;
+            border-radius: 18px;
+                background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.012)), rgba(10, 12, 33, 0.76);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                box-shadow: var(--shadow-soft);
+            backdrop-filter: var(--blur-panel);
+            -webkit-backdrop-filter: var(--blur-panel);
+        }
+        .home-social-band .social-friend-rail {
+            position: relative;
+            width: 100%;
+            min-width: 0;
+            overflow: hidden;
+        }
+        .home-social-band .social-friend-list {
+            display: flex;
+            flex-wrap: nowrap;
+            align-items: stretch;
+            gap: 14px;
+            overflow-x: auto;
+            overflow-y: hidden;
+            width: 100%;
+            min-width: 0;
+            padding: 4px 2px 8px;
+            scroll-snap-type: x mandatory;
+            scroll-padding-inline: 2px;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            cursor: grab;
+            user-select: none;
+            overscroll-behavior-x: contain;
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+        }
+        .home-social-band .social-friend-list.is-dragging {
+            cursor: grabbing;
+            scroll-snap-type: none;
+        }
+        .home-social-band .social-friend-list::-webkit-scrollbar {
+            display: none;
+        }
+        .home-social-band .social-story-card {
+            position: relative;
+            width: 112px;
+            min-width: 112px;
+            height: 198px;
+            padding: 0;
+            display: block;
+            border-radius: 18px;
+            overflow: hidden;
+            scroll-snap-align: start;
+            scroll-snap-stop: always;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01)),
+                rgba(31, 24, 62, 0.82);
+            box-shadow: 0 14px 28px rgba(0, 0, 0, 0.22);
+            transform-origin: center;
+            transition:
+                transform 180ms ease,
+                box-shadow 180ms ease,
+                border-color 180ms ease;
+        }
+        .home-social-band .social-story-card:hover {
+            transform: translateY(-3px) scale(1.02);
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow:
+                0 24px 40px rgba(2, 8, 23, 0.3),
+                0 10px 24px rgba(15, 23, 42, 0.2);
+        }
+        .home-social-band .social-story-card:focus-visible {
+            outline: 2px solid rgba(147, 197, 253, 0.9);
+            outline-offset: 3px;
+        }
+        .home-social-band .social-story-card__media {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        .home-social-band .social-story-card__cover,
+        .home-social-band .social-story-card__overlay {
+            position: absolute;
+            inset: 0;
+        }
+        .home-social-band .social-story-card__cover {
+            background:
+                radial-gradient(circle at 28% 18%, rgba(255, 255, 255, 0.2), transparent 34%),
+                linear-gradient(180deg, rgba(30, 41, 59, 0.22) 0%, rgba(15, 23, 42, 0.82) 100%),
+                linear-gradient(160deg, #355c7d 0%, #6c5b7b 45%, #c06c84 100%);
+            background-position: center;
+            background-size: cover;
+            transform: scale(1.01);
+            transition: transform 180ms ease;
+        }
+        .home-social-band .social-story-card__media.has-cover .social-story-card__cover {
+            background-image:
+                linear-gradient(180deg, rgba(15, 23, 42, 0.06) 0%, rgba(15, 23, 42, 0.56) 100%),
+                var(--story-cover-image);
+        }
+        .home-social-band .social-story-card:hover .social-story-card__cover {
+            transform: scale(1.015);
+        }
+        .home-social-band .social-story-card__overlay {
+            background:
+                linear-gradient(180deg, rgba(12, 20, 33, 0.08) 0%, rgba(12, 20, 33, 0.26) 52%, rgba(12, 20, 33, 0.82) 100%);
+            transform: none !important;
+            transition: none !important;
+        }
+        .home-social-band .social-story-card__avatar-frame {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            width: 42px;
+            height: 42px;
+            padding: 3px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            z-index: 2;
+            background: rgba(148, 163, 184, 0.6);
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.28);
+        }
+        .home-social-band .social-story-card__avatar-frame--fresh {
+            background: linear-gradient(135deg, #1877f2, #60a5fa);
+        }
+        .home-social-band .social-story-card__avatar-frame--seen {
+            background: rgba(255, 255, 255, 0.42);
+        }
+        .home-social-band .social-avatar.social-avatar--story {
+            width: 100%;
+            height: 100%;
+            border-radius: 999px;
+            border: 2px solid rgba(255, 255, 255, 0.94);
+            background: rgba(15, 23, 42, 0.82);
+            overflow: hidden;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 0.95rem;
+            font-weight: 800;
+        }
+        .home-social-band .social-avatar.social-avatar--story img,
+        .home-social-band .social-avatar.social-avatar--story > span {
+            width: 100%;
+            height: 100%;
+            border-radius: inherit;
+            object-fit: cover;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .home-social-band .social-story-card__presence {
+            position: absolute;
+            top: 40px;
+            left: 42px;
+            width: 12px;
+            height: 12px;
+            border-width: 2px;
+            z-index: 3;
+        }
+        .home-social-band .social-story-card__name {
+            position: absolute;
+            right: 12px;
+            bottom: 12px;
+            left: 12px;
+            z-index: 2;
+            font-size: 0.83rem;
+            font-weight: 800;
+            line-height: 1.2;
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-shadow: 0 2px 8px rgba(15, 23, 42, 0.8);
+        }
+        .home-social-band .social-story-pill {
+            top: 12px;
+            right: 12px;
+            z-index: 3;
+            min-height: 24px;
+            padding: 0 9px;
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.64);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            color: rgba(255, 255, 255, 0.96);
+            font-size: 0.68rem;
+            font-weight: 800;
+            backdrop-filter: blur(10px);
+        }
+        .home-social-band .social-story-card--create {
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015)),
+                rgba(31, 24, 62, 0.86);
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+        .home-social-band .social-story-card--create .social-story-card__cover {
+            background:
+                radial-gradient(circle at 20% 12%, rgba(255, 255, 255, 0.14), transparent 32%),
+                linear-gradient(160deg, rgba(255, 82, 210, 0.18) 0%, rgba(155, 118, 255, 0.2) 48%, rgba(121, 201, 255, 0.16) 100%);
+        }
+        .home-social-band .social-story-card--create .social-story-card__media.has-cover .social-story-card__cover {
+            background-image:
+                linear-gradient(180deg, rgba(12, 20, 33, 0.02) 0%, rgba(12, 20, 33, 0.18) 100%),
+                var(--story-cover-image);
+            background-position: center;
+            background-size: cover;
+        }
+        .home-social-band .social-story-card--create .social-story-card__overlay {
+            background: linear-gradient(180deg, rgba(12, 20, 33, 0.02) 0%, rgba(12, 20, 33, 0.08) 56%, rgba(12, 20, 33, 0.2) 100%);
+        }
+        .home-social-band .social-story-card__footer--create {
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 2;
+            min-height: 64px;
+            padding: 18px 12px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015)),
+                rgba(24, 19, 50, 0.96);
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+        .home-social-band .social-story-card__footer--create .social-story-card__name {
+            position: static;
+            color: rgba(245, 247, 255, 0.96);
+            text-shadow: 0 2px 8px rgba(10, 14, 34, 0.45);
+            text-align: center;
+        }
+        .home-social-band .social-story-card__plus {
+            position: absolute;
+            top: -18px;
+            left: 50%;
+            width: 36px;
+            height: 36px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            transform: translateX(-50%);
+            background: var(--primary-gradient);
+            color: #fff;
+            border: 4px solid rgba(27, 20, 58, 0.96);
+            box-shadow:
+                0 10px 20px rgba(58, 39, 116, 0.28),
+                0 0 18px rgba(241, 110, 224, 0.18),
+                0 0 24px rgba(121, 201, 255, 0.14);
+        }
+        .home-social-band .social-story-card--utility .social-story-card__cover,
+        .home-social-band .social-story-card--empty .social-story-card__cover {
+            background:
+                radial-gradient(circle at 20% 18%, rgba(255, 255, 255, 0.12), transparent 32%),
+                linear-gradient(160deg, rgba(88, 41, 157, 0.8) 0%, rgba(53, 36, 114, 0.92) 52%, rgba(17, 24, 39, 0.98) 100%);
+        }
+        .home-social-band .social-story-card--empty .social-story-card__cover {
+            background:
+                linear-gradient(160deg, rgba(55, 43, 104, 0.92), rgba(18, 16, 42, 0.96));
+        }
+        .home-social-band .social-story-card__utility-icon {
+            position: absolute;
+            top: 18px;
+            left: 18px;
+            width: 42px;
+            height: 42px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            z-index: 2;
+            background: rgba(255, 255, 255, 0.16);
+            border: 1px solid rgba(255, 255, 255, 0.24);
+            color: #fff;
+            font-size: 1rem;
+            box-shadow: 0 10px 22px rgba(15, 23, 42, 0.22);
+        }
+        .home-social-band .social-story-card--empty {
+            border-style: dashed;
+            border-color: rgba(255, 255, 255, 0.18);
+        }
+        .home-social-band .social-story-card--empty .social-story-card__name {
+            white-space: normal;
+        }
+        .home-social-band .social-friend-badge {
+            top: 12px;
+            right: 12px;
+            left: auto;
+            z-index: 3;
+        }
+        .home-social-band .social-friend-nav {
+            width: 38px;
+            height: 38px;
+        }
+        @@media (max-width: 991.98px) {
+            .home-social-band .social-story-card {
+                width: 108px;
+                min-width: 108px;
+                height: 192px;
+            }
+        }
+        @@media (max-width: 767.98px) {
+            .home-social-band .home-social-rail {
+                padding: 14px 12px;
+                border-radius: 16px;
+            }
+            .home-social-band .social-friend-list {
+                padding-inline: 2px;
+                gap: 12px;
+            }
+            .home-social-band .social-story-card {
+                width: 102px;
+                min-width: 102px;
+                height: 184px;
+            }
+            .home-social-band .social-friend-nav {
+                display: none;
+            }
+        }
+
+        /* === POST CARD === */
+        .post-card {
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015)),
+                var(--panel-bg-strong) !important;
+            border: 1px solid var(--panel-border) !important;
+            border-radius: 12px !important;
+            box-shadow: 0 14px 28px rgba(0, 0, 0, 0.22) !important;
+            transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease !important;
+        }
+        .post-card:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: var(--shadow-hover) !important;
+            border-color: var(--panel-border-strong) !important;
+        }
+        /* Post title — 2 dòng clamp, không bị display:block phá clamp */
+        .post-title {
+            font-size: 1.1rem !important;
+            font-weight: 700 !important;
+            color: rgba(255,255,255,0.97) !important;
+            line-height: 1.35 !important;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+            display: -webkit-box !important;
+            -webkit-box-orient: vertical !important;
+            -webkit-line-clamp: 2 !important;
+            overflow: hidden !important;
+            white-space: normal !important;
+        }
+        .post-excerpt { color: rgba(255,255,255,0.72) !important; font-size: 0.875rem !important; }
+        .post-metrics { display: flex; gap: 16px; }
+        .metric { font-weight: 600; font-size: 0.875rem; color: var(--text-secondary); display: inline-flex; gap: 6px; align-items: center; }
         .metric.likes { color: var(--accent-pink); }
-        .metric.comments { color: #3b82f6; }
-        
-        /* Sidebar Refinements */
-        .sidebar-link { padding: 12px 16px !important; border-radius: 8px !important; color: rgba(255,255,255,0.7) !important; display: flex; align-items: center; gap: 12px; transition: all 0.2s !important; margin-bottom: 4px; }
-        .sidebar-link:hover { background: rgba(255,255,255,0.08) !important; color: #fff !important; transform: translateX(6px); }
-        .sidebar-link.active { background: rgba(168,85,247,0.15) !important; color: #a855f7 !important; font-weight: 600; border-left: 4px solid #a855f7; padding-left: 12px !important; }
-        
-        /* Clean Background overrides */
-        .abstract-background__wave { opacity: 0.1 !important; }
+        .metric.comments { color: var(--accent-purple); }
+
+        /* === SIDEBAR === */
+        .sidebar-link {
+            color: var(--text-secondary) !important;
+        }
+        .sidebar-link:hover:not(.active) {
+            background: rgba(255,255,255,0.05) !important;
+            border-color: var(--panel-border) !important;
+            color: var(--text-primary) !important;
+            transform: translateX(3px) !important;
+        }
+        .sidebar-link.active {
+            color: #fff !important;
+            background: linear-gradient(135deg, rgba(255, 82, 210, 0.18), rgba(155, 118, 255, 0.18), rgba(121, 201, 255, 0.14)) !important;
+            border: 1px solid rgba(160, 133, 255, 0.32) !important;
+            box-shadow:
+                0 0 16px rgba(160, 85, 255, 0.14),
+                inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+        }
+
+        /* === BACKGROUND WAVES === */
+        .abstract-background__wave { opacity: 0.12 !important; }
     </style>
     <div class="home-social-band animated-entry">
         <div class="home-social-rail">
@@ -108,59 +458,63 @@
                 <div id="homeFriendList" class="social-friend-list" data-friend-list>
                     @if (canUseSocial)
                     {
-                        if (ownStory?.HasActiveStory == true && ownStory.LatestStoryId.HasValue)
+                        <button type="button"
+                                class="glass-panel social-card social-card--friend social-card--story social-card--story-self social-story-card social-story-card--create"
+                                data-open-story-modal
+                                title="Tạo story mới">
+                            <span class="social-story-card__media @(string.IsNullOrWhiteSpace(currentUserAvatar) ? string.Empty : "has-cover")"
+                                  style="@currentUserStoryCoverStyle">
+                                <span class="social-story-card__cover" aria-hidden="true"></span>
+                                <span class="social-story-card__overlay" aria-hidden="true"></span>
+                                <span class="social-story-card__footer social-story-card__footer--create">
+                                    <span class="social-story-card__plus" aria-hidden="true">
+                                        <i class="fa-solid fa-plus"></i>
+                                    </span>
+                                    <span class="social-story-card__name" title="Tạo story">Tạo story</span>
+                                </span>
+                            </span>
+                        </button>
+
+                        @if (ownStory?.HasActiveStory == true && ownStory.LatestStoryId.HasValue)
                         {
                             <a asp-controller="Story"
                                asp-action="Viewer"
                                asp-route-id="@ownStory.LatestStoryId.Value"
-                               class="glass-panel social-card social-card--friend social-card--story social-card--story-self social-card--story-self-active"
-                               title="Xem khoảnh khắc của bạn">
-                                <span class="social-story-pill">@ownStory.ActiveStoryCount story</span>
-                                <span class="social-avatar social-avatar--story is-own-story" style="position: relative;">
-                                    @if (!string.IsNullOrWhiteSpace(currentUserAvatar))
-                                    {
-                                        <img src="@Url.Content("~" + currentUserAvatar)" alt="Your story" />
-                                    }
-                                    else
-                                    {
-                                        <span>@GetInitials(currentUsername)</span>
-                                    }
-                                </span>
-                                <span class="social-card-copy">
-                                    <strong>Story của bạn</strong>
+                               class="glass-panel social-card social-card--friend social-card--story social-card--story-self social-story-card social-story-card--fresh"
+                               title="Xem story của bạn">
+                                <span class="social-story-card__media @(string.IsNullOrWhiteSpace(currentUserAvatar) ? string.Empty : "has-cover")"
+                                      style="@currentUserStoryCoverStyle">
+                                    <span class="social-story-card__cover" aria-hidden="true"></span>
+                                    <span class="social-story-card__overlay" aria-hidden="true"></span>
+                                    <span class="social-story-pill">Bạn</span>
+                                    <span class="social-story-card__avatar-frame social-story-card__avatar-frame--fresh">
+                                        <span class="social-avatar social-avatar--story is-own-story">
+                                            @if (!string.IsNullOrWhiteSpace(currentUserAvatar))
+                                            {
+                                                <img src="@Url.Content("~" + currentUserAvatar)" alt="Story của bạn" />
+                                            }
+                                            else
+                                            {
+                                                <span>@GetInitials(currentUsername)</span>
+                                            }
+                                        </span>
+                                    </span>
+                                    <span class="social-story-card__name" title="Story của bạn">Story của bạn</span>
                                 </span>
                             </a>
                         }
-                        else
-                        {
-                            <button type="button"
-                                    class="glass-panel social-card social-card--friend social-card--story social-card--story-self"
-                                    data-open-story-modal
-                                    title="Đăng khoảnh khắc mới">
-                                <span class="social-story-pill is-create">Mới</span>
-                                <span class="social-avatar social-avatar--story is-own-story is-create" style="position: relative;">
-                                    @if (!string.IsNullOrWhiteSpace(currentUserAvatar))
-                                    {
-                                        <img src="@Url.Content("~" + currentUserAvatar)" alt="Tạo story" />
-                                        <span class="story-create-plus" style="position: absolute; bottom: 0; right: 0; background: var(--mc-primary); color: #fff; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; border: 2px solid var(--bg-base);"><i class="fa-solid fa-plus"></i></span>
-                                    }
-                                    else
-                                    {
-                                        <i class="fa-solid fa-plus"></i>
-                                    }
-                                </span>
-                                <span class="social-card-copy">
-                                    <strong>Tạo story</strong>
-                                </span>
-                            </button>
-                        }
 
-                        <button type="button" class="social-card social-card--add" data-open-friend-modal title="Tìm và thêm bạn bè">
-                            <span class="social-avatar social-avatar--story">
-                                <i class="fa-solid fa-plus"></i>
-                            </span>
-                            <span class="social-card-copy">
-                                <strong>Thêm bạn</strong>
+                        <button type="button"
+                                class="glass-panel social-card social-card--friend social-card--add social-story-card social-story-card--utility"
+                                data-open-friend-modal
+                                title="Tìm và thêm bạn bè">
+                            <span class="social-story-card__media">
+                                <span class="social-story-card__cover" aria-hidden="true"></span>
+                                <span class="social-story-card__overlay" aria-hidden="true"></span>
+                                <span class="social-story-card__utility-icon" aria-hidden="true">
+                                    <i class="fa-solid fa-user-plus"></i>
+                                </span>
+                                <span class="social-story-card__name" title="Thêm bạn">Thêm bạn</span>
                             </span>
                         </button>
                     }
@@ -182,58 +536,64 @@
                                 : friend.IsMessageBlockedByOtherUser
                                     ? "Người này đang chặn tin nhắn với bạn."
                                     : $"Trang cá nhân của @{friend.Username}";
+                            var friendCoverStyle = !string.IsNullOrWhiteSpace(friend.AvatarUrl)
+                                ? $"--story-cover-image: url('{Url.Content("~" + friend.AvatarUrl)}');"
+                                : null;
+                            var friendStoryCardModifier = friend.HasActiveStory
+                                ? (friend.HasUnviewedStory ? "social-story-card--fresh" : "social-story-card--seen")
+                                : "social-story-card--idle";
 
                             <a asp-controller="@(friend.HasActiveStory && friend.LatestStoryId.HasValue ? "Story" : "Profile")"
                                asp-action="@(friend.HasActiveStory && friend.LatestStoryId.HasValue ? "Viewer" : "UserProfile")"
                                asp-route-id="@(friend.HasActiveStory && friend.LatestStoryId.HasValue ? friend.LatestStoryId : null)"
                                asp-route-username="@(friend.HasActiveStory && friend.LatestStoryId.HasValue ? null : friend.Username)"
-                               class="glass-panel social-card social-card--friend @(friend.HasActiveStory ? "social-card--story" : string.Empty) @(friend.HasUnviewedStory ? "social-card--story-fresh" : string.Empty)"
+                               class="glass-panel social-card social-card--friend @(friend.HasActiveStory ? "social-card--story" : string.Empty) @(friend.HasUnviewedStory ? "social-card--story-fresh" : string.Empty) social-story-card @friendStoryCardModifier"
                                data-friend-card
                                data-friend-user-id="@friend.UserId"
                                data-friend-username="@friend.Username"
                                data-friend-state="@friendState"
                                title="@friendTitle">
-                                <span class="social-friend-badge @(friendState == "connected" ? "is-hidden" : string.Empty)"
-                                      data-friend-status-badge
-                                      aria-hidden="true">
-                                    <i class="fa-solid @(friendState == "blocked-by-viewer" ? "fa-ban" : "fa-shield-halved")"></i>
-                                </span>
-                                @if (friend.HasActiveStory)
-                                {
-                                    <span class="social-story-pill">@friend.ActiveStoryCount story</span>
-                                }
-
-                                <div style="position: relative; display: inline-block;">
-                                    <span class="social-avatar social-avatar--story @(friend.HasActiveStory ? "has-story" : string.Empty)">
-                                        @if (!string.IsNullOrWhiteSpace(friend.AvatarUrl))
-                                        {
-                                            <img src="@Url.Content("~" + friend.AvatarUrl)" alt="@friend.DisplayName" />
-                                        }
-                                        else
-                                        {
-                                            <span>@GetInitials(friend.DisplayName, friend.Username)</span>
-                                        }
+                                <span class="social-story-card__media @(string.IsNullOrWhiteSpace(friend.AvatarUrl) ? string.Empty : "has-cover")"
+                                      style="@friendCoverStyle">
+                                    <span class="social-story-card__cover" aria-hidden="true"></span>
+                                    <span class="social-story-card__overlay" aria-hidden="true"></span>
+                                    <span class="social-friend-badge @(friendState == "connected" ? "is-hidden" : string.Empty)"
+                                          data-friend-status-badge
+                                          aria-hidden="true">
+                                        <i class="fa-solid @(friendState == "blocked-by-viewer" ? "fa-ban" : "fa-shield-halved")"></i>
                                     </span>
-                                    <span class="presence-dot" data-presence-user-id="@friend.UserId" style="position: absolute; bottom: 10px; right: -2px; border: 2px solid var(--bg-base); width: 14px; height: 14px; z-index: 2;"></span>
-                                </div>
-                                <span class="social-card-copy">
-                                    <strong>@@@friend.Username</strong>
                                     @if (friend.HasActiveStory)
                                     {
-                                        <span>@(friend.HasUnviewedStory ? "Chưa xem" : "Đã xem")</span>
+                                        <span class="social-story-pill">@(friend.HasUnviewedStory ? "Chưa xem" : "Đã xem")</span>
                                     }
+                                    <span class="social-story-card__avatar-frame @(friend.HasActiveStory && friend.HasUnviewedStory ? "social-story-card__avatar-frame--fresh" : "social-story-card__avatar-frame--seen")">
+                                        <span class="social-avatar social-avatar--story @(friend.HasActiveStory ? "has-story" : string.Empty)">
+                                            @if (!string.IsNullOrWhiteSpace(friend.AvatarUrl))
+                                            {
+                                                <img src="@Url.Content("~" + friend.AvatarUrl)" alt="@friend.DisplayName" />
+                                            }
+                                            else
+                                            {
+                                                <span>@GetInitials(friend.DisplayName, friend.Username)</span>
+                                            }
+                                        </span>
+                                    </span>
+                                    <span class="presence-dot social-story-card__presence" data-presence-user-id="@friend.UserId"></span>
+                                    <span class="social-story-card__name" title="@friend.Username">@@@friend.Username</span>
                                 </span>
                             </a>
                         }
                     }
                     else
                     {
-                        <div class="glass-panel social-card social-card--empty" data-friend-empty>
-                            <span class="social-avatar social-avatar--story" style="background: transparent !important; border: 2px dashed rgba(255,255,255,0.2);">
-                                <i class="fa-regular fa-user" style="color: rgba(255,255,255,0.5);"></i>
-                            </span>
-                            <span class="social-card-copy" style="opacity: 0.6;">
-                                <strong>Chưa có bạn</strong>
+                        <div class="glass-panel social-card social-card--empty social-story-card social-story-card--empty" data-friend-empty>
+                            <span class="social-story-card__media">
+                                <span class="social-story-card__cover" aria-hidden="true"></span>
+                                <span class="social-story-card__overlay" aria-hidden="true"></span>
+                                <span class="social-story-card__utility-icon" aria-hidden="true">
+                                    <i class="fa-regular fa-user"></i>
+                                </span>
+                                <span class="social-story-card__name" title="Chưa có bạn">Chưa có bạn</span>
                             </span>
                         </div>
                     }
@@ -574,5 +934,3 @@
         </div>
     </aside>
 </div>
-
-

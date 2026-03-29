@@ -11,6 +11,9 @@ let friendRailFrame = 0;
 let searchTimer = 0;
 let searchToken = 0;
 let friendModalLastFocusedElement = null;
+let isDraggingFriendRail = false;
+let friendRailDragStartX = 0;
+let friendRailStartScrollLeft = 0;
 
 export const getFriendModalFocusableElements = () => {
     if (!(friendModalDialog instanceof HTMLElement)) return [];
@@ -39,7 +42,7 @@ const getFriendRailGap = () => {
 
 const getFriendRailStep = () => {
     if (!(friendList instanceof HTMLElement)) return 0;
-    const firstItem = friendList.querySelector('[data-friend-card], [data-friend-empty]');
+    const firstItem = friendList.querySelector('.social-story-card, [data-friend-card], [data-friend-empty]');
     if (!(firstItem instanceof HTMLElement)) return Math.max(friendList.clientWidth * 0.82, 0);
     return firstItem.getBoundingClientRect().width + getFriendRailGap();
 };
@@ -84,11 +87,12 @@ export const scrollFriendRail = (direction) => {
 export const ensureFriendEmptyState = () => {
     if (!(friendList instanceof HTMLElement) || friendList.querySelector('[data-friend-card]')) return;
     friendList.innerHTML = `
-        <div class="glass-panel social-card social-card--empty" data-friend-empty>
-            <span class="social-card-icon"><i class="fa-regular fa-user"></i></span>
-            <span class="social-card-copy">
-                <strong>Chua co ban</strong>
-                <span>Bat dau ket noi tu o Them ban</span>
+        <div class="glass-panel social-card social-card--empty social-story-card social-story-card--empty" data-friend-empty>
+            <span class="social-story-card__media">
+                <span class="social-story-card__cover" aria-hidden="true"></span>
+                <span class="social-story-card__overlay" aria-hidden="true"></span>
+                <span class="social-story-card__utility-icon" aria-hidden="true"><i class="fa-regular fa-user"></i></span>
+                <span class="social-story-card__name" title="Chua co ban">Chua co ban</span>
             </span>
         </div>`;
     scheduleFriendRailUpdate();
@@ -115,35 +119,43 @@ export const renderFriendCard = (friend) => {
     const targetUrl = hasActiveStory
         ? `/Story/Viewer/${encodeURIComponent(friend.latestStoryId)}`
         : `/Profile/user/${encodeURIComponent(friend.username)}`;
+    const coverStyle = friend.avatarUrl ? ` style="--story-cover-image: url('${escapeHtml(friend.avatarUrl)}');"` : '';
+    const mediaClass = `social-story-card__media${friend.avatarUrl ? ' has-cover' : ''}`;
+    const cardVariantClass = hasActiveStory
+        ? (friend.hasUnviewedStory ? ' social-story-card--fresh' : ' social-story-card--seen')
+        : ' social-story-card--idle';
     const avatarMarkup = friend.avatarUrl
         ? `<img src="${escapeHtml(friend.avatarUrl)}" alt="${escapeHtml(friend.displayName)}" />`
         : `<span>${escapeHtml(getInitials(friend.displayName, friend.username))}</span>`;
     const storyPill = hasActiveStory
-        ? `<span class="social-story-pill">${escapeHtml(`${friend.activeStoryCount || 1} story`)}</span>`
+        ? `<span class="social-story-pill">${friend.hasUnviewedStory ? 'Chua xem' : 'Da xem'}</span>`
         : '';
-    const storyMeta = hasActiveStory
-        ? `<span>${friend.hasUnviewedStory ? 'Chua xem' : 'Da xem'}</span>`
-        : '';
+    const avatarFrameClass = hasActiveStory && friend.hasUnviewedStory
+        ? 'social-story-card__avatar-frame social-story-card__avatar-frame--fresh'
+        : 'social-story-card__avatar-frame social-story-card__avatar-frame--seen';
 
     return `
         <a href="${targetUrl}"
-           class="glass-panel social-card social-card--friend${hasActiveStory ? ' social-card--story' : ''}${friend.hasUnviewedStory ? ' social-card--story-fresh' : ''}"
+           class="glass-panel social-card social-card--friend social-story-card${hasActiveStory ? ' social-card--story' : ''}${friend.hasUnviewedStory ? ' social-card--story-fresh' : ''}${cardVariantClass}"
            data-friend-card
            data-friend-user-id="${friend.userId}"
            data-friend-username="${escapeHtml(friend.username)}"
            data-friend-state="${friendState.state}"
            title="${escapeHtml(friendState.label)}">
-            <span class="social-friend-badge${friendState.hidden ? ' is-hidden' : ''}" data-friend-status-badge aria-hidden="true">
-                <i class="fa-solid ${friendState.icon}"></i>
-            </span>
-            ${storyPill}
-            <span class="social-avatar social-avatar--story${hasActiveStory ? ' has-story' : ''} avatar-link">
-                ${avatarMarkup}
-                <span class="presence-dot" data-presence-user-id="${friend.userId}"></span>
-            </span>
-            <span class="social-card-copy">
-                <strong>@${escapeHtml(friend.username)}</strong>
-                ${storyMeta}
+            <span class="${mediaClass}"${coverStyle}>
+                <span class="social-story-card__cover" aria-hidden="true"></span>
+                <span class="social-story-card__overlay" aria-hidden="true"></span>
+                <span class="social-friend-badge${friendState.hidden ? ' is-hidden' : ''}" data-friend-status-badge aria-hidden="true">
+                    <i class="fa-solid ${friendState.icon}"></i>
+                </span>
+                ${storyPill}
+                <span class="${avatarFrameClass}">
+                    <span class="social-avatar social-avatar--story${hasActiveStory ? ' has-story' : ''} avatar-link">
+                        ${avatarMarkup}
+                    </span>
+                </span>
+                <span class="presence-dot social-story-card__presence" data-presence-user-id="${friend.userId}"></span>
+                <span class="social-story-card__name" title="@${escapeHtml(friend.username)}">@${escapeHtml(friend.username)}</span>
             </span>
         </a>`;
 };
@@ -330,6 +342,37 @@ export const bindHomeSocial = () => {
     }
 
     friendList?.addEventListener('scroll', () => scheduleFriendRailUpdate(), { passive: true });
+    friendList?.addEventListener('pointerdown', (event) => {
+        if (!(friendList instanceof HTMLElement) || event.pointerType === 'touch') return;
+        isDraggingFriendRail = true;
+        friendRailDragStartX = event.clientX;
+        friendRailStartScrollLeft = friendList.scrollLeft;
+        friendList.classList.add('is-dragging');
+    });
+    friendList?.addEventListener('pointermove', (event) => {
+        if (!(friendList instanceof HTMLElement) || !isDraggingFriendRail) return;
+        const deltaX = event.clientX - friendRailDragStartX;
+        friendList.scrollLeft = friendRailStartScrollLeft - deltaX;
+    });
+    friendList?.addEventListener('pointerup', () => {
+        if (!(friendList instanceof HTMLElement)) return;
+        isDraggingFriendRail = false;
+        friendList.classList.remove('is-dragging');
+    });
+    friendList?.addEventListener('pointerleave', () => {
+        if (!(friendList instanceof HTMLElement)) return;
+        isDraggingFriendRail = false;
+        friendList.classList.remove('is-dragging');
+    });
+    friendList?.addEventListener('wheel', (event) => {
+        if (!(friendList instanceof HTMLElement)) return;
+        if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+        event.preventDefault();
+        friendList.scrollBy({
+            left: event.deltaY,
+            behavior: 'auto'
+        });
+    }, { passive: false });
     window.addEventListener('resize', () => scheduleFriendRailUpdate());
 
     if ('ResizeObserver' in window && friendList instanceof HTMLElement) {
@@ -502,4 +545,3 @@ export const setFeedSuggestionState = (userId, state) => {
         }
     });
 };
-
