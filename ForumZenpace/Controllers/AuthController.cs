@@ -82,7 +82,16 @@ namespace ForumZenpace.Controllers
             };
 
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
+            var authenticationProperties = new AuthenticationProperties
+            {
+                IsPersistent = model.RememberMe,
+                AllowRefresh = true
+            };
+
+            await HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                new ClaimsPrincipal(identity),
+                authenticationProperties);
 
             return RedirectToAction("Index", "Home");
         }

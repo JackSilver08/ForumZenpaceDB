@@ -50,15 +50,21 @@
                 <span asp-validation-for="Password" class="text-danger"></span>
             </div>
 
-            <button type="submit" class="btn btn-primary" style="width: 100%;">Đăng nhập</button>
-
-            <div class="auth-footer" style="margin-top: 14px;">
-                <a asp-action="ForgotPassword">Quên mật khẩu?</a>
+            <div class="auth-form-options">
+                <label asp-for="RememberMe" class="auth-remember">
+                    <input asp-for="RememberMe" class="auth-remember-input" />
+                    <span>Nhớ tôi</span>
+                </label>
             </div>
 
-            <div class="auth-footer">
-                Chưa có tài khoản?
-                <a asp-action="Register">Tạo tài khoản mới</a>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Đăng nhập</button>
+
+            <div class="auth-footer auth-footer-split">
+                <a asp-action="ForgotPassword">Quên mật khẩu?</a>
+                <span class="auth-footer-inline">
+                    Chưa có tài khoản?
+                    <a asp-action="Register">Tạo tài khoản mới</a>
+                </span>
             </div>
         </form>
     </div>

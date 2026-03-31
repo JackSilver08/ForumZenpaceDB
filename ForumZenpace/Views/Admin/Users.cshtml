@@ -32,19 +32,19 @@
                     @foreach (var user in Model)
                     {
                         <tr>
-                            <td><strong>@@@user.Username</strong></td>
-                            <td>@user.FullName</td>
-                            <td>
+                            <td data-label="Danh tính"><strong>@@@user.Username</strong></td>
+                            <td data-label="Họ tên">@user.FullName</td>
+                            <td data-label="Vai trò">
                                 <span class="badge-tag">@user.Role.Name</span>
                             </td>
-                            <td>
+                            <td data-label="Trạng thái">
                                 <span class="status-pill @(user.IsActive ? "is-live" : "is-muted")">
                                     <span class="dot" style="background: currentColor;"></span>
                                     @(user.IsActive ? "Kích hoạt" : "Bị khóa")
                                 </span>
                             </td>
-                            <td class="table-note">@user.CreatedAt.ToString("dd MMM yyyy")</td>
-                            <td>
+                            <td class="table-note" data-label="Gia nhập">@user.CreatedAt.ToString("dd MMM yyyy")</td>
+                            <td data-label="Điều khiển">
                                 @if (user.Role.Name != "Admin")
                                 {
                                     <form asp-action="ToggleUserStatus" method="post" class="inline-form">

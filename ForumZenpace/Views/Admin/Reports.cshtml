@@ -31,13 +31,13 @@
                     @foreach (var report in Model)
                     {
                         <tr>
-                            <td>
+                            <td data-label="Nội dung">
                                 <a asp-controller="Post" asp-action="Details" asp-route-id="@report.PostId" target="_blank" class="table-link">@report.Post?.Title</a>
                             </td>
-                            <td>@report.User?.FullName</td>
-                            <td><span class="badge-tag">@report.Reason</span></td>
-                            <td class="table-note">@report.CreatedAt.ToString("dd MMM, HH:mm")</td>
-                            <td>
+                            <td data-label="Người gửi">@report.User?.FullName</td>
+                            <td data-label="Lý do"><span class="badge-tag">@report.Reason</span></td>
+                            <td class="table-note" data-label="Thời điểm">@report.CreatedAt.ToString("dd MMM, HH:mm")</td>
+                            <td data-label="Xử lý">
                                 <div class="admin-actions">
                                     <form asp-action="TogglePostStatus" method="post" class="inline-form">
                                         <input type="hidden" name="id" value="@report.PostId" />
