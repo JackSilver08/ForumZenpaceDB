@@ -809,6 +809,81 @@
                                 <span class="feed-suggestion-title"><i class="fa-solid fa-user-group"></i> Những người bạn có thể biết</span>
                                 <button type="button" class="btn btn-text feed-suggestion-dismiss" data-dismiss-suggestion title="Ẩn gợi ý"><i class="fa-solid fa-xmark"></i></button>
                             </div>
+                            <div class="feed-suggestion-container" data-feed-suggestion-container>
+                                <button type="button"
+                                        class="feed-suggestion-nav feed-suggestion-nav--prev"
+                                        data-feed-suggestion-nav-prev
+                                        aria-label="Xem gợi ý trước"
+                                        hidden>
+                                    <i class="fa-solid fa-chevron-left"></i>
+                                </button>
+                                <div class="feed-suggestion-rail" data-feed-suggestion-rail>
+                                    @foreach (var s in Model.SuggestedFriends)
+                                    {
+                                        <div class="feed-suggestion-card" data-suggestion-user-id="@s.UserId">
+                                            <button type="button" class="feed-suggestion-dismiss-single" data-dismiss-single title="Ẩn">
+                                                <i class="fa-solid fa-xmark"></i>
+                                            </button>
+                                            <a href="/Profile/user/@s.Username" class="feed-suggestion-avatar-link">
+                                                @if (!string.IsNullOrWhiteSpace(s.AvatarUrl))
+                                                {
+                                                    <img src="@Url.Content("~" + s.AvatarUrl)" alt="@s.DisplayName" class="feed-suggestion-avatar" />
+                                                }
+                                                else
+                                                {
+                                                    <div class="feed-suggestion-avatar feed-suggestion-initials">
+                                                        @GetInitials(s.DisplayName, s.Username)
+                                                    </div>
+                                                }
+                                            </a>
+                                            <a href="/Profile/user/@s.Username" class="feed-suggestion-name">@s.DisplayName</a>
+                                            @if (!string.IsNullOrWhiteSpace(s.ActionLabel) && s.ActionLabel.Contains("chung"))
+                                            {
+                                                <span class="feed-suggestion-mutual"><i class="fa-solid fa-users"></i> @s.ActionLabel</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="feed-suggestion-mutual"><i class="fa-solid fa-user"></i> Người dùng Zenpace</span>
+                                            }
+                                            <button type="button"
+                                                    class="btn btn-primary feed-suggestion-add"
+                                                    data-feed-add-friend
+                                                    data-target-user-id="@s.UserId">
+                                                <i class="fa-solid fa-user-plus"></i>
+                                                <span>Thêm bạn bè</span>
+                                            </button>
+                                        </div>
+                                    }
+                                </div>
+                                <button type="button"
+                                        class="feed-suggestion-nav feed-suggestion-nav--next"
+                                        data-feed-suggestion-nav-next
+                                        aria-label="Xem gợi ý tiếp"
+                                        hidden>
+                                    <i class="fa-solid fa-chevron-right"></i>
+                                </button>
+                            </div>
+                            <a href="#" class="feed-suggestion-see-all" data-open-friend-modal>Xem tất cả</a>
+                        </div>
+                    }
+                }
+
+                @* If fewer posts than insertAfter threshold, show suggestions at the end *@
+                @if (hasSuggestions && !suggestionsRendered)
+                {
+                    <div class="feed-suggestion-block glass-panel" data-feed-suggestion-block>
+                        <div class="feed-suggestion-header">
+                            <span class="feed-suggestion-title"><i class="fa-solid fa-user-group"></i> Những người bạn có thể biết</span>
+                            <button type="button" class="btn btn-text feed-suggestion-dismiss" data-dismiss-suggestion title="Ẩn gợi ý"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                        <div class="feed-suggestion-container" data-feed-suggestion-container>
+                            <button type="button"
+                                    class="feed-suggestion-nav feed-suggestion-nav--prev"
+                                    data-feed-suggestion-nav-prev
+                                    aria-label="Xem gợi ý trước"
+                                    hidden>
+                                <i class="fa-solid fa-chevron-left"></i>
+                            </button>
                             <div class="feed-suggestion-rail" data-feed-suggestion-rail>
                                 @foreach (var s in Model.SuggestedFriends)
                                 {
@@ -847,56 +922,13 @@
                                     </div>
                                 }
                             </div>
-                            <a href="#" class="feed-suggestion-see-all" data-open-friend-modal>Xem tất cả</a>
-                        </div>
-                    }
-                }
-
-                @* If fewer posts than insertAfter threshold, show suggestions at the end *@
-                @if (hasSuggestions && !suggestionsRendered)
-                {
-                    <div class="feed-suggestion-block glass-panel" data-feed-suggestion-block>
-                        <div class="feed-suggestion-header">
-                            <span class="feed-suggestion-title"><i class="fa-solid fa-user-group"></i> Những người bạn có thể biết</span>
-                            <button type="button" class="btn btn-text feed-suggestion-dismiss" data-dismiss-suggestion title="Ẩn gợi ý"><i class="fa-solid fa-xmark"></i></button>
-                        </div>
-                        <div class="feed-suggestion-rail" data-feed-suggestion-rail>
-                            @foreach (var s in Model.SuggestedFriends)
-                            {
-                                <div class="feed-suggestion-card" data-suggestion-user-id="@s.UserId">
-                                    <button type="button" class="feed-suggestion-dismiss-single" data-dismiss-single title="Ẩn">
-                                        <i class="fa-solid fa-xmark"></i>
-                                    </button>
-                                    <a href="/Profile/user/@s.Username" class="feed-suggestion-avatar-link">
-                                        @if (!string.IsNullOrWhiteSpace(s.AvatarUrl))
-                                        {
-                                            <img src="@Url.Content("~" + s.AvatarUrl)" alt="@s.DisplayName" class="feed-suggestion-avatar" />
-                                        }
-                                        else
-                                        {
-                                            <div class="feed-suggestion-avatar feed-suggestion-initials">
-                                                @GetInitials(s.DisplayName, s.Username)
-                                            </div>
-                                        }
-                                    </a>
-                                    <a href="/Profile/user/@s.Username" class="feed-suggestion-name">@s.DisplayName</a>
-                                    @if (!string.IsNullOrWhiteSpace(s.ActionLabel) && s.ActionLabel.Contains("chung"))
-                                    {
-                                        <span class="feed-suggestion-mutual"><i class="fa-solid fa-users"></i> @s.ActionLabel</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="feed-suggestion-mutual"><i class="fa-solid fa-user"></i> Người dùng Zenpace</span>
-                                    }
-                                    <button type="button"
-                                            class="btn btn-primary feed-suggestion-add"
-                                            data-feed-add-friend
-                                            data-target-user-id="@s.UserId">
-                                        <i class="fa-solid fa-user-plus"></i>
-                                        <span>Thêm bạn bè</span>
-                                    </button>
-                                </div>
-                            }
+                            <button type="button"
+                                    class="feed-suggestion-nav feed-suggestion-nav--next"
+                                    data-feed-suggestion-nav-next
+                                    aria-label="Xem gợi ý tiếp"
+                                    hidden>
+                                <i class="fa-solid fa-chevron-right"></i>
+                            </button>
                         </div>
                         <a href="#" class="feed-suggestion-see-all" data-open-friend-modal>Xem tất cả</a>
                     </div>

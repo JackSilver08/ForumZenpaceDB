@@ -514,6 +514,51 @@ export const bindHomeSocial = () => {
             }
         });
     });
+
+    // Feed suggestion rail scroll controls
+    document.querySelectorAll('[data-feed-suggestion-container]').forEach((container) => {
+        const rail = container.querySelector('[data-feed-suggestion-rail]');
+        const prevBtn = container.querySelector('[data-feed-suggestion-nav-prev]');
+        const nextBtn = container.querySelector('[data-feed-suggestion-nav-next]');
+
+        if (!(rail instanceof HTMLElement) || !(prevBtn instanceof HTMLButtonElement) || !(nextBtn instanceof HTMLButtonElement)) return;
+
+        const updateSuggestionRailControls = () => {
+            const maxScrollLeft = Math.max(0, rail.scrollWidth - rail.clientWidth);
+            const hasOverflow = maxScrollLeft > 4;
+
+            if (!hasOverflow && rail.scrollLeft > 0) rail.scrollLeft = 0;
+
+            // Left button: only show if scrollable AND has scrolled right
+            const canScrollPrev = hasOverflow && rail.scrollLeft > 4;
+            // Right button: only show if scrollable AND not at the end
+            const canScrollNext = hasOverflow && rail.scrollLeft < maxScrollLeft - 4;
+
+            prevBtn.hidden = !canScrollPrev;
+            prevBtn.disabled = !canScrollPrev;
+            nextBtn.hidden = !canScrollNext;
+            nextBtn.disabled = !canScrollNext;
+        };
+
+        const scrollSuggestionRail = (direction) => {
+            const card = rail.querySelector('.feed-suggestion-card');
+            if (!(card instanceof HTMLElement)) return;
+            const gap = 12;
+            const step = card.getBoundingClientRect().width + gap;
+            rail.scrollBy({
+                left: direction * step,
+                behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+            });
+        };
+
+        prevBtn.addEventListener('click', () => scrollSuggestionRail(-1));
+        nextBtn.addEventListener('click', () => scrollSuggestionRail(1));
+
+        rail.addEventListener('scroll', updateSuggestionRailControls);
+        window.addEventListener('resize', updateSuggestionRailControls);
+
+        updateSuggestionRailControls();
+    });
 };
 
 /**
