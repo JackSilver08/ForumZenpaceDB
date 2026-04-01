@@ -220,7 +220,7 @@ namespace ForumZenpace.Services
 
             if (rankedCandidates.Count == 0)
             {
-                return new List<FriendCandidateViewModel>();
+                return await GetFallbackFriendSuggestionsAsync(excludedIds, limit, cancellationToken);
             }
 
             var candidateIds = rankedCandidates.Select(x => x.UserId).ToList();
@@ -229,7 +229,7 @@ namespace ForumZenpace.Services
                 .Where(u => candidateIds.Contains(u.Id) && u.IsActive)
                 .ToListAsync(cancellationToken);
 
-            return rankedCandidates
+            var suggestions = rankedCandidates
                 .Join(users, r => r.UserId, u => u.Id, (r, user) => new FriendCandidateViewModel
                 {
                     UserId = user.Id,
@@ -242,6 +242,49 @@ namespace ForumZenpace.Services
                     ActionLabel = $"Ket ban ({r.MutualCount} chung)"
                 })
                 .ToList();
+
+            if (suggestions.Count >= limit)
+            {
+                return suggestions;
+            }
+
+            foreach (var suggestion in suggestions)
+            {
+                excludedIds.Add(suggestion.UserId);
+            }
+
+            var fallbackSuggestions = await GetFallbackFriendSuggestionsAsync(excludedIds, limit - suggestions.Count, cancellationToken);
+            return suggestions.Concat(fallbackSuggestions).Take(limit).ToList();
+        }
+
+        private async Task<IReadOnlyList<FriendCandidateViewModel>> GetFallbackFriendSuggestionsAsync(
+            HashSet<int> excludedIds,
+            int limit,
+            CancellationToken cancellationToken)
+        {
+            if (limit <= 0)
+            {
+                return Array.Empty<FriendCandidateViewModel>();
+            }
+
+            var fallbackUsers = await _context.Users
+                .AsNoTracking()
+                .Where(u => u.IsActive && !excludedIds.Contains(u.Id))
+                .OrderBy(u => Guid.NewGuid())
+                .Take(limit)
+                .ToListAsync(cancellationToken);
+
+            return fallbackUsers.Select(user => new FriendCandidateViewModel
+            {
+                UserId = user.Id,
+                Username = user.Username,
+                DisplayName = GetDisplayName(user.FullName, user.Username),
+                Email = EmailVerificationService.MaskEmail(user.Email),
+                AvatarUrl = user.Avatar,
+                RelationshipState = "none",
+                CanSendRequest = true,
+                ActionLabel = "Ket ban"
+            }).ToList();
         }
 
         public async Task<RelationshipStatusViewModel> GetRelationshipStatusAsync(int currentUserId, int targetUserId, CancellationToken cancellationToken = default)
