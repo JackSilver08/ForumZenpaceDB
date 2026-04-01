@@ -49,9 +49,16 @@ export const renderProfileStatus = () => {
 
 export const syncProfileState = (state) => {
     if (!(profileSocial instanceof HTMLElement)) return;
+
+    const datasetKeyMap = {
+        isMessageBlockedByViewer: 'messageBlockedByViewer',
+        isMessageBlockedByOtherUser: 'messageBlockedByOtherUser'
+    };
+
     Object.entries(state).forEach(([key, value]) => {
         if (typeof value === 'boolean') {
-            profileSocial.dataset[key] = `${value}`;
+            const datasetKey = datasetKeyMap[key] ?? key;
+            profileSocial.dataset[datasetKey] = `${value}`;
         }
     });
     renderProfileActions();
