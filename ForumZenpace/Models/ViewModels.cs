@@ -12,6 +12,9 @@ namespace ForumZenpace.Models
 
         [Required, DataType(DataType.Password)]
         public string Password { get; set; } = string.Empty;
+
+        [Display(Name = "Nhớ tôi")]
+        public bool RememberMe { get; set; }
     }
 
     public class RegisterViewModel
@@ -214,6 +217,18 @@ namespace ForumZenpace.Models
         public int? ReplyToMessageId { get; set; }
         public int? StoryId { get; set; }
         public bool IsStoryReply { get; set; }
+    }
+
+    public class SharePostToFriendViewModel
+    {
+        [Required]
+        public int PostId { get; set; }
+
+        [Required]
+        public int TargetUserId { get; set; }
+
+        [Required, MaxLength(50)]
+        public string Username { get; set; } = string.Empty;
     }
 
     public class DirectMessageRealtimeViewModel

@@ -685,6 +685,163 @@
     </div>
 }
 
+@if (posts.Any())
+{
+    <div class="social-modal post-share-modal" data-share-modal hidden aria-hidden="true">
+        <div class="social-modal-backdrop" data-close-share-modal></div>
+        <div class="surface social-modal-dialog post-share-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="postShareModalTitle">
+            <div class="social-modal-header">
+                <div>
+                    <div class="panel-label">Chia sẻ</div>
+                    <h2 id="postShareModalTitle" class="section-heading">Gửi bài viết cho bạn bè</h2>
+                    <p class="surface-subtitle">Chọn người nhận trong danh sách bạn bè hoặc tạo liên kết để gửi ra bên ngoài.</p>
+                </div>
+                <button type="button" class="profile-modal-close" aria-label="Đóng popup chia sẻ" data-close-share-modal>
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="post-share-modal__selected">
+                <span class="panel-label">Bài viết đang chọn</span>
+                <strong data-share-post-title>Chọn một bài viết để chia sẻ</strong>
+                <a href="#" target="_blank" rel="noopener noreferrer" data-share-open-link>Mở bài viết trong tab mới</a>
+            </div>
+
+            <div class="post-share-modal__grid @(canUseSocial ? string.Empty : "post-share-modal__grid--single")">
+                @if (canUseSocial)
+                {
+                    <section class="post-share-modal__panel">
+                        <div class="post-share-modal__panel-head">
+                            <div>
+                                <div class="panel-label">Gửi vào chat</div>
+                                <h3 class="section-heading">Chia sẻ cho bạn bè</h3>
+                            </div>
+                        </div>
+
+                        <div class="social-search-shell">
+                            <label class="field-label" for="shareFriendSearchBox">Tìm bạn bè</label>
+                            <div class="social-search-row">
+                                <input id="shareFriendSearchBox"
+                                       type="text"
+                                       class="form-control"
+                                       placeholder="Tìm theo tên hiển thị hoặc username..."
+                                       data-share-friend-search />
+                            </div>
+                            <div class="field-hint post-share-status" data-share-chat-status>
+                                @(friends.Any()
+                                    ? "Chọn một người bạn để gửi link bài viết vào cuộc trò chuyện."
+                                    : "Bạn chưa có bạn bè nào để chia sẻ trực tiếp.")
+                            </div>
+                        </div>
+
+                        @if (friends.Any())
+                        {
+                            <div class="post-share-friend-list" data-share-friend-list>
+                                @foreach (var friend in friends)
+                                {
+                                    var canShareToFriend = !friend.IsMessageBlockedByViewer && !friend.IsMessageBlockedByOtherUser;
+                                    var friendSearchValue = $"{friend.DisplayName} {friend.Username}".ToLowerInvariant();
+                                    var shareButtonLabel = canShareToFriend
+                                        ? "Gửi vào chat"
+                                        : (friend.IsMessageBlockedByViewer ? "Bạn đã chặn" : "Bị chặn");
+                                    var shareButtonIcon = canShareToFriend ? "fa-paper-plane" : "fa-ban";
+                                    var shareHint = canShareToFriend
+                                        ? "Bạn bè Zenpace"
+                                        : (friend.IsMessageBlockedByViewer
+                                            ? "Bạn đang chặn cuộc trò chuyện này"
+                                            : "Người này đang chặn tin nhắn với bạn");
+
+                                    <div class="social-result-card post-share-friend-card"
+                                         data-share-friend-item
+                                         data-share-search-value="@friendSearchValue">
+                                        <div class="social-result-avatar avatar-link">
+                                            @if (!string.IsNullOrWhiteSpace(friend.AvatarUrl))
+                                            {
+                                                <img src="@Url.Content("~" + friend.AvatarUrl)" alt="@friend.DisplayName" />
+                                            }
+                                            else
+                                            {
+                                                <span>@GetInitials(friend.DisplayName, friend.Username)</span>
+                                            }
+                                            <span class="presence-dot" data-presence-user-id="@friend.UserId"></span>
+                                        </div>
+
+                                        <div class="social-result-copy">
+                                            <strong>@friend.DisplayName</strong>
+                                            <span>@("@"+friend.Username)</span>
+                                            <small>@shareHint</small>
+                                        </div>
+
+                                        <button type="button"
+                                                class="@(canShareToFriend ? "btn btn-primary" : "btn btn-outline") social-result-action"
+                                                data-share-send
+                                                data-target-user-id="@friend.UserId"
+                                                data-username="@friend.Username"
+                                                @(canShareToFriend ? null : "disabled")>
+                                            <i class="fa-solid @shareButtonIcon"></i>
+                                            <span>@shareButtonLabel</span>
+                                        </button>
+                                    </div>
+                                }
+                            </div>
+
+                            <div class="social-search-empty" data-share-friend-empty hidden>
+                                <i class="fa-solid fa-user-group"></i>
+                                <span>Không tìm thấy bạn bè phù hợp.</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="social-search-empty">
+                                <i class="fa-regular fa-comments"></i>
+                                <span>Khi đã có bạn bè trên Zenpace, bạn sẽ chia sẻ bài viết thẳng vào chat tại đây.</span>
+                            </div>
+                        }
+                    </section>
+                }
+
+                <section class="post-share-modal__panel">
+                    <div class="post-share-modal__panel-head">
+                        <div>
+                            <div class="panel-label">Liên kết ngoài</div>
+                            <h3 class="section-heading">Tạo link chia sẻ</h3>
+                        </div>
+                        <button type="button"
+                                class="btn btn-outline icon-btn post-share-copy-button"
+                                data-share-copy-link
+                                title="Sao chép liên kết">
+                            <i class="fa-solid fa-link"></i>
+                        </button>
+                    </div>
+
+                    <p class="muted">Nhấn biểu tượng liên kết để sao chép URL bài viết và gửi ra ngoài Zenpace.</p>
+
+                    <div class="post-share-link-box">
+                        <input type="text"
+                               class="form-control"
+                               readonly
+                               value=""
+                               data-share-link-output />
+                    </div>
+
+                    <div class="field-hint post-share-status" data-share-link-status>
+                        Liên kết sẽ được tạo tự động theo bài viết bạn vừa chọn.
+                    </div>
+
+                    @if (!canUseSocial)
+                    {
+                        <div class="social-search-empty post-share-login-note">
+                            <i class="fa-solid fa-user-lock"></i>
+                            <span>Đăng nhập để gửi bài viết trực tiếp vào khung trò chuyện với bạn bè.</span>
+                            <a asp-controller="Auth" asp-action="Login" class="btn btn-primary">Đăng nhập</a>
+                        </div>
+                    }
+                </section>
+            </div>
+        </div>
+    </div>
+}
+
 <div class="forum-page animated-entry">
     <aside class="forum-column forum-sidebar">
         <div class="glass-panel sidebar-panel">
@@ -790,6 +947,17 @@
                                             <i class="fa-regular fa-eye"></i>
                                             <span>@post.ViewCount lượt xem</span>
                                         </span>
+                                        <button type="button"
+                                                class="metric metric-action post-share-trigger"
+                                                data-open-share-modal
+                                                data-share-post-id="@post.Id"
+                                                data-share-post-title="@post.Title"
+                                                data-share-post-url="@Url.Action("Details", "Post", new { id = post.Id }, Context.Request.Scheme)"
+                                                aria-label="Chia sẻ bài viết @post.Title"
+                                                title="Chia sẻ bài viết">
+                                            <i class="fa-solid fa-share-nodes"></i>
+                                            <span>Share</span>
+                                        </button>
                                     </div>
 
                                     <a asp-controller="Post" asp-action="Details" asp-route-id="@post.Id" class="btn btn-text">
@@ -966,3 +1134,7 @@
         </div>
     </aside>
 </div>
+
+@section Scripts {
+    <script type="module" src="~/js/post-share.js" asp-append-version="true"></script>
+}

@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using System.Text.RegularExpressions;
+using ForumZenpace.Hubs;
 using ForumZenpace.Models;
 using ForumZenpace.Services;
 
@@ -17,19 +19,25 @@ namespace ForumZenpace.Controllers
         private readonly PostImageService _postImageService;
         private readonly IBackgroundTaskQueue _taskQueue;
         private readonly GeminiEmbeddingService _geminiService;
+        private readonly DirectMessageService _directMessageService;
+        private readonly IHubContext<DirectMessageHub> _hubContext;
 
         public PostController(
             ForumDbContext context, 
             RecommendationService recommendationService,
             PostImageService postImageService,
             IBackgroundTaskQueue taskQueue,
-            GeminiEmbeddingService geminiService)
+            GeminiEmbeddingService geminiService,
+            DirectMessageService directMessageService,
+            IHubContext<DirectMessageHub> hubContext)
         {
             _context = context;
             _recommendationService = recommendationService;
             _postImageService = postImageService;
             _taskQueue = taskQueue;
             _geminiService = geminiService;
+            _directMessageService = directMessageService;
+            _hubContext = hubContext;
         }
 
         [HttpGet]
@@ -459,6 +467,71 @@ namespace ForumZenpace.Controllers
             }
 
             return RedirectToAction("Details", new { id = comment.PostId });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ShareToFriend(SharePostToFriendViewModel model)
+        {
+            if (!TryGetCurrentUserId(out var userId))
+            {
+                return Unauthorized(new { success = false, message = "Ban can dang nhap de chia se bai viet." });
+            }
+
+            model.Username = model.Username?.Trim() ?? string.Empty;
+            if (!ModelState.IsValid || model.PostId <= 0 || model.TargetUserId <= 0)
+            {
+                return BadRequest(new { success = false, message = "Thong tin chia se bai viet khong hop le." });
+            }
+
+            var post = await _context.Posts
+                .AsNoTracking()
+                .Include(item => item.User)
+                .FirstOrDefaultAsync(item => item.Id == model.PostId && item.Status == "Active");
+
+            if (post == null)
+            {
+                return NotFound(new { success = false, message = "Khong tim thay bai viet de chia se." });
+            }
+
+            var isFriend = await _context.Friendships
+                .AsNoTracking()
+                .AnyAsync(friendship =>
+                    (friendship.UserAId == userId && friendship.UserBId == model.TargetUserId) ||
+                    (friendship.UserAId == model.TargetUserId && friendship.UserBId == userId));
+
+            if (!isFriend)
+            {
+                return BadRequest(new { success = false, message = "Ban chi co the chia se bai viet cho ban be." });
+            }
+
+            var shareUrl = Url.Action(nameof(Details), "Post", new { id = post.Id }, Request.Scheme)
+                ?? $"{Request.Scheme}://{Request.Host}/Post/Details/{post.Id}";
+            var shareMessage = $"Chia se bai viet nay voi ban:\n{post.Title}\n{shareUrl}";
+
+            var result = await _directMessageService.SendMessageAsync(userId, new SendDirectMessageViewModel
+            {
+                TargetUserId = model.TargetUserId,
+                Username = model.Username,
+                Content = shareMessage
+            }, HttpContext.RequestAborted);
+
+            if (!result.Success || result.Message is null)
+            {
+                return BadRequest(new { success = false, message = result.ErrorMessage });
+            }
+
+            await _hubContext.Clients.Group(result.ConversationGroupName)
+                .SendAsync("DirectMessageReceived", result.Message, HttpContext.RequestAborted);
+
+            return Json(new
+            {
+                success = true,
+                message = $"Da gui bai viet cho {result.TargetDisplayName}.",
+                targetUserId = model.TargetUserId,
+                postId = post.Id,
+                conversationUrl = Url.Action("UserProfile", "Profile", new { username = result.TargetUsername, tab = "chat" })
+            });
         }
         
         [HttpPost]

@@ -27,9 +27,9 @@
                         @foreach (var category in Model)
                         {
                             <tr>
-                                <td class="table-note">#@category.Id.ToString("D2")</td>
-                                <td><strong>@category.Name</strong></td>
-                                <td><span class="badge-tag">@category.Posts.Count bài</span></td>
+                                <td class="table-note" data-label="Mã">#@category.Id.ToString("D2")</td>
+                                <td data-label="Tên danh mục"><strong>@category.Name</strong></td>
+                                <td data-label="Số bài viết"><span class="badge-tag">@category.Posts.Count bài</span></td>
                             </tr>
                         }
                     </tbody>

@@ -1,0 +1,631 @@
+/* Global responsive refinements loaded after site.css and ui-fixes.css. */
+
+@media (max-width: 1100px) {
+    .forum-page {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .forum-sidebar {
+        display: block;
+        order: 0;
+    }
+
+    .forum-right {
+        order: 1;
+    }
+
+    .forum-main {
+        order: 2;
+    }
+}
+
+@media (max-width: 900px) {
+    .page-shell,
+    .container {
+        padding-inline: clamp(12px, 3.6vw, 16px);
+    }
+
+    .main-content {
+        padding-top: 12px;
+        padding-bottom: 26px;
+    }
+
+    .navbar {
+        align-items: flex-start;
+        gap: 12px;
+        padding: 12px;
+    }
+
+    .header-actions {
+        width: 100%;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .header-actions > .btn:not(.icon-btn),
+    .header-actions > a.btn:not(.icon-btn),
+    .header-actions > form > .btn:not(.icon-btn) {
+        flex: 1 1 150px;
+        min-height: 40px;
+    }
+
+    .header-actions .icon-btn,
+    .header-actions .user-badge {
+        min-height: 40px;
+        height: 40px;
+    }
+
+    .header-actions .btn span,
+    .header-actions .user-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .user-badge {
+        min-width: 0;
+        padding: 0 8px 0 10px;
+    }
+
+    .home-social-band .home-social-rail {
+        padding: 12px !important;
+        border-radius: 16px !important;
+    }
+
+    .home-social-band .social-friend-list {
+        gap: 10px !important;
+    }
+
+    .home-social-band .social-story-card {
+        width: 98px !important;
+        min-width: 98px !important;
+        height: 176px !important;
+        border-radius: 16px !important;
+    }
+
+    .home-social-band .social-story-card__avatar-frame {
+        top: 10px !important;
+        left: 10px !important;
+        width: 38px !important;
+        height: 38px !important;
+    }
+
+    .home-social-band .social-story-card__presence {
+        top: 36px !important;
+        left: 38px !important;
+    }
+
+    .home-social-band .social-story-card__name {
+        right: 10px !important;
+        bottom: 10px !important;
+        left: 10px !important;
+        font-size: 0.78rem !important;
+        line-height: 1.28 !important;
+        white-space: normal !important;
+        display: -webkit-box !important;
+        overflow: hidden !important;
+        -webkit-box-orient: vertical !important;
+        -webkit-line-clamp: 2 !important;
+    }
+
+    .sidebar-panel {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 12px;
+        align-items: center;
+    }
+
+    .sidebar-panel .panel-label {
+        width: 100%;
+        margin-bottom: 0;
+    }
+
+    .sidebar-link {
+        flex: 0 0 auto;
+        min-height: 36px;
+        margin-bottom: 0;
+    }
+
+    .side-panel,
+    .surface,
+    .detail-card,
+    .auth-card,
+    .admin-card,
+    .admin-table-shell,
+    .admin-sidecard {
+        border-radius: 16px;
+    }
+
+    .search-form {
+        gap: 10px;
+    }
+
+    .search-row {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+        margin-top: 0;
+    }
+
+    .search-row .form-control {
+        padding-right: 12px;
+    }
+
+    .search-submit {
+        position: static;
+        width: 100%;
+        min-height: 40px;
+        border-radius: 10px;
+    }
+
+    .post-list {
+        gap: 10px;
+    }
+
+    .post-card {
+        padding: 14px 14px 12px !important;
+        border-radius: 14px !important;
+    }
+
+    .post-card-header {
+        gap: 10px;
+    }
+
+    .post-title {
+        font-size: 1rem !important;
+    }
+
+    .post-excerpt {
+        font-size: 0.85rem !important;
+        line-height: 1.55 !important;
+    }
+
+    .post-footer {
+        gap: 10px;
+    }
+
+    .post-metrics {
+        flex-wrap: wrap;
+        gap: 8px 12px;
+    }
+
+    .post-footer > .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .feed-suggestion-block {
+        padding: 16px 14px 14px;
+    }
+
+    .feed-suggestion-header {
+        align-items: flex-start;
+    }
+
+    .feed-suggestion-card {
+        flex-basis: 138px;
+        width: 138px;
+    }
+
+    .profile-shell {
+        margin-top: 18px;
+    }
+
+    .profile-summary-card,
+    .profile-content-card {
+        padding: 14px;
+    }
+
+    .profile-tabs {
+        max-width: 100%;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    .profile-tabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    .profile-tab {
+        flex: 0 0 auto;
+        min-height: 36px;
+        padding-inline: 14px;
+    }
+
+    .profile-chat-thread {
+        max-height: min(52vh, 400px);
+        padding-right: 0;
+    }
+
+    .profile-chat-message {
+        max-width: min(92%, 520px);
+    }
+
+    .profile-chat-composer {
+        padding: 12px;
+    }
+
+    .detail-card {
+        padding: 18px;
+    }
+
+    .detail-title {
+        font-size: clamp(1.45rem, 5.8vw, 1.8rem);
+    }
+
+    .detail-content {
+        padding: 16px;
+    }
+
+    .detail-actions,
+    .detail-action-group {
+        width: 100%;
+    }
+
+    .detail-action-group {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+
+    .detail-action-group .btn,
+    .detail-action-group .inline-form,
+    .detail-action-group .inline-form .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .report-form-row {
+        display: grid;
+        gap: 10px;
+    }
+
+    .report-form-row > div {
+        justify-content: stretch !important;
+    }
+
+    .report-form-row .btn {
+        width: 100%;
+    }
+
+    .comment-card {
+        padding: 16px;
+    }
+
+    .comment-composer-input {
+        min-height: 96px;
+    }
+
+    .comment-editor-submit-group,
+    .comment-editor-submit-group .btn {
+        width: 100%;
+    }
+
+    #ai-suggestions-container {
+        padding: 12px !important;
+    }
+
+    #ai-suggestions-list {
+        gap: 8px !important;
+        padding-right: 4px !important;
+    }
+
+    #ai-suggestions-list > .btn,
+    #ai-suggestions-list > .skeleton-badge {
+        width: min(82vw, 240px) !important;
+    }
+
+    .notice-item {
+        padding: 14px;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .notice-head {
+        align-items: flex-start;
+    }
+
+    .notice-actions {
+        width: 100%;
+        margin-left: 0;
+        justify-content: stretch;
+    }
+
+    .notice-actions .btn,
+    .notice-actions form {
+        flex: 1 1 150px;
+    }
+
+    .notice-actions .notice-action {
+        width: 100%;
+        min-width: 0;
+        height: 40px;
+        border-radius: 12px;
+    }
+
+    .story-modal {
+        padding: 12px;
+    }
+
+    .story-modal-dialog {
+        width: 100%;
+        max-height: calc(100dvh - 24px);
+        padding: 16px;
+        border-radius: 20px;
+    }
+
+    .story-composer-preview {
+        min-height: 280px !important;
+    }
+
+    .story-composer-actions {
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .story-composer-actions .btn {
+        width: 100%;
+    }
+
+    .auth-card {
+        padding: 22px 18px;
+    }
+
+    .auth-form > .btn.btn-primary,
+    .auth-form button[type="submit"].btn.btn-primary {
+        min-height: 44px;
+    }
+
+    .admin-shell {
+        gap: 18px;
+    }
+
+    .admin-stats {
+        gap: 12px;
+    }
+
+    .admin-stat,
+    .admin-card,
+    .admin-table-shell,
+    .admin-sidecard {
+        padding: 14px;
+    }
+
+    .summary-footer {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 720px) {
+    .navbar {
+        border-radius: 14px;
+    }
+
+    .logo {
+        width: min(172px, 52vw);
+    }
+
+    .header-actions > .btn:not(.icon-btn),
+    .header-actions > a.btn:not(.icon-btn),
+    .header-actions > form > .btn:not(.icon-btn) {
+        flex-basis: 100%;
+    }
+
+    .header-actions .icon-btn,
+    .header-actions .user-badge {
+        flex: 0 0 auto;
+    }
+
+    .forum-page,
+    .home-toolbar,
+    .home-social-band {
+        gap: 10px;
+    }
+
+    .home-social-band .social-story-card {
+        width: 92px !important;
+        min-width: 92px !important;
+        height: 168px !important;
+    }
+
+    .post-card-header {
+        align-items: flex-start;
+    }
+
+    .detail-content {
+        font-size: 0.9rem;
+        line-height: 1.7;
+    }
+
+    .markdown-link-card {
+        align-items: flex-start;
+        padding: 14px;
+    }
+
+    .markdown-link-card__icon {
+        width: 42px;
+        height: 42px;
+    }
+
+    .profile-summary-stats,
+    .profile-story-summary-row {
+        gap: 8px;
+    }
+
+    .profile-chat-panel {
+        gap: 12px;
+    }
+
+    .profile-chat-actions,
+    .profile-chat-toolbar-controls,
+    .profile-chat-submit {
+        width: 100%;
+    }
+
+    .profile-chat-submit {
+        margin-left: 0;
+        justify-content: stretch;
+    }
+
+    .profile-chat-submit .btn {
+        width: 100%;
+    }
+
+    .notice-actions .btn,
+    .notice-actions form {
+        flex-basis: 100%;
+    }
+
+    .admin-shortcuts {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .admin-shortcut {
+        padding: 16px 12px;
+    }
+
+    .scroll-x {
+        overflow: visible;
+    }
+
+    .table,
+    .table thead,
+    .table tbody,
+    .table tr,
+    .table td {
+        display: block;
+        width: 100%;
+    }
+
+    .table thead {
+        display: none;
+    }
+
+    .table tbody {
+        display: grid;
+        gap: 12px;
+    }
+
+    .table tbody tr {
+        display: grid;
+        gap: 10px;
+        padding: 14px;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background:
+            linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.015)),
+            rgba(10, 12, 33, 0.72);
+        box-shadow: 0 10px 24px rgba(5, 7, 18, 0.22);
+    }
+
+    .table td {
+        padding: 0;
+        border: 0;
+        color: var(--text-primary);
+    }
+
+    .table td::before {
+        content: attr(data-label);
+        display: block;
+        margin-bottom: 4px;
+        color: var(--text-muted);
+        font-size: 0.6875rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+
+    .table-link {
+        max-width: 100%;
+        white-space: normal;
+    }
+
+    .admin-actions {
+        display: grid;
+        gap: 8px;
+    }
+
+    .admin-actions .inline-form {
+        display: block;
+        width: 100%;
+    }
+
+    .admin-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 560px) {
+    .page-shell,
+    .container {
+        padding-inline: 12px;
+    }
+
+    .footer-shell {
+        text-align: center;
+        align-items: center;
+    }
+
+    .btn {
+        min-height: 40px;
+    }
+
+    .header-actions .btn span {
+        font-size: 0.75rem;
+    }
+
+    .user-badge {
+        padding-left: 8px;
+    }
+
+    .home-social-band .home-social-rail {
+        padding: 10px !important;
+    }
+
+    .feed-suggestion-card {
+        flex-basis: 132px;
+        width: 132px;
+    }
+
+    .detail-card,
+    .comment-card,
+    .auth-card,
+    .story-modal-dialog {
+        padding: 14px;
+    }
+
+    .detail-title {
+        font-size: 1.35rem;
+    }
+
+    .profile-avatar-frame {
+        width: 96px;
+        height: 96px;
+    }
+
+    .profile-stat-chip {
+        padding: 9px 6px;
+    }
+
+    .profile-chat-bubble {
+        padding: 11px 12px;
+    }
+
+    .profile-chat-meta {
+        gap: 6px 8px;
+    }
+
+    .profile-modal-dialog {
+        padding: 16px;
+    }
+
+    .admin-shortcuts {
+        grid-template-columns: 1fr;
+    }
+}

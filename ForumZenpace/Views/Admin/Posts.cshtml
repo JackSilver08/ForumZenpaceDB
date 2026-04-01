@@ -33,20 +33,20 @@
                     @foreach (var post in Model.OrderByDescending(p => p.CreatedAt))
                     {
                         <tr>
-                            <td>
+                            <td data-label="Tiêu đề">
                                 <a asp-controller="Post" asp-action="Details" asp-route-id="@post.Id" target="_blank" class="table-link">@post.Title</a>
                             </td>
-                            <td>@post.User.FullName</td>
-                            <td><span class="badge-tag">@post.Category.Name</span></td>
-                            <td>
+                            <td data-label="Tác giả">@post.User.FullName</td>
+                            <td data-label="Chuyên mục"><span class="badge-tag">@post.Category.Name</span></td>
+                            <td data-label="Trạng thái">
                                 <span class="status-pill @(post.Status == "Active" ? "is-live" : "is-muted")">
                                     <span class="dot" style="background: currentColor;"></span>
                                     @(post.Status == "Active" ? "Công khai" : "Đã ẩn")
                                 </span>
                             </td>
-                            <td class="table-note">@post.CreatedAt.ToString("dd MMM yyyy")</td>
-                            <td>@post.ViewCount</td>
-                            <td>
+                            <td class="table-note" data-label="Ngày đăng">@post.CreatedAt.ToString("dd MMM yyyy")</td>
+                            <td data-label="Lượt xem">@post.ViewCount</td>
+                            <td data-label="Hành động">
                                 <div class="admin-actions">
                                     <form asp-action="TogglePostStatus" method="post" class="inline-form">
                                         <input type="hidden" name="id" value="@post.Id" />
