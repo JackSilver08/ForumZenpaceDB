@@ -347,6 +347,17 @@ namespace ForumZenpace.Services
 
             var friendIds = await GetFriendIdsAsync(userId, cancellationToken);
             var deliveries = new List<StoryNotificationDeliveryResult>();
+            var activeStoryCount = await _context.Stories
+                .AsNoTracking()
+                .CountAsync(item => item.UserId == userId && item.ExpiresAt > DateTime.UtcNow, cancellationToken);
+
+            var currentUserStory = new CurrentUserStorySummaryViewModel
+            {
+                HasActiveStory = true,
+                ActiveStoryCount = activeStoryCount,
+                LatestStoryId = story.Id
+            };
+
             if (friendIds.Count > 0)
             {
                 var notificationContent = BuildStoryNotificationContent(user);
@@ -398,11 +409,19 @@ namespace ForumZenpace.Services
                     })
                     .ToDictionaryAsync(item => item.UserId, item => item.Count, cancellationToken);
 
+                var messageBlocks = await _context.MessageBlocks
+                    .AsNoTracking()
+                    .Where(block =>
+                        (block.BlockerUserId == userId && friendIds.Contains(block.BlockedUserId)) ||
+                        (block.BlockedUserId == userId && friendIds.Contains(block.BlockerUserId)))
+                    .ToListAsync(cancellationToken);
+
                 deliveries.AddRange(friendIds.Select(friendId => new StoryNotificationDeliveryResult
                 {
                     UserId = friendId,
                     Notification = MapNotificationItem(notificationsByUserId[friendId], user),
-                    UnreadNotificationCount = unreadCounts.TryGetValue(friendId, out var unreadCount) ? unreadCount : 0
+                    UnreadNotificationCount = unreadCounts.TryGetValue(friendId, out var unreadCount) ? unreadCount : 0,
+                    FriendStory = BuildFriendStorySummary(friendId, user, messageBlocks, activeStoryCount, story.Id)
                 }));
             }
 
@@ -411,6 +430,7 @@ namespace ForumZenpace.Services
             {
                 Success = true,
                 Story = MapStorySummary(story, userId),
+                CurrentUserStory = currentUserStory,
                 NotificationDeliveries = deliveries
             };
         }
@@ -946,6 +966,28 @@ namespace ForumZenpace.Services
             return trimmed.Length <= maxLength ? trimmed : trimmed[..maxLength];
         }
 
+        private static FriendSummaryViewModel BuildFriendStorySummary(
+            int viewerUserId,
+            User storyAuthor,
+            IReadOnlyCollection<MessageBlock> messageBlocks,
+            int activeStoryCount,
+            int latestStoryId)
+        {
+            return new FriendSummaryViewModel
+            {
+                UserId = storyAuthor.Id,
+                Username = storyAuthor.Username,
+                DisplayName = GetDisplayName(storyAuthor.FullName, storyAuthor.Username),
+                AvatarUrl = storyAuthor.Avatar,
+                IsMessageBlockedByViewer = messageBlocks.Any(block => block.BlockerUserId == viewerUserId && block.BlockedUserId == storyAuthor.Id),
+                IsMessageBlockedByOtherUser = messageBlocks.Any(block => block.BlockerUserId == storyAuthor.Id && block.BlockedUserId == viewerUserId),
+                HasActiveStory = true,
+                HasUnviewedStory = true,
+                ActiveStoryCount = activeStoryCount,
+                LatestStoryId = latestStoryId
+            };
+        }
+
         private static string BuildStoryNotificationContent(User actorUser)
         {
             return $"{GetDisplayName(actorUser.FullName, actorUser.Username)} vua dang khoanh khac moi.";
@@ -990,6 +1032,7 @@ namespace ForumZenpace.Services
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
         public ProfileStorySummaryViewModel? Story { get; set; }
+        public CurrentUserStorySummaryViewModel? CurrentUserStory { get; set; }
         public IReadOnlyList<StoryNotificationDeliveryResult> NotificationDeliveries { get; set; } = Array.Empty<StoryNotificationDeliveryResult>();
     }
 
@@ -998,6 +1041,7 @@ namespace ForumZenpace.Services
         public int UserId { get; set; }
         public int UnreadNotificationCount { get; set; }
         public NotificationItemViewModel Notification { get; set; } = null!;
+        public FriendSummaryViewModel? FriendStory { get; set; }
     }
 
     public sealed class DeleteStoryResult

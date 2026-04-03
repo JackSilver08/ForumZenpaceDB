@@ -96,6 +96,9 @@
             -webkit-overflow-scrolling: touch;
             scroll-behavior: smooth;
         }
+        .home-social-band [data-own-story-slot] {
+            display: contents;
+        }
         .home-social-band .social-friend-list.is-dragging {
             cursor: grabbing;
             scroll-snap-type: none;
@@ -458,51 +461,57 @@
                 <div id="homeFriendList" class="social-friend-list" data-friend-list>
                     @if (canUseSocial)
                     {
-                        <button type="button"
-                                class="glass-panel social-card social-card--friend social-card--story social-card--story-self social-story-card social-story-card--create"
-                                data-open-story-modal
-                                title="Tạo story mới">
-                            <span class="social-story-card__media @(string.IsNullOrWhiteSpace(currentUserAvatar) ? string.Empty : "has-cover")"
-                                  style="@currentUserStoryCoverStyle">
-                                <span class="social-story-card__cover" aria-hidden="true"></span>
-                                <span class="social-story-card__overlay" aria-hidden="true"></span>
-                                <span class="social-story-card__footer social-story-card__footer--create">
-                                    <span class="social-story-card__plus" aria-hidden="true">
-                                        <i class="fa-solid fa-plus"></i>
-                                    </span>
-                                    <span class="social-story-card__name" title="Tạo story">Tạo story</span>
-                                </span>
-                            </span>
-                        </button>
-
-                        @if (ownStory?.HasActiveStory == true && ownStory.LatestStoryId.HasValue)
-                        {
-                            <a asp-controller="Story"
-                               asp-action="Viewer"
-                               asp-route-id="@ownStory.LatestStoryId.Value"
-                               class="glass-panel social-card social-card--friend social-card--story social-card--story-self social-story-card social-story-card--fresh"
-                               title="Xem story của bạn">
+                        <div data-own-story-slot
+                             data-current-username="@currentUsername"
+                             data-current-avatar-url="@(string.IsNullOrWhiteSpace(currentUserAvatar) ? string.Empty : Url.Content("~" + currentUserAvatar))"
+                             data-current-user-initial="@GetInitials(currentUsername)">
+                            <button type="button"
+                                    class="glass-panel social-card social-card--friend social-card--story social-card--story-self social-story-card social-story-card--create"
+                                    data-open-story-modal
+                                    title="Tạo story mới">
                                 <span class="social-story-card__media @(string.IsNullOrWhiteSpace(currentUserAvatar) ? string.Empty : "has-cover")"
                                       style="@currentUserStoryCoverStyle">
                                     <span class="social-story-card__cover" aria-hidden="true"></span>
                                     <span class="social-story-card__overlay" aria-hidden="true"></span>
-                                    <span class="social-story-pill">Bạn</span>
-                                    <span class="social-story-card__avatar-frame social-story-card__avatar-frame--fresh">
-                                        <span class="social-avatar social-avatar--story is-own-story">
-                                            @if (!string.IsNullOrWhiteSpace(currentUserAvatar))
-                                            {
-                                                <img src="@Url.Content("~" + currentUserAvatar)" alt="Story của bạn" />
-                                            }
-                                            else
-                                            {
-                                                <span>@GetInitials(currentUsername)</span>
-                                            }
+                                    <span class="social-story-card__footer social-story-card__footer--create">
+                                        <span class="social-story-card__plus" aria-hidden="true">
+                                            <i class="fa-solid fa-plus"></i>
                                         </span>
+                                        <span class="social-story-card__name" title="Tạo story">Tạo story</span>
                                     </span>
-                                    <span class="social-story-card__name" title="Story của bạn">Story của bạn</span>
                                 </span>
-                            </a>
-                        }
+                            </button>
+
+                            @if (ownStory?.HasActiveStory == true && ownStory.LatestStoryId.HasValue)
+                            {
+                                <a asp-controller="Story"
+                                   asp-action="Viewer"
+                                   asp-route-id="@ownStory.LatestStoryId.Value"
+                                   class="glass-panel social-card social-card--friend social-card--story social-card--story-self social-story-card social-story-card--fresh"
+                                   data-own-story-card
+                                   title="Xem story của bạn">
+                                    <span class="social-story-card__media @(string.IsNullOrWhiteSpace(currentUserAvatar) ? string.Empty : "has-cover")"
+                                          style="@currentUserStoryCoverStyle">
+                                        <span class="social-story-card__cover" aria-hidden="true"></span>
+                                        <span class="social-story-card__overlay" aria-hidden="true"></span>
+                                        <span class="social-story-pill">Bạn</span>
+                                        <span class="social-story-card__avatar-frame social-story-card__avatar-frame--fresh">
+                                            <span class="social-avatar social-avatar--story is-own-story">
+                                                @if (!string.IsNullOrWhiteSpace(currentUserAvatar))
+                                                {
+                                                    <img src="@Url.Content("~" + currentUserAvatar)" alt="Story của bạn" />
+                                                }
+                                                else
+                                                {
+                                                    <span>@GetInitials(currentUsername)</span>
+                                                }
+                                            </span>
+                                        </span>
+                                        <span class="social-story-card__name" title="Story của bạn">Story của bạn</span>
+                                    </span>
+                                </a>
+                            }
+                        </div>
 
                         <button type="button"
                                 class="glass-panel social-card social-card--friend social-card--add social-story-card social-story-card--utility"

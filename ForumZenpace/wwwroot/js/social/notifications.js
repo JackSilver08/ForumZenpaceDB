@@ -102,9 +102,21 @@ export const prependNotification = (notification) => {
     const existing = list.querySelector(`[data-notification-id="${notification.id}"]`);
     if (existing instanceof HTMLElement) {
         existing.outerHTML = renderNotificationItem(notification);
+        const refreshed = list.querySelector(`[data-notification-id="${notification.id}"]`);
+        if (refreshed instanceof HTMLElement) {
+            document.dispatchEvent(new CustomEvent('zenpace:presence-refresh', {
+                detail: { root: refreshed }
+            }));
+        }
         return;
     }
     list.insertAdjacentHTML('afterbegin', renderNotificationItem(notification));
+    const inserted = list.querySelector(`[data-notification-id="${notification.id}"]`);
+    if (inserted instanceof HTMLElement) {
+        document.dispatchEvent(new CustomEvent('zenpace:presence-refresh', {
+            detail: { root: inserted }
+        }));
+    }
 };
 
 export const updateNotificationResolution = (requestId, status) => {
@@ -126,6 +138,35 @@ export const updateNotificationResolution = (requestId, status) => {
     }
 };
 
+export const markNotificationAsReadLocally = (notificationId) => {
+    const item = notificationList?.querySelector(`[data-notification-id="${notificationId}"]`);
+    if (!(item instanceof HTMLElement)) return;
+
+    item.classList.remove('notice-item--unread');
+    item.querySelectorAll('[data-mark-notification-read]').forEach((element) => element.remove());
+
+    const stateDesc = item.querySelector('[data-notification-state]');
+    if (stateDesc instanceof HTMLElement) {
+        stateDesc.textContent = 'Da doc';
+    }
+};
+
+export const markAllNotificationsAsReadLocally = () => {
+    notificationList?.querySelectorAll('[data-notification-item]').forEach((item) => {
+        if (!(item instanceof HTMLElement)) {
+            return;
+        }
+
+        item.classList.remove('notice-item--unread');
+        item.querySelectorAll('[data-mark-notification-read]').forEach((element) => element.remove());
+
+        const stateDesc = item.querySelector('[data-notification-state]');
+        if (stateDesc instanceof HTMLElement) {
+            stateDesc.textContent = 'Da doc';
+        }
+    });
+};
+
 export const bindNotificationPage = () => {
     notificationPage?.addEventListener('click', async (event) => {
         const acceptButton = event.target instanceof Element ? event.target.closest('[data-notification-accept]') : null;
@@ -137,11 +178,12 @@ export const bindNotificationPage = () => {
                     if (isRealtimeAvailable()) {
                         await connection.invoke('AcceptFriendRequest', requestId);
                     } else {
-                        await postSocialAction('/Social/AcceptFriendRequest', {
+                        const result = await postSocialAction('/Social/AcceptFriendRequest', {
                             requestId,
                             returnUrl: getCurrentReturnUrl()
                         });
-                        window.location.reload();
+                        updateNotificationResolution(result.requestId ?? requestId, result.status || 'Accepted');
+                        setUnreadCount(Number.parseInt(`${result.unreadCount ?? 0}`, 10));
                     }
                 } catch {
                     acceptButton.disabled = false;
@@ -159,14 +201,67 @@ export const bindNotificationPage = () => {
                     if (isRealtimeAvailable()) {
                         await connection.invoke('DeclineFriendRequest', requestId);
                     } else {
-                        await postSocialAction('/Social/DeclineFriendRequest', {
+                        const result = await postSocialAction('/Social/DeclineFriendRequest', {
                             requestId,
                             returnUrl: getCurrentReturnUrl()
                         });
-                        window.location.reload();
+                        updateNotificationResolution(result.requestId ?? requestId, result.status || 'Declined');
+                        setUnreadCount(Number.parseInt(`${result.unreadCount ?? 0}`, 10));
                     }
                 } catch {
                     declineButton.disabled = false;
+                }
+            }
+        }
+    });
+
+    notificationPage?.addEventListener('submit', async (event) => {
+        const form = event.target;
+        if (!(form instanceof HTMLFormElement)) {
+            return;
+        }
+
+        if (form.hasAttribute('data-mark-notification-read')) {
+            event.preventDefault();
+            const idField = form.querySelector('input[name="id"]');
+            const notificationId = Number.parseInt(idField instanceof HTMLInputElement ? idField.value : '', 10);
+            if (!Number.isInteger(notificationId) || notificationId <= 0) {
+                return;
+            }
+
+            const submitButton = form.querySelector('button[type="submit"]');
+            if (submitButton instanceof HTMLButtonElement) {
+                submitButton.disabled = true;
+            }
+
+            try {
+                const result = await postSocialAction('/Notification/MarkAsRead', { id: notificationId });
+                markNotificationAsReadLocally(result.id ?? notificationId);
+                setUnreadCount(Number.parseInt(`${result.unreadCount ?? 0}`, 10));
+            } catch {
+                if (submitButton instanceof HTMLButtonElement) {
+                    submitButton.disabled = false;
+                }
+            }
+
+            return;
+        }
+
+        if (form.hasAttribute('data-mark-all-notifications-read')) {
+            event.preventDefault();
+            const submitButton = form.querySelector('button[type="submit"]');
+            if (submitButton instanceof HTMLButtonElement) {
+                submitButton.disabled = true;
+            }
+
+            try {
+                const result = await postSocialAction('/Notification/MarkAllAsRead');
+                markAllNotificationsAsReadLocally();
+                setUnreadCount(Number.parseInt(`${result.unreadCount ?? 0}`, 10));
+                form.remove();
+            } catch {
+                if (submitButton instanceof HTMLButtonElement) {
+                    submitButton.disabled = false;
                 }
             }
         }

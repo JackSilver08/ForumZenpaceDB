@@ -21,6 +21,7 @@ namespace ForumZenpace.Controllers
         private readonly GeminiEmbeddingService _geminiService;
         private readonly DirectMessageService _directMessageService;
         private readonly IHubContext<DirectMessageHub> _hubContext;
+        private readonly IHubContext<SocialHub> _socialHubContext;
 
         public PostController(
             ForumDbContext context, 
@@ -29,7 +30,8 @@ namespace ForumZenpace.Controllers
             IBackgroundTaskQueue taskQueue,
             GeminiEmbeddingService geminiService,
             DirectMessageService directMessageService,
-            IHubContext<DirectMessageHub> hubContext)
+            IHubContext<DirectMessageHub> hubContext,
+            IHubContext<SocialHub> socialHubContext)
         {
             _context = context;
             _recommendationService = recommendationService;
@@ -38,6 +40,7 @@ namespace ForumZenpace.Controllers
             _geminiService = geminiService;
             _directMessageService = directMessageService;
             _hubContext = hubContext;
+            _socialHubContext = socialHubContext;
         }
 
         [HttpGet]
@@ -288,6 +291,19 @@ namespace ForumZenpace.Controllers
             return View(post);
         }
 
+        [AllowAnonymous]
+        [HttpGet]
+        public async Task<IActionResult> RealtimeState(int id)
+        {
+            var realtimeState = await BuildRealtimeStateModelAsync(id, HttpContext.RequestAborted);
+            if (realtimeState is null)
+            {
+                return NotFound();
+            }
+
+            return PartialView("_PostRealtimeState", realtimeState);
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddComment(CommentViewModel model)
@@ -334,16 +350,14 @@ namespace ForumZenpace.Controllers
             }
 
             await _context.SaveChangesAsync();
+            await BroadcastPostUpdatedAsync(model.PostId, userId, "comment-added");
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
-                _context.Entry(comment).Reference(c => c.User).Load();
-                return Json(new { 
-                    success = true, 
-                    id = comment.Id,
-                    content = comment.Content,
-                    author = comment.User.FullName,
-                    date = comment.CreatedAt.ToString("MMM dd HH:mm"),
+                return Json(new {
+                    success = true,
+                    postId = model.PostId,
+                    commentId = comment.Id,
                     parentId = comment.ParentId
                 });
             }
@@ -391,6 +405,7 @@ namespace ForumZenpace.Controllers
             }
 
             await _context.SaveChangesAsync();
+            await BroadcastPostUpdatedAsync(postId, userId, isLiked ? "post-liked" : "post-unliked");
 
             // Safely update user preference vector on background thread
             await _taskQueue.QueueBackgroundWorkItemAsync(async (sp, token) =>
@@ -402,7 +417,7 @@ namespace ForumZenpace.Controllers
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
                 var likeCount = await _context.Likes.CountAsync(l => l.PostId == postId);
-                return Json(new { success = true, liked = isLiked, likeCount = likeCount });
+                return Json(new { success = true, postId, liked = isLiked, likeCount = likeCount });
             }
 
             return RedirectToAction("Details", new { id = postId });
@@ -459,11 +474,12 @@ namespace ForumZenpace.Controllers
             }
 
             await _context.SaveChangesAsync();
+            await BroadcastPostUpdatedAsync(comment.PostId, userId, isLiked ? "comment-liked" : "comment-unliked");
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
                 var likeCount = await _context.CommentLikes.CountAsync(cl => cl.CommentId == commentId);
-                return Json(new { success = true, liked = isLiked, likeCount = likeCount, commentId = commentId });
+                return Json(new { success = true, postId = comment.PostId, liked = isLiked, likeCount = likeCount, commentId = commentId });
             }
 
             return RedirectToAction("Details", new { id = comment.PostId });
@@ -591,9 +607,10 @@ namespace ForumZenpace.Controllers
                 _context.Comments.RemoveRange(commentBranch);
                 _context.Comments.Remove(comment);
                 await _context.SaveChangesAsync();
+                await BroadcastPostUpdatedAsync(postId, userId, "comment-deleted");
                 
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-                    return Json(new { success = true });
+                    return Json(new { success = true, postId, commentId = comment.Id });
                     
                 return RedirectToAction("Details", new { id = postId });
             }
@@ -711,6 +728,53 @@ namespace ForumZenpace.Controllers
             return postComments
                 .Where(c => idsToDelete.Contains(c.Id))
                 .ToList();
+        }
+
+        private async Task<PostRealtimeStateViewModel?> BuildRealtimeStateModelAsync(int postId, CancellationToken cancellationToken)
+        {
+            var post = await _context.Posts
+                .AsNoTracking()
+                .Include(item => item.Likes)
+                .Include(item => item.Comments)
+                    .ThenInclude(comment => comment.User)
+                .Include(item => item.Comments)
+                    .ThenInclude(comment => comment.CommentLikes)
+                .FirstOrDefaultAsync(item => item.Id == postId && item.Status == "Active", cancellationToken);
+
+            if (post is null)
+            {
+                return null;
+            }
+
+            var currentUserId = GetCurrentUserId();
+            var isAuthenticated = User.Identity?.IsAuthenticated == true;
+
+            return new PostRealtimeStateViewModel
+            {
+                PostId = post.Id,
+                LikeCount = post.Likes.Count,
+                HasLiked = currentUserId.HasValue && post.Likes.Any(like => like.UserId == currentUserId.Value),
+                CommentCount = post.Comments.Count,
+                CurrentUserId = currentUserId,
+                IsAuthenticated = isAuthenticated,
+                CommentThreads = BuildCommentThreads(post.Comments, post.Id, currentUserId, isAuthenticated)
+            };
+        }
+
+        private async Task BroadcastPostUpdatedAsync(int postId, int actorUserId, string eventType)
+        {
+            if (postId <= 0)
+            {
+                return;
+            }
+
+            await _socialHubContext.Clients.Group(PostChannel.GetPostGroupName(postId))
+                .SendAsync("PostUpdated", new
+                {
+                    postId,
+                    actorUserId,
+                    eventType
+                }, HttpContext.RequestAborted);
         }
 
         private int? GetCurrentUserId()
