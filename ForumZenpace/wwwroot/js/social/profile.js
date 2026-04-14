@@ -94,23 +94,25 @@ export const bindProfileSocial = () => {
             if (action.hasAttribute('data-social-remove-friend')) {
                 if (isRealtimeAvailable()) {
                     await connection.invoke('RemoveFriend', targetUserId);
-                    syncProfileState({ isFriend: false, hasOutgoingRequest: false, hasIncomingRequest: false });
                 } else {
                     await postSocialAction('/Social/RemoveFriend', {
                         targetUserId, returnUrl: getCurrentReturnUrl()
                     });
-                    window.location.reload();
                 }
+                syncProfileState({ isFriend: false, hasOutgoingRequest: false, hasIncomingRequest: false });
                 return;
             }
 
             if (isRealtimeAvailable()) {
                 await connection.invoke('ToggleMessageBlock', targetUserId);
             } else {
-                await postSocialAction('/Social/ToggleMessageBlock', {
+                const result = await postSocialAction('/Social/ToggleMessageBlock', {
                     targetUserId, returnUrl: getCurrentReturnUrl()
                 });
-                window.location.reload();
+                syncProfileState({
+                    isMessageBlockedByViewer: !!result.isMessageBlockedByViewer,
+                    isMessageBlockedByOtherUser: !!result.isMessageBlockedByOtherUser
+                });
             }
         } catch {
             renderProfileStatus();

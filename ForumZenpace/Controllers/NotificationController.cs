@@ -41,6 +41,12 @@ namespace ForumZenpace.Controllers
             var unreadCount = await _socialService.MarkNotificationAsReadAsync(userId, id);
             await _hubContext.Clients.Group(SocialChannel.GetUserGroupName(userId))
                 .SendAsync("NotificationCountChanged", new { unreadCount });
+
+            if (IsAjaxRequest())
+            {
+                return Json(new { success = true, id, unreadCount });
+            }
+
             return RedirectToAction(nameof(Index));
         }
         
@@ -56,12 +62,23 @@ namespace ForumZenpace.Controllers
             var unreadCount = await _socialService.MarkAllNotificationsAsReadAsync(userId);
             await _hubContext.Clients.Group(SocialChannel.GetUserGroupName(userId))
                 .SendAsync("NotificationCountChanged", new { unreadCount });
+
+            if (IsAjaxRequest())
+            {
+                return Json(new { success = true, unreadCount });
+            }
+
             return RedirectToAction(nameof(Index));
         }
 
         private bool TryGetCurrentUserId(out int userId)
         {
             return int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out userId);
+        }
+
+        private bool IsAjaxRequest()
+        {
+            return string.Equals(Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
         }
     }
 }

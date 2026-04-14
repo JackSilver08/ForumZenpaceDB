@@ -62,6 +62,22 @@ namespace ForumZenpace.Controllers
 
                 await _hubContext.Clients.Group(SocialChannel.GetUserGroupName(delivery.UserId))
                     .SendAsync("NotificationCountChanged", new { unreadCount = delivery.UnreadNotificationCount });
+
+                if (delivery.FriendStory is not null)
+                {
+                    await _hubContext.Clients.Group(SocialChannel.GetUserGroupName(delivery.UserId))
+                        .SendAsync("FriendStoryUpdated", delivery.FriendStory);
+                }
+            }
+
+            if (result.Story is not null)
+            {
+                await _hubContext.Clients.Group(SocialChannel.GetUserGroupName(userId))
+                    .SendAsync("OwnStoryPublished", new
+                    {
+                        story = result.Story,
+                        currentUserStory = result.CurrentUserStory
+                    });
             }
 
             var redirectUrl = result.Story is not null
@@ -73,7 +89,9 @@ namespace ForumZenpace.Controllers
                 return Json(new
                 {
                     success = true,
-                    redirectUrl
+                    redirectUrl,
+                    story = result.Story,
+                    currentUserStory = result.CurrentUserStory
                 });
             }
 

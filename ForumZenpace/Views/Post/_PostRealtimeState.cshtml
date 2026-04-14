@@ -1,0 +1,24 @@
+@using System.Linq
+@model ForumZenpace.Models.PostRealtimeStateViewModel
+
+<div data-post-realtime-state
+     data-post-id="@Model.PostId"
+     data-like-count="@Model.LikeCount"
+     data-has-liked="@Model.HasLiked.ToString().ToLowerInvariant()"
+     data-comment-count="@Model.CommentCount">
+    <div data-post-comment-list-fragment>
+        @if (Model.CommentThreads.Any())
+        {
+            @foreach (var thread in Model.CommentThreads)
+            {
+                <partial name="_CommentThreadItem" model="thread" />
+            }
+        }
+        else
+        {
+            <div class="comment-empty-state">
+                Chưa có bình luận nào. Hãy mở đầu chuỗi thảo luận đầu tiên.
+            </div>
+        }
+    </div>
+</div>

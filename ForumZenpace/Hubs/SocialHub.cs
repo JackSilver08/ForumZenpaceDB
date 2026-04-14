@@ -62,6 +62,26 @@ namespace ForumZenpace.Hubs
             return await _socialService.SearchFriendCandidatesAsync(GetCurrentUserId(), term);
         }
 
+        public async Task JoinPost(int postId)
+        {
+            if (postId <= 0)
+            {
+                throw new HubException("Khong tim thay bai viet hop le.");
+            }
+
+            await Groups.AddToGroupAsync(Context.ConnectionId, PostChannel.GetPostGroupName(postId));
+        }
+
+        public async Task LeavePost(int postId)
+        {
+            if (postId <= 0)
+            {
+                return;
+            }
+
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, PostChannel.GetPostGroupName(postId));
+        }
+
         public async Task SendFriendRequest(int targetUserId)
         {
             var currentUserId = GetCurrentUserId();

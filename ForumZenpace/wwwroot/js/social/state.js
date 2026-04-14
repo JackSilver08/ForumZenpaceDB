@@ -14,7 +14,12 @@ export const state = {
     realtimeReady: false
 };
 
-export const setRealtimeReady = (ready) => { state.realtimeReady = ready; };
+export const setRealtimeReady = (ready) => {
+    state.realtimeReady = ready;
+    document.dispatchEvent(new CustomEvent('zenpace:social-realtime-changed', {
+        detail: { ready }
+    }));
+};
 export const isRealtimeAvailable = () => Boolean(connection && state.realtimeReady);
 
 export const notificationLink = document.querySelector('[data-notification-link]');

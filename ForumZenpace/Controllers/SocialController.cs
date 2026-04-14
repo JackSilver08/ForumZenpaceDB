@@ -68,6 +68,17 @@ namespace ForumZenpace.Controllers
                     state = "pending-received"
                 });
 
+            if (IsAjaxRequest())
+            {
+                return Json(new
+                {
+                    success = true,
+                    targetUserId,
+                    state = "pending-sent",
+                    unreadCount = result.ReceiverUnreadNotificationCount
+                });
+            }
+
             return BuildSuccessResult(returnUrl);
         }
 
@@ -128,6 +139,18 @@ namespace ForumZenpace.Controllers
                     .SendAsync("NotificationCountChanged", new { unreadCount = result.SenderUnreadNotificationCount });
             }
 
+            if (IsAjaxRequest())
+            {
+                return Json(new
+                {
+                    success = true,
+                    requestId,
+                    status = Models.FriendRequestStatuses.Accepted,
+                    unreadCount = result.ReceiverUnreadNotificationCount,
+                    friend = result.FriendForReceiver
+                });
+            }
+
             return BuildSuccessResult(returnUrl);
         }
 
@@ -171,6 +194,17 @@ namespace ForumZenpace.Controllers
                     state = "none"
                 });
 
+            if (IsAjaxRequest())
+            {
+                return Json(new
+                {
+                    success = true,
+                    requestId,
+                    status = Models.FriendRequestStatuses.Declined,
+                    unreadCount = result.ReceiverUnreadNotificationCount
+                });
+            }
+
             return BuildSuccessResult(returnUrl);
         }
 
@@ -209,6 +243,16 @@ namespace ForumZenpace.Controllers
                     state = "none"
                 });
 
+            if (IsAjaxRequest())
+            {
+                return Json(new
+                {
+                    success = true,
+                    targetUserId,
+                    state = "none"
+                });
+            }
+
             return BuildSuccessResult(returnUrl);
         }
 
@@ -245,6 +289,18 @@ namespace ForumZenpace.Controllers
                     isMessageBlockedByOtherUser = reverseRelationship.IsMessageBlockedByOtherUser,
                     isConversationBlocked = reverseRelationship.IsConversationBlocked
                 });
+
+            if (IsAjaxRequest())
+            {
+                return Json(new
+                {
+                    success = true,
+                    targetUserId,
+                    isMessageBlockedByViewer = result.IsMessageBlockedByViewer,
+                    isMessageBlockedByOtherUser = result.IsMessageBlockedByOtherUser,
+                    isConversationBlocked = result.IsConversationBlocked
+                });
+            }
 
             return BuildSuccessResult(returnUrl);
         }

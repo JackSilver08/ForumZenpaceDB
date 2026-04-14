@@ -65,6 +65,16 @@ if (Number.isInteger(currentUserId) && currentUserId > 0) {
             }
         });
 
+        connection.on('FriendStoryUpdated', (friend) => {
+            upsertFriendCard(friend);
+        });
+
+        connection.on('OwnStoryPublished', (payload) => {
+            document.dispatchEvent(new CustomEvent('zenpace:own-story-published', {
+                detail: payload
+            }));
+        });
+
         connection.on('MessageBlockChanged', (payload) => {
             const targetUserId = Number.parseInt(`${payload.targetUserId ?? ''}`, 10);
             if (!Number.isInteger(targetUserId) || targetUserId <= 0) return;

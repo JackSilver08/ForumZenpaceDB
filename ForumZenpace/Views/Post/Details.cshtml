@@ -10,7 +10,7 @@
         : "U";
 }
 
-<div class="detail-shell animated-entry">
+<div class="detail-shell animated-entry" data-post-detail data-post-id="@Model.Id">
     <div class="surface detail-card">
         <div class="detail-header">
             <div class="detail-kicker">
@@ -37,9 +37,13 @@
 
         <div class="detail-actions">
             <div class="detail-action-group">
-                <form asp-action="ToggleLike" method="post" class="inline-form ajax-postback">
+                <form asp-action="ToggleLike" method="post" class="inline-form ajax-postback" data-post-like-form>
                     <input type="hidden" name="postId" value="@Model.Id" />
-                    <button type="submit" class="btn @(ViewBag.HasLiked == true ? "btn-primary" : "btn-outline")">
+                    <button type="submit"
+                            class="btn @(ViewBag.HasLiked == true ? "btn-primary" : "btn-outline")"
+                            data-post-like-button
+                            data-liked-label="Đã đề xuất"
+                            data-unliked-label="Đề xuất">
                         <i class="fa-solid fa-fire-flame-curved"></i>
                         @(ViewBag.HasLiked == true ? "Đã đề xuất" : "Đề xuất") (@Model.Likes.Count)
                     </button>
@@ -89,7 +93,7 @@
     <div class="surface comment-card">
         <div class="surface-header">
             <div>
-                <h2 class="section-title">Bình luận (@Model.Comments.Count)</h2>
+                <h2 class="section-title">Bình luận (<span data-post-comment-count>@Model.Comments.Count</span>)</h2>
                 <p class="surface-subtitle">Luồng trao đổi được sắp xếp gọn, dễ đọc và dễ theo dõi hơn ở cả desktop lẫn mobile.</p>
             </div>
         </div>
@@ -151,7 +155,7 @@
             </div>
         }
 
-        <div class="comment-list">
+        <div class="comment-list" data-post-comment-list>
             @if (commentThreads.Any())
             {
                 @foreach (var thread in commentThreads)
@@ -216,7 +220,7 @@
                 reply.removeAttribute('hidden');
             });
 
-            button.setAttribute('aria-expanded', (!isExpanded).ToString().toLowerCase());
+            button.setAttribute('aria-expanded', (!isExpanded).toString());
             button.textContent = isExpanded
                 ? (button.dataset.collapsedLabel || 'Xem thêm phản hồi')
                 : (button.dataset.expandedLabel || 'Ẩn bớt phản hồi');
@@ -241,53 +245,6 @@
             box.setAttribute('hidden', 'hidden');
         }
 
-        document.addEventListener('submit', async (event) => {
-            const form = event.target;
-            if (!(form instanceof HTMLFormElement) || !form.classList.contains('ajax-postback')) {
-                return;
-            }
-
-            event.preventDefault();
-
-            const submitButton = form.querySelector('button[type="submit"]');
-            if (submitButton) {
-                submitButton.disabled = true;
-                submitButton.style.opacity = '0.7';
-            }
-
-            try {
-                const response = await fetch(form.action, {
-                    method: 'POST',
-                    body: new FormData(form),
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                });
-
-                if (!response.ok) {
-                    alert('Không thể xử lý yêu cầu lúc này.');
-                    return;
-                }
-
-                const data = await response.json();
-                if (!data.success) {
-                    alert(data.message || 'Yêu cầu không thành công.');
-                    return;
-                }
-
-                if (form.action.includes('Report')) {
-                    alert(data.message || 'Đã gửi báo cáo.');
-                    form.reset();
-                    document.getElementById('reportBox')?.setAttribute('hidden', 'hidden');
-                    return;
-                }
-
-                window.location.reload();
-            } finally {
-                if (submitButton) {
-                    submitButton.disabled = false;
-                    submitButton.style.opacity = '1';
-                }
-            }
-        });
     </script>
     <script>
         let aiSuggestionsFetched = false;
@@ -349,6 +306,7 @@
             document.head.appendChild(style);
         }
     </script>
+    <script type="module" src="~/js/post-details.js" asp-append-version="true"></script>
     <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@@1.29.0/index.js"></script>
     <script src="~/js/comment-emoji.js" asp-append-version="true"></script>
 }

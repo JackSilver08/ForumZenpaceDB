@@ -262,19 +262,21 @@
                 }
                 else if (isStoriesTab)
                 {
-                    <div class="profile-story-shell">
+                    <div class="profile-story-shell"
+                         data-profile-story-manager
+                         data-is-owner="@Model.IsOwner.ToString().ToLowerInvariant()">
                         <div class="profile-story-summary-row">
                             <div class="glass-card profile-story-metric">
                                 <span class="profile-story-metric-label">Đang hiện</span>
-                                <strong class="profile-story-metric-value">@Model.ActiveStoryCount</strong>
+                                <strong class="profile-story-metric-value" data-story-active-count>@Model.ActiveStoryCount</strong>
                             </div>
                             <div class="glass-card profile-story-metric">
                                 <span class="profile-story-metric-label">Archive</span>
-                                <strong class="profile-story-metric-value">@Model.ArchivedStoryCount</strong>
+                                <strong class="profile-story-metric-value" data-story-archived-count>@Model.ArchivedStoryCount</strong>
                             </div>
                             <div class="glass-card profile-story-metric">
                                 <span class="profile-story-metric-label">Tổng story</span>
-                                <strong class="profile-story-metric-value">@Model.StoryCount</strong>
+                                <strong class="profile-story-metric-value" data-story-total-count>@Model.StoryCount</strong>
                             </div>
                         </div>
 
@@ -293,19 +295,19 @@
                         {
                             @if (activeStories.Any())
                             {
-                                <div class="profile-story-section">
+                                <div class="profile-story-section" data-profile-active-story-section>
                                     <div class="profile-story-section-header">
                                         <div>
                                             <div class="panel-label">Đang hoạt động</div>
                                             <h3 class="section-heading">Story trong 24 giờ</h3>
                                         </div>
-                                        <span class="status-pill is-live">@activeStories.Count đang hiện</span>
+                                        <span class="status-pill is-live" data-profile-active-story-status>@activeStories.Count đang hiện</span>
                                     </div>
 
-                                    <div class="profile-story-grid">
+                                    <div class="profile-story-grid" data-profile-active-story-grid>
                                         @foreach (var story in activeStories)
                                         {
-                                            <article class="glass-card profile-story-card @(story.HasBeenViewedByViewer ? string.Empty : "profile-story-card--fresh")">
+                                            <article class="glass-card profile-story-card @(story.HasBeenViewedByViewer ? string.Empty : "profile-story-card--fresh")" data-story-id="@story.Id">
                                                 <a asp-controller="Story"
                                                    asp-action="Viewer"
                                                    asp-route-id="@story.Id"
@@ -356,19 +358,19 @@
 
                             @if (archivedStories.Any())
                             {
-                                <div class="profile-story-section">
+                                <div class="profile-story-section" data-profile-archived-story-section>
                                     <div class="profile-story-section-header">
                                         <div>
                                             <div class="panel-label">Lưu trữ</div>
                                             <h3 class="section-heading">Story đã hết hạn</h3>
                                         </div>
-                                        <span class="status-pill is-muted">@archivedStories.Count trong archive</span>
+                                        <span class="status-pill is-muted" data-profile-archived-story-status>@archivedStories.Count trong archive</span>
                                     </div>
 
-                                    <div class="profile-story-grid">
+                                    <div class="profile-story-grid" data-profile-archived-story-grid>
                                         @foreach (var story in archivedStories)
                                         {
-                                            <article class="glass-card profile-story-card profile-story-card--archived">
+                                            <article class="glass-card profile-story-card profile-story-card--archived" data-story-id="@story.Id">
                                                 <a asp-controller="Story"
                                                    asp-action="Viewer"
                                                    asp-route-id="@story.Id"
@@ -416,7 +418,7 @@
                         }
                         else
                         {
-                            <div class="profile-empty-state">
+                            <div class="profile-empty-state" data-profile-story-empty>
                                 <div class="empty-icon">
                                     <i class="fa-regular fa-images"></i>
                                 </div>

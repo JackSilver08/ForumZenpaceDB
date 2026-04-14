@@ -144,6 +144,17 @@ namespace ForumZenpace.Models
         public string? ReplyingToAuthorName { get; set; }
     }
 
+    public class PostRealtimeStateViewModel
+    {
+        public int PostId { get; set; }
+        public int LikeCount { get; set; }
+        public bool HasLiked { get; set; }
+        public int CommentCount { get; set; }
+        public int? CurrentUserId { get; set; }
+        public bool IsAuthenticated { get; set; }
+        public IReadOnlyList<CommentThreadViewModel> CommentThreads { get; set; } = Array.Empty<CommentThreadViewModel>();
+    }
+
     public class ProfileViewModel
     {
         [Required, MaxLength(100)]

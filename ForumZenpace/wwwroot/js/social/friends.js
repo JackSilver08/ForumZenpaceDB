@@ -166,10 +166,22 @@ export const upsertFriendCard = (friend) => {
     const existingCard = friendList.querySelector(`[data-friend-user-id="${friend.userId}"]`);
     if (existingCard instanceof HTMLElement) {
         existingCard.outerHTML = renderFriendCard(friend);
+        const refreshedCard = friendList.querySelector(`[data-friend-user-id="${friend.userId}"]`);
+        if (refreshedCard instanceof HTMLElement) {
+            document.dispatchEvent(new CustomEvent('zenpace:presence-refresh', {
+                detail: { root: refreshedCard }
+            }));
+        }
         scheduleFriendRailUpdate();
         return;
     }
     friendList.insertAdjacentHTML('afterbegin', renderFriendCard(friend));
+    const insertedCard = friendList.querySelector(`[data-friend-user-id="${friend.userId}"]`);
+    if (insertedCard instanceof HTMLElement) {
+        document.dispatchEvent(new CustomEvent('zenpace:presence-refresh', {
+            detail: { root: insertedCard }
+        }));
+    }
     scheduleFriendRailUpdate();
 };
 
@@ -251,6 +263,10 @@ const renderCandidateResults = (items) => {
                 </button>
             </div>`;
     }).join('');
+
+    document.dispatchEvent(new CustomEvent('zenpace:presence-refresh', {
+        detail: { root: container }
+    }));
 };
 
 export const setCandidateState = (userId, state) => {
