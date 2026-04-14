@@ -163,14 +163,6 @@
         .btn-icon { background: none; border: none; color: #fff; font-size: 1.2rem; cursor: pointer; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); transition: transform 0.2s; }
         .btn-icon:hover { transform: scale(1.1); }
         
-        .nav-zone {
-            position: absolute;
-            top: 100px; bottom: 100px;
-            z-index: 5;
-        }
-        .nav-left { left: 0; width: 30%; }
-        .nav-right { right: 0; width: 70%; }
-        
         .nav-arrow {
             position: absolute;
             top: 50%;
@@ -194,6 +186,15 @@
             background: rgba(0,0,0,0.6);
             border-color: rgba(255,255,255,0.5);
             transform: translateY(-50%) scale(1.1);
+        }
+        .nav-arrow.is-disabled {
+            opacity: 0.45;
+            cursor: default;
+        }
+        .nav-arrow.is-disabled:hover {
+            background: rgba(0,0,0,0.3);
+            border-color: rgba(255,255,255,0.2);
+            transform: translateY(-50%);
         }
         .nav-arrow-left { left: 16px; }
         .nav-arrow-right { right: 16px; }
@@ -263,7 +264,7 @@
 </head>
 <body>
     <a id="linkPrev" href="@(Model.PreviousStoryId.HasValue ? Url.Action("Viewer", new { id = Model.PreviousStoryId.Value }) : "javascript:void(0)")" style="display:none"></a>
-    <a id="linkNext" href="@(Model.NextStoryId.HasValue ? Url.Action("Viewer", new { id = Model.NextStoryId.Value }) : Url.Action("Index", "Home", new { tab = "stories" }))" style="display:none"></a>
+    <a id="linkNext" href="@(Model.NextStoryId.HasValue ? Url.Action("Viewer", new { id = Model.NextStoryId.Value }) : "javascript:void(0)")" style="display:none"></a>
     <a id="linkClose" href="@Url.Action("Index", "Home", new { tab = "stories" })" style="display:none"></a>
 
     <div class="story-container">
@@ -278,9 +279,6 @@
             }
         </div>
 
-        <div class="nav-zone nav-left" id="zoneLeft"></div>
-        <div class="nav-zone nav-right" id="zoneRight"></div>
-        
         <button class="nav-arrow nav-arrow-left" onclick="goPrev()"><i class="fa-solid fa-chevron-left"></i></button>
         <button class="nav-arrow nav-arrow-right" onclick="goNext()"><i class="fa-solid fa-chevron-right"></i></button>
 
@@ -385,8 +383,6 @@
         let storyDuration = @durationPerStory; 
         const fallbackStoryDuration = storyDuration;
         const storyId = @story.Id;
-        const ZONE_LEFT = document.getElementById('zoneLeft');
-        const ZONE_RIGHT = document.getElementById('zoneRight');
         const PROGRESS = document.getElementById('currentProgress');
         const INPUT = document.getElementById('replyInput');
         const BTN_SEND = document.getElementById('btnSendReal');
@@ -397,6 +393,8 @@
         const MUSIC_URI = @Html.Raw(JsonSerializer.Serialize(story.MusicPlayerUri ?? string.Empty));
         const YOUTUBE_HOST = document.getElementById('storyYoutubeHost');
         const SPOTIFY_HOST = document.getElementById('storySpotifyHost');
+        const HAS_NEXT_STORY = @Html.Raw(Model.NextStoryId.HasValue ? "true" : "false");
+        const NEXT_ARROW = document.querySelector('.nav-arrow-right');
         let youtubePlayer = null;
         let spotifyController = null;
         let youtubeReady = false;
@@ -575,7 +573,7 @@
                 if (percent >= 100) {
                     percent = 100;
                     if(PROGRESS) PROGRESS.style.width = percent + '%';
-                    goNext();
+                    goNext(true);
                     return;
                 }
                 if(PROGRESS) PROGRESS.style.width = percent + '%';
@@ -613,11 +611,17 @@
                 if(PROGRESS) PROGRESS.style.width = '0%';
             }
         }
-        function goNext() {
-            const link = document.getElementById('linkNext').href;
-            if(link) {
+        function goNext(autoAdvance = false) {
+            const linkNext = document.getElementById('linkNext');
+            const link = linkNext ? linkNext.href : null;
+            if(HAS_NEXT_STORY && link && !link.includes('javascript:')) {
                 pauseMusic();
                 window.location.href = link;
+                return;
+            }
+
+            if (autoAdvance) {
+                closeStory();
             }
         }
         function closeStory() {
@@ -628,46 +632,9 @@
             }
         }
         
-        // Touch / Mouse gestures
-        function addHoldEvents(el, triggerWait, holdCb, releaseCb) {
-            let timer = null;
-            let didHold = false;
-            
-            const start = (e) => {
-                if(e.type === 'touchstart') {
-                    // Don't prevent default, or input won't focus, wait - we need it to not steal focus if user just clicks
-                }
-                didHold = false;
-                timer = setTimeout(() => {
-                    didHold = true;
-                    holdCb();
-                }, triggerWait);
-            };
-            
-            const end = (e) => {
-                clearTimeout(timer);
-                if(didHold) {
-                    releaseCb(true); // Was a hold
-                } else {
-                    releaseCb(false); // Was a tap
-                }
-            };
-            
-            el.addEventListener('mousedown', start);
-            el.addEventListener('touchstart', start);
-            el.addEventListener('mouseup', end);
-            el.addEventListener('touchend', end);
-            el.addEventListener('mouseleave', () => { clearTimeout(timer); if(didHold) releaseCb(true); });
-            el.addEventListener('touchcancel', () => { clearTimeout(timer); if(didHold) releaseCb(true); });
+        if (!HAS_NEXT_STORY && NEXT_ARROW) {
+            NEXT_ARROW.classList.add('is-disabled');
         }
-        
-        addHoldEvents(ZONE_LEFT, 250, pause, (wasHold) => {
-            if(wasHold) resume(); else goPrev();
-        });
-        
-        addHoldEvents(ZONE_RIGHT, 250, pause, (wasHold) => {
-            if(wasHold) resume(); else goNext();
-        });
         
         function toggleMute() {
             isMuted = !isMuted;

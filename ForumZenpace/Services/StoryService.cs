@@ -250,8 +250,8 @@ namespace ForumZenpace.Services
                         MusicUrl = item.MusicUrl
                     })
                     .ToList(),
-                PreviousStoryId = selectedIndex < authorStories.Count - 1 ? authorStories[selectedIndex + 1].Id : null,
-                NextStoryId = selectedIndex > 0 ? authorStories[selectedIndex - 1].Id : null
+                PreviousStoryId = selectedIndex > 0 ? authorStories[selectedIndex - 1].Id : null,
+                NextStoryId = selectedIndex < authorStories.Count - 1 ? authorStories[selectedIndex + 1].Id : null
             };
         }
 
