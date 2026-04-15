@@ -24,7 +24,6 @@ namespace ForumZenpace.Controllers
             ".gif",
             ".webp"
         };
-        private const long MaxAvatarSizeBytes = 5 * 1024 * 1024;
         private readonly ForumDbContext _context;
         private readonly IWebHostEnvironment _environment;
         private readonly DirectMessageService _directMessageService;
@@ -33,6 +32,7 @@ namespace ForumZenpace.Controllers
         private readonly EmailVerificationService _emailVerificationService;
         private readonly AuthFlowTokenService _authFlowTokenService;
         private readonly IHubContext<DirectMessageHub> _hubContext;
+        private readonly long? _maxAvatarSizeBytes;
 
         public ProfileController(
             ForumDbContext context,
@@ -42,7 +42,8 @@ namespace ForumZenpace.Controllers
             StoryService storyService,
             EmailVerificationService emailVerificationService,
             AuthFlowTokenService authFlowTokenService,
-            IHubContext<DirectMessageHub> hubContext)
+            IHubContext<DirectMessageHub> hubContext,
+            IConfiguration configuration)
         {
             _context = context;
             _environment = environment;
@@ -52,6 +53,9 @@ namespace ForumZenpace.Controllers
             _emailVerificationService = emailVerificationService;
             _authFlowTokenService = authFlowTokenService;
             _hubContext = hubContext;
+            _maxAvatarSizeBytes = ResolveSizeLimitBytes(
+                configuration.GetValue<long?>("UploadLimits:MaxAvatarSizeMB"),
+                defaultMb: 5);
         }
 
         [HttpGet]
@@ -217,9 +221,9 @@ namespace ForumZenpace.Controllers
                 return;
             }
 
-            if (avatarFile.Length > MaxAvatarSizeBytes)
+            if (_maxAvatarSizeBytes.HasValue && avatarFile.Length > _maxAvatarSizeBytes.Value)
             {
-                ModelState.AddModelError(nameof(ProfileViewModel.AvatarFile), "Anh dai dien chi duoc toi da 5MB.");
+                ModelState.AddModelError(nameof(ProfileViewModel.AvatarFile), "Anh dai dien vuot qua gioi han dung luong cho phep.");
             }
 
             var extension = Path.GetExtension(avatarFile.FileName);
@@ -243,6 +247,17 @@ namespace ForumZenpace.Controllers
             await avatarFile.CopyToAsync(stream);
 
             return $"/uploads/avatars/{fileName}";
+        }
+
+        private static long? ResolveSizeLimitBytes(long? configuredMb, long defaultMb)
+        {
+            var effectiveMb = configuredMb ?? defaultMb;
+            if (effectiveMb <= 0)
+            {
+                return null;
+            }
+
+            return effectiveMb * 1024L * 1024L;
         }
 
         private int? GetCurrentUserId()

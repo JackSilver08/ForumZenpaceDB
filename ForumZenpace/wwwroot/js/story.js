@@ -263,7 +263,7 @@
             imagePreview.hidden = true;
             imagePreview.removeAttribute('src');
             if (imageName instanceof HTMLElement) {
-                imageName.textContent = 'Chap nhan JPG, PNG, GIF, WEBP. Gioi han toi da 10MB.';
+                imageName.textContent = 'Chap nhan JPG, PNG, GIF, WEBP. Khong gioi han dung luong.';
             }
             return;
         }

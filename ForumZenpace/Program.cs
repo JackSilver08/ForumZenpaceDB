@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.FileProviders;
 using ForumZenpace.Hubs;
 using ForumZenpace.Models;
@@ -9,6 +10,24 @@ using DotNetEnv;
 Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
+var maxMultipartBodySizeBytes = ResolveSizeLimitBytes(
+    builder.Configuration.GetValue<long?>("UploadLimits:MaxMultipartBodySizeMB"),
+    defaultMb: 128);
+
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Limits.MaxRequestBodySize = maxMultipartBodySizeBytes;
+});
+
+builder.Services.Configure<IISServerOptions>(options =>
+{
+    options.MaxRequestBodySize = maxMultipartBodySizeBytes;
+});
+
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = maxMultipartBodySizeBytes ?? long.MaxValue;
+});
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
@@ -127,3 +146,14 @@ var hash = new PasswordSecurityService().HashPassword("gf");
 Console.WriteLine($"Hash của gf: {hash}");
 
 app.Run();
+
+static long? ResolveSizeLimitBytes(long? configuredMb, long defaultMb)
+{
+    var effectiveMb = configuredMb ?? defaultMb;
+    if (effectiveMb <= 0)
+    {
+        return null;
+    }
+
+    return effectiveMb * 1024L * 1024L;
+}

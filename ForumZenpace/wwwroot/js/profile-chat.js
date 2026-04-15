@@ -282,6 +282,8 @@
             return;
         }
 
+        const callIcon = voiceStart.querySelector('i');
+        const isManagedCallState = voiceState === 'outgoing' || voiceState === 'connecting' || voiceState === 'active';
         let disabledReason = '';
         if (voiceState === 'idle') {
             if (!hasVoiceSupport) {
@@ -296,18 +298,23 @@
         const label = disabledReason
             || (voiceState === 'prompt'
                 ? 'Dong popup voice chat'
-                : voiceState === 'outgoing'
-                    ? (voicePopupVisible ? 'An popup goi voice' : 'Mo popup goi voice')
-                    : voiceState === 'connecting'
-                        ? (voicePopupVisible ? 'An popup voice chat' : 'Mo popup voice chat')
-                        : voiceState === 'active'
-                            ? (voicePopupVisible ? 'An dieu khien voice chat' : 'Mo dieu khien voice chat')
+                : voiceState === 'outgoing' || voiceState === 'connecting' || voiceState === 'active'
+                    ? 'Dung cuoc goi'
+                    : voiceState === 'incoming'
+                        ? `Nhan cuoc goi voice tu ${targetDisplayName}`
                             : `Goi voice voi ${targetDisplayName}`);
 
         voiceStart.hidden = false;
         voiceStart.disabled = voiceState === 'idle' && !!disabledReason;
         voiceStart.title = label;
         voiceStart.setAttribute('aria-label', label);
+        voiceStart.classList.toggle('is-end-call', isManagedCallState);
+
+        if (callIcon instanceof HTMLElement) {
+            callIcon.className = isManagedCallState
+                ? 'fa-solid fa-phone-slash'
+                : 'fa-solid fa-phone';
+        }
     };
 
     const updateMuteButton = () => {
@@ -1309,8 +1316,14 @@
             }
 
             if (voiceState === 'outgoing' || voiceState === 'connecting' || voiceState === 'active') {
-                voicePopupVisible = !voicePopupVisible;
-                updateVoiceControls();
+                closeVoiceSession('Voice chat da ket thuc', `Da dong cuoc goi voi ${targetDisplayName}.`, {
+                    notifyRemote: true
+                }).catch(() => {});
+                return;
+            }
+
+            if (voiceState === 'incoming') {
+                acceptVoiceChat().catch(() => {});
             }
         });
     }

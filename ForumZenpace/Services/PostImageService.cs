@@ -16,15 +16,18 @@ namespace ForumZenpace.Services
         };
         
         private static readonly Regex MarkdownImageRegex = new(@"!\[[^\]]*\]\((?<url>[^)]+)\)", RegexOptions.Compiled);
-        private const long MaxPostImageSizeBytes = 10 * 1024 * 1024;
 
         private readonly ForumDbContext _context;
         private readonly IWebHostEnvironment _environment;
+        private readonly long? _maxPostImageSizeBytes;
 
-        public PostImageService(ForumDbContext context, IWebHostEnvironment environment)
+        public PostImageService(ForumDbContext context, IWebHostEnvironment environment, IConfiguration configuration)
         {
             _context = context;
             _environment = environment;
+            _maxPostImageSizeBytes = ResolveSizeLimitBytes(
+                configuration.GetValue<long?>("UploadLimits:MaxPostImageSizeMB"),
+                defaultMb: 10);
         }
 
         public string? ValidatePostImage(IFormFile? image)
@@ -34,9 +37,9 @@ namespace ForumZenpace.Services
                 return "Anh tai len khong hop le.";
             }
 
-            if (image.Length > MaxPostImageSizeBytes)
+            if (_maxPostImageSizeBytes.HasValue && image.Length > _maxPostImageSizeBytes.Value)
             {
-                return "Anh trong bai viet chi duoc toi da 10MB.";
+                return "Anh trong bai viet vuot qua gioi han dung luong cho phep.";
             }
 
             var extension = Path.GetExtension(image.FileName);
@@ -178,6 +181,17 @@ namespace ForumZenpace.Services
                 .Select(match => match.Groups["url"].Value.Trim())
                 .Where(url => !string.IsNullOrWhiteSpace(url))
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        }
+
+        private static long? ResolveSizeLimitBytes(long? configuredMb, long defaultMb)
+        {
+            var effectiveMb = configuredMb ?? defaultMb;
+            if (effectiveMb <= 0)
+            {
+                return null;
+            }
+
+            return effectiveMb * 1024L * 1024L;
         }
     }
 }

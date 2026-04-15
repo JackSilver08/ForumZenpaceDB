@@ -28,19 +28,23 @@ namespace ForumZenpace.Services
             StoryBackgroundStyles.Midnight
         };
 
-        private const long MaxStoryImageSizeBytes = 10 * 1024 * 1024;
         private readonly ForumDbContext _context;
         private readonly IWebHostEnvironment _environment;
         private readonly StoryMusicLibraryService _storyMusicLibraryService;
+        private readonly long? _maxStoryImageSizeBytes;
 
         public StoryService(
             ForumDbContext context,
             IWebHostEnvironment environment,
-            StoryMusicLibraryService storyMusicLibraryService)
+            StoryMusicLibraryService storyMusicLibraryService,
+            IConfiguration configuration)
         {
             _context = context;
             _environment = environment;
             _storyMusicLibraryService = storyMusicLibraryService;
+            _maxStoryImageSizeBytes = ResolveSizeLimitBytes(
+                configuration.GetValue<long?>("UploadLimits:MaxStoryImageSizeMB"),
+                defaultMb: 10);
         }
 
         public async Task<CurrentUserStorySummaryViewModel?> GetCurrentUserStorySummaryAsync(int userId, CancellationToken cancellationToken = default)
@@ -276,7 +280,7 @@ namespace ForumZenpace.Services
 
             if (hasImage)
             {
-                var validationError = ValidateStoryImage(model.Image);
+                var validationError = ValidateStoryImage(model.Image, _maxStoryImageSizeBytes);
                 if (!string.IsNullOrWhiteSpace(validationError))
                 {
                     return CreateFailure(validationError);
@@ -647,16 +651,16 @@ namespace ForumZenpace.Services
             }
         }
 
-        private static string? ValidateStoryImage(IFormFile? image)
+        private static string? ValidateStoryImage(IFormFile? image, long? maxStoryImageSizeBytes)
         {
             if (image is null || image.Length == 0)
             {
                 return "Anh khoanh khac khong hop le.";
             }
 
-            if (image.Length > MaxStoryImageSizeBytes)
+            if (maxStoryImageSizeBytes.HasValue && image.Length > maxStoryImageSizeBytes.Value)
             {
-                return "Anh story chi duoc toi da 10MB.";
+                return "Anh story vuot qua gioi han dung luong cho phep.";
             }
 
             var extension = Path.GetExtension(image.FileName);
@@ -964,6 +968,17 @@ namespace ForumZenpace.Services
 
             var trimmed = value.Trim();
             return trimmed.Length <= maxLength ? trimmed : trimmed[..maxLength];
+        }
+
+        private static long? ResolveSizeLimitBytes(long? configuredMb, long defaultMb)
+        {
+            var effectiveMb = configuredMb ?? defaultMb;
+            if (effectiveMb <= 0)
+            {
+                return null;
+            }
+
+            return effectiveMb * 1024L * 1024L;
         }
 
         private static FriendSummaryViewModel BuildFriendStorySummary(
