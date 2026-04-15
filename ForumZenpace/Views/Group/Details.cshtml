@@ -1,0 +1,168 @@
+@using ForumZenpace.Formatting
+@model ForumZenpace.Models.GroupDetailsViewModel
+@{
+    ViewData["Title"] = Model.Group.Name;
+}
+
+<div class="detail-shell animated-entry">
+    <div class="surface detail-card">
+        <div class="detail-header">
+            <div style="display:flex; align-items:center; gap:16px; margin-bottom:18px;">
+                <span class="avatar" style="width:72px; height:72px;">
+                    @if (!string.IsNullOrWhiteSpace(Model.Group.AvatarUrl))
+                    {
+                        <img src="@Url.Content("~" + Model.Group.AvatarUrl)" alt="@Model.Group.Name" />
+                    }
+                    else
+                    {
+                        <span>@Model.Group.Name.Substring(0, 1).ToUpperInvariant()</span>
+                    }
+                </span>
+                <div style="min-width:0;">
+                    <h1 class="detail-title" style="margin-bottom:6px;">@Model.Group.Name</h1>
+                    <p class="muted" style="max-width: 760px; margin:0;">@Model.Group.Description</p>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(Model.SuccessMessage))
+            {
+                <div class="profile-inline-alert" style="margin-bottom:14px;">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <span>@Model.SuccessMessage</span>
+                </div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+            {
+                <div class="profile-inline-alert is-error" style="margin-bottom:14px;">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <span>@Model.ErrorMessage</span>
+                </div>
+            }
+
+            <div class="detail-kicker">
+                <span class="category-badge">@Model.Group.AccentLabel</span>
+                <div class="detail-meta">
+                    <span>@Model.Group.MemberCount thành viên</span>
+                    <span class="dot"></span>
+                    <span>@Model.Group.PostCount bài viết</span>
+                    <span class="dot"></span>
+                    <span>Tạo bởi @Model.Group.CreatorDisplayName</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="detail-actions">
+            <div class="detail-action-group">
+                @if (Model.Group.IsOwnedByCurrentUser)
+                {
+                    <form asp-action="UpdateAvatar"
+                          asp-route-slug="@Model.Group.Slug"
+                          method="post"
+                          enctype="multipart/form-data"
+                          class="inline-form"
+                          style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                        @Html.AntiForgeryToken()
+                        <input type="file"
+                               name="AvatarFile"
+                               class="form-control"
+                               accept=".jpg,.jpeg,.png,.gif,.webp"
+                               style="max-width:260px;" />
+                        <button type="submit" class="btn btn-outline">Đổi ảnh đại diện</button>
+                    </form>
+                }
+
+                @if (User.Identity?.IsAuthenticated == true && !Model.Group.IsJoined)
+                {
+                    <form asp-action="Join" method="post" class="inline-form">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Group.Id" />
+                        <button type="submit" class="btn btn-primary">Tham gia group</button>
+                    </form>
+                }
+                else if (Model.CanCreatePosts)
+                {
+                    <a asp-controller="Post" asp-action="Create" asp-route-groupId="@Model.Group.Id" class="btn btn-primary">Đăng bài trong group</a>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="surface comment-card">
+        <div class="surface-header">
+            <div>
+                <h2 class="section-title">Bài viết trong group</h2>
+                <p class="surface-subtitle">Các chủ đề gần đây của cộng đồng này.</p>
+            </div>
+        </div>
+
+        @if (!Model.Posts.Any())
+        {
+            <div class="comment-empty-state">Group này chưa có bài viết nào.</div>
+        }
+        else
+        {
+            <div class="post-list">
+                @foreach (var post in Model.Posts)
+                {
+                    <article class="glass-panel post-card">
+                        <div class="post-card-body">
+                            <div class="post-meta-row">
+                                <span class="category-badge">@post.Category.Name</span>
+                                <span>@post.CreatedAt.ToString("dd MMM yyyy")</span>
+                            </div>
+                            <a asp-controller="Post" asp-action="Details" asp-route-id="@post.Id" class="post-title">@post.Title</a>
+                            <p class="post-excerpt">@PostContentFormatter.ToExcerpt(post.Content, 180)</p>
+                            <div class="post-footer">
+                                <div class="post-metrics">
+                                    <span class="metric"><i class="fa-regular fa-user"></i><span>@post.User.FullName</span></span>
+                                    <span class="metric likes"><i class="fa-solid fa-fire"></i><span>@post.Likes.Count đề xuất</span></span>
+                                    <span class="metric comments"><i class="fa-regular fa-comment-dots"></i><span>@post.Comments.Count bình luận</span></span>
+                                </div>
+                                <a asp-controller="Post" asp-action="Details" asp-route-id="@post.Id" class="btn btn-text">Mở chủ đề</a>
+                            </div>
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+    </div>
+
+    <div class="surface comment-card">
+        <div class="surface-header">
+            <div>
+                <h2 class="section-title">Thành viên</h2>
+                <p class="surface-subtitle">Những người đang tham gia group này.</p>
+            </div>
+        </div>
+
+        <div style="display:grid; gap:10px;">
+            @foreach (var member in Model.Members)
+            {
+                <a asp-controller="Profile"
+                   asp-action="UserProfile"
+                   asp-route-username="@member.Username"
+                   style="display:flex; align-items:center; justify-content:space-between; gap:12px; text-decoration:none;"
+                   class="sidebar-link">
+                    <span style="display:flex; align-items:center; gap:12px;">
+                        <span class="avatar" style="width:42px; height:42px;">
+                            @if (!string.IsNullOrWhiteSpace(member.AvatarUrl))
+                            {
+                                <img src="@Url.Content("~" + member.AvatarUrl)" alt="@member.DisplayName" />
+                            }
+                            else
+                            {
+                                <span>@member.DisplayName.Substring(0, 1).ToUpperInvariant()</span>
+                            }
+                        </span>
+                        <span>
+                            <strong style="display:block; color:var(--text-primary);">@member.DisplayName</strong>
+                            <span style="font-size:0.86rem;">@@@member.Username</span>
+                        </span>
+                    </span>
+                    <span class="category-badge">@member.Role</span>
+                </a>
+            }
+        </div>
+    </div>
+</div>

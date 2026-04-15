@@ -1,0 +1,80 @@
+@model IReadOnlyList<ForumZenpace.Models.GroupListItemViewModel>
+@{
+    ViewData["Title"] = "Groups";
+}
+
+<div class="editor-shell animated-entry">
+    <div class="surface editor-card">
+        <div class="editor-header">
+            <div>
+                <h1 class="editor-title">Khám phá Groups</h1>
+                <p class="editor-subtitle">Tạo và tham gia các cộng đồng nhỏ theo chủ đề, giống trải nghiệm Facebook Group nhưng gắn chặt với bài viết của Zenpace.</p>
+            </div>
+
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <a asp-action="Create" class="btn btn-primary">Tạo group</a>
+            }
+        </div>
+
+        @if (!Model.Any())
+        {
+            <div class="empty-state">
+                <div class="empty-icon"><i class="fa-solid fa-users"></i></div>
+                <h2 class="section-heading">Chưa có group nào</h2>
+                <p class="muted">Hãy tạo group đầu tiên để gom các bài viết theo cộng đồng riêng.</p>
+            </div>
+        }
+        else
+        {
+            <div style="display:grid; gap:16px;">
+                @foreach (var group in Model)
+                {
+                    <article class="glass-panel post-card">
+                        <div class="post-card-body">
+                            <div style="display:flex; align-items:center; gap:14px; margin-bottom:14px;">
+                                <span class="avatar" style="width:56px; height:56px;">
+                                    @if (!string.IsNullOrWhiteSpace(group.AvatarUrl))
+                                    {
+                                        <img src="@Url.Content("~" + group.AvatarUrl)" alt="@group.Name" />
+                                    }
+                                    else
+                                    {
+                                        <span>@group.Name.Substring(0, 1).ToUpperInvariant()</span>
+                                    }
+                                </span>
+                                <div>
+                                    <a asp-action="Details" asp-route-slug="@group.Slug" class="post-title" style="display:block;">@group.Name</a>
+                                    <div class="post-meta-row">
+                                        <span class="category-badge">@group.AccentLabel</span>
+                                        <span>@group.MemberCount thành viên</span>
+                                        <span class="dot"></span>
+                                        <span>@group.PostCount bài viết</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <p class="post-excerpt">@group.Description</p>
+
+                            <div class="post-footer">
+                                <div class="post-metrics">
+                                    <span class="metric"><i class="fa-regular fa-user"></i><span>@group.CreatorDisplayName</span></span>
+                                    @if (group.IsOwnedByCurrentUser)
+                                    {
+                                        <span class="metric likes"><i class="fa-solid fa-crown"></i><span>Bạn là quản trị viên</span></span>
+                                    }
+                                    else if (group.IsJoined)
+                                    {
+                                        <span class="metric comments"><i class="fa-solid fa-circle-check"></i><span>Đã tham gia</span></span>
+                                    }
+                                </div>
+
+                                <a asp-action="Details" asp-route-slug="@group.Slug" class="btn btn-primary">Mở group</a>
+                            </div>
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+    </div>
+</div>

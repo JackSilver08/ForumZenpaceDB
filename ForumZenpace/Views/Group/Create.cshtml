@@ -1,0 +1,62 @@
+@model ForumZenpace.Models.GroupCreateViewModel
+@{
+    ViewData["Title"] = "Tạo group";
+}
+
+<div class="editor-shell animated-entry">
+    <div class="surface editor-card">
+        <div class="editor-header">
+            <div>
+                <h1 class="editor-title">Tạo group mới</h1>
+                <p class="editor-subtitle">Mỗi group là một cộng đồng nhỏ có thành viên riêng và luồng bài viết riêng.</p>
+            </div>
+            <div class="editor-mark">
+                <i class="fa-solid fa-users"></i>
+            </div>
+        </div>
+
+        <form asp-action="Create" method="post" enctype="multipart/form-data" class="editor-form">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="field">
+                <label asp-for="Name" class="field-label">Tên group</label>
+                <input asp-for="Name" class="form-control" placeholder="Ví dụ: ASP.NET Core Việt Nam" />
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+
+            <div class="field">
+                <label asp-for="Description" class="field-label">Mô tả</label>
+                <textarea asp-for="Description" class="form-control" rows="4" placeholder="Group này dành cho ai, nói về điều gì và kỳ vọng nội dung ra sao?"></textarea>
+                <span asp-validation-for="Description" class="text-danger"></span>
+            </div>
+
+            <div class="field">
+                <label asp-for="AccentColor" class="field-label">Màu nhận diện</label>
+                <div class="select-shell">
+                    <select asp-for="AccentColor" class="form-control">
+                        <option value="sky">Sky</option>
+                        <option value="coral">Coral</option>
+                        <option value="mint">Mint</option>
+                        <option value="gold">Gold</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="field">
+                <label asp-for="AvatarFile" class="field-label">Ảnh đại diện group</label>
+                <input asp-for="AvatarFile" type="file" class="form-control" accept=".jpg,.jpeg,.png,.gif,.webp" />
+                <div class="field-hint">Tùy chọn. Hỗ trợ JPG, PNG, GIF, WEBP và tối đa 5MB.</div>
+                <span asp-validation-for="AvatarFile" class="text-danger"></span>
+            </div>
+
+            <div class="editor-footer">
+                <a asp-action="Index" class="btn btn-text">Quay lại groups</a>
+                <button type="submit" class="btn btn-primary">Tạo group</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
