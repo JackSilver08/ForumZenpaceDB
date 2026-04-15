@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 
 namespace ForumZenpace.Models
 {
@@ -73,6 +74,11 @@ namespace ForumZenpace.Models
         
         [Required]
         public int CategoryId { get; set; }
+
+        [Display(Name = "Nhóm")]
+        public int? GroupId { get; set; }
+
+        public IReadOnlyList<GroupPostingOptionViewModel> AvailableGroups { get; set; } = Array.Empty<GroupPostingOptionViewModel>();
     }
 
     public class PostImageUploadViewModel
@@ -120,6 +126,7 @@ namespace ForumZenpace.Models
     {
         public IReadOnlyList<Post> Posts { get; set; } = Array.Empty<Post>();
         public IReadOnlyList<Category> Categories { get; set; } = Array.Empty<Category>();
+        public IReadOnlyList<GroupListItemViewModel> FeaturedGroups { get; set; } = Array.Empty<GroupListItemViewModel>();
         public string CurrentSort { get; set; } = string.Empty;
         public string? SearchString { get; set; }
         public int? CurrentCategoryId { get; set; }
@@ -436,9 +443,82 @@ namespace ForumZenpace.Models
         public string Title { get; set; } = string.Empty;
         public string Excerpt { get; set; } = string.Empty;
         public string CategoryName { get; set; } = string.Empty;
+        public string? GroupName { get; set; }
+        public string? GroupSlug { get; set; }
         public DateTime CreatedAt { get; set; }
         public int CommentCount { get; set; }
         public int ViewCount { get; set; }
+    }
+
+    public class GroupPostingOptionViewModel
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Slug { get; set; } = string.Empty;
+    }
+
+    public class GroupCreateViewModel
+    {
+        [Required, MaxLength(120)]
+        public string Name { get; set; } = string.Empty;
+
+        [Required, MaxLength(500)]
+        public string Description { get; set; } = string.Empty;
+
+        [Required, MaxLength(32)]
+        public string AccentColor { get; set; } = GroupAccentColors.Sky;
+
+        public IFormFile? AvatarFile { get; set; }
+    }
+
+    public class GroupListItemViewModel
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Slug { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public string AccentColor { get; set; } = GroupAccentColors.Sky;
+        public string? AvatarUrl { get; set; }
+        public string CreatorDisplayName { get; set; } = string.Empty;
+        public int MemberCount { get; set; }
+        public int PostCount { get; set; }
+        public bool IsJoined { get; set; }
+        public bool IsOwnedByCurrentUser { get; set; }
+
+        public string AccentLabel => AccentColor switch
+        {
+            GroupAccentColors.Coral => "Coral",
+            GroupAccentColors.Mint => "Mint",
+            GroupAccentColors.Gold => "Gold",
+            _ => "Sky"
+        };
+    }
+
+    public class GroupDetailsViewModel
+    {
+        public GroupListItemViewModel Group { get; set; } = new();
+        public IReadOnlyList<Post> Posts { get; set; } = Array.Empty<Post>();
+        public IReadOnlyList<GroupMemberSummaryViewModel> Members { get; set; } = Array.Empty<GroupMemberSummaryViewModel>();
+        public bool CanCreatePosts { get; set; }
+        public string SuccessMessage { get; set; } = string.Empty;
+        public string ErrorMessage { get; set; } = string.Empty;
+    }
+
+    public class GroupMemberSummaryViewModel
+    {
+        public int UserId { get; set; }
+        public string Username { get; set; } = string.Empty;
+        public string DisplayName { get; set; } = string.Empty;
+        public string? AvatarUrl { get; set; }
+        public string Role { get; set; } = GroupMemberRoles.Member;
+    }
+
+    public class GroupAvatarUpdateViewModel
+    {
+        [Required]
+        public string Slug { get; set; } = string.Empty;
+
+        public IFormFile? AvatarFile { get; set; }
     }
 
     public class CreateStoryViewModel

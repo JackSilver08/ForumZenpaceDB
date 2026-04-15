@@ -14,6 +14,8 @@ namespace ForumZenpace.Models
         public DbSet<User> Users { get; set; }
         public DbSet<PendingRegistration> PendingRegistrations { get; set; }
         public DbSet<Category> Categories { get; set; }
+        public DbSet<Group> Groups { get; set; }
+        public DbSet<GroupMember> GroupMembers { get; set; }
         public DbSet<Post> Posts { get; set; }
         public DbSet<Comment> Comments { get; set; }
         public DbSet<Like> Likes { get; set; }
@@ -51,6 +53,18 @@ namespace ForumZenpace.Models
 
             modelBuilder.Entity<PostImage>()
                 .HasIndex(postImage => postImage.DraftToken);
+
+            modelBuilder.Entity<Group>()
+                .HasIndex(group => group.Slug)
+                .IsUnique();
+
+            modelBuilder.Entity<Group>()
+                .Property(group => group.Avatar)
+                .HasMaxLength(255);
+
+            modelBuilder.Entity<GroupMember>()
+                .HasIndex(member => new { member.GroupId, member.UserId })
+                .IsUnique();
 
             modelBuilder.Entity<Story>()
                 .HasIndex(story => new { story.UserId, story.CreatedAt });
@@ -108,6 +122,26 @@ namespace ForumZenpace.Models
                 .WithMany(message => message.Replies)
                 .HasForeignKey(message => message.ReplyToMessageId);
 
+            modelBuilder.Entity<Group>()
+                .HasOne(group => group.CreatorUser)
+                .WithMany(user => user.CreatedGroups)
+                .HasForeignKey(group => group.CreatorUserId);
+
+            modelBuilder.Entity<GroupMember>()
+                .HasOne(member => member.Group)
+                .WithMany(group => group.Members)
+                .HasForeignKey(member => member.GroupId);
+
+            modelBuilder.Entity<GroupMember>()
+                .HasOne(member => member.User)
+                .WithMany(user => user.GroupMemberships)
+                .HasForeignKey(member => member.UserId);
+
+            modelBuilder.Entity<Post>()
+                .HasOne(post => post.Group)
+                .WithMany(group => group.Posts)
+                .HasForeignKey(post => post.GroupId);
+
             modelBuilder.Entity<Notification>()
                 .HasOne(notification => notification.ActorUser)
                 .WithMany(user => user.ActorNotifications)
@@ -130,6 +164,14 @@ namespace ForumZenpace.Models
             modelBuilder.Entity<Story>()
                 .Property(story => story.BackgroundStyle)
                 .HasDefaultValue(StoryBackgroundStyles.Aurora);
+
+            modelBuilder.Entity<Group>()
+                .Property(group => group.AccentColor)
+                .HasDefaultValue(GroupAccentColors.Sky);
+
+            modelBuilder.Entity<GroupMember>()
+                .Property(member => member.Role)
+                .HasDefaultValue(GroupMemberRoles.Member);
 
             modelBuilder.Entity<User>()
                 .Property(user => user.IsEmailConfirmed)

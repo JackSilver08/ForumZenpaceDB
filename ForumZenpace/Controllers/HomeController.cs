@@ -44,6 +44,7 @@ namespace ForumZenpace.Controllers
                 var posts = _context.Posts
                     .Include(p => p.User)
                     .Include(p => p.Category)
+                    .Include(p => p.Group)
                     .Include(p => p.Likes)
                     .Include(p => p.Comments)
                     .AsSplitQuery()
@@ -106,6 +107,26 @@ namespace ForumZenpace.Controllers
                     : null,
                 Friends = friends,
                 SuggestedFriends = suggestedFriends,
+                FeaturedGroups = await _context.Groups
+                    .AsNoTracking()
+                    .OrderByDescending(group => group.Members.Count)
+                    .ThenByDescending(group => group.Posts.Count(post => post.Status == "Active"))
+                    .Take(6)
+                    .Select(group => new GroupListItemViewModel
+                    {
+                        Id = group.Id,
+                        Name = group.Name,
+                        Slug = group.Slug,
+                        Description = group.Description,
+                        AccentColor = group.AccentColor,
+                        AvatarUrl = group.Avatar,
+                        CreatorDisplayName = string.IsNullOrWhiteSpace(group.CreatorUser.FullName) ? group.CreatorUser.Username : group.CreatorUser.FullName,
+                        MemberCount = group.Members.Count,
+                        PostCount = group.Posts.Count(post => post.Status == "Active"),
+                        IsJoined = currentUserId.HasValue && group.Members.Any(member => member.UserId == currentUserId.Value),
+                        IsOwnedByCurrentUser = currentUserId.HasValue && group.CreatorUserId == currentUserId.Value
+                    })
+                    .ToListAsync(),
                 SuggestionInsertAfterPost = 3,
                 UnreadNotificationCount = currentUserId.HasValue
                     ? await _socialService.GetUnreadNotificationCountAsync(currentUserId.Value)

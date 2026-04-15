@@ -44,12 +44,19 @@ namespace ForumZenpace.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Create()
+        public async Task<IActionResult> Create(int? groupId = null)
         {
+            if (!TryGetCurrentUserId(out var userId))
+            {
+                return Challenge();
+            }
+
             ViewBag.Categories = new SelectList(await _context.Categories.ToListAsync(), "Id", "Name");
             return View(new PostViewModel
             {
-                DraftToken = _postImageService.CreateDraftToken()
+                DraftToken = _postImageService.CreateDraftToken(),
+                GroupId = groupId,
+                AvailableGroups = await GetAvailableGroupsAsync(userId)
             });
         }
 
@@ -63,15 +70,30 @@ namespace ForumZenpace.Controllers
                 model.DraftToken = _postImageService.CreateDraftToken();
             }
 
-            if (!ModelState.IsValid)
-            {
-                ViewBag.Categories = new SelectList(await _context.Categories.ToListAsync(), "Id", "Name", model.CategoryId);
-                return View(model);
-            }
-
             if (!TryGetCurrentUserId(out var userId))
             {
                 return Challenge();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                ViewBag.Categories = new SelectList(await _context.Categories.ToListAsync(), "Id", "Name", model.CategoryId);
+                model.AvailableGroups = await GetAvailableGroupsAsync(userId);
+                return View(model);
+            }
+
+            if (model.GroupId.HasValue)
+            {
+                var isGroupMember = await _context.GroupMembers
+                    .AnyAsync(member => member.GroupId == model.GroupId.Value && member.UserId == userId);
+
+                if (!isGroupMember)
+                {
+                    ModelState.AddModelError(nameof(PostViewModel.GroupId), "Ban can tham gia nhom truoc khi dang bai.");
+                    ViewBag.Categories = new SelectList(await _context.Categories.ToListAsync(), "Id", "Name", model.CategoryId);
+                    model.AvailableGroups = await GetAvailableGroupsAsync(userId);
+                    return View(model);
+                }
             }
 
             var post = new Post
@@ -79,6 +101,7 @@ namespace ForumZenpace.Controllers
                 Title = model.Title,
                 Content = model.Content,
                 CategoryId = model.CategoryId,
+                GroupId = model.GroupId,
                 UserId = userId
             };
 
@@ -121,7 +144,9 @@ namespace ForumZenpace.Controllers
                 DraftToken = _postImageService.CreateDraftToken(),
                 Title = post.Title,
                 Content = post.Content,
-                CategoryId = post.CategoryId
+                CategoryId = post.CategoryId,
+                GroupId = post.GroupId,
+                AvailableGroups = await GetAvailableGroupsAsync(userId)
             });
         }
 
@@ -149,12 +174,29 @@ namespace ForumZenpace.Controllers
             {
                 ViewBag.Categories = new SelectList(await _context.Categories.ToListAsync(), "Id", "Name", model.CategoryId);
                 ViewBag.PostId = id;
+                model.AvailableGroups = await GetAvailableGroupsAsync(userId);
                 return View(model);
+            }
+
+            if (model.GroupId.HasValue)
+            {
+                var isGroupMember = await _context.GroupMembers
+                    .AnyAsync(member => member.GroupId == model.GroupId.Value && member.UserId == userId);
+
+                if (!isGroupMember)
+                {
+                    ModelState.AddModelError(nameof(PostViewModel.GroupId), "Ban khong con la thanh vien cua nhom nay.");
+                    ViewBag.Categories = new SelectList(await _context.Categories.ToListAsync(), "Id", "Name", model.CategoryId);
+                    ViewBag.PostId = id;
+                    model.AvailableGroups = await GetAvailableGroupsAsync(userId);
+                    return View(model);
+                }
             }
 
             post.Title = model.Title;
             post.Content = model.Content;
             post.CategoryId = model.CategoryId;
+            post.GroupId = model.GroupId;
             post.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
@@ -264,6 +306,7 @@ namespace ForumZenpace.Controllers
             var post = await _context.Posts
                 .Include(p => p.User)
                 .Include(p => p.Category)
+                .Include(p => p.Group)
                 .Include(p => p.Likes)
                 .Include(p => p.Comments)
                     .ThenInclude(c => c.User)
@@ -735,6 +778,7 @@ namespace ForumZenpace.Controllers
             var post = await _context.Posts
                 .AsNoTracking()
                 .Include(item => item.Likes)
+                .Include(item => item.Group)
                 .Include(item => item.Comments)
                     .ThenInclude(comment => comment.User)
                 .Include(item => item.Comments)
@@ -787,6 +831,21 @@ namespace ForumZenpace.Controllers
         private bool TryGetCurrentUserId(out int userId)
         {
             return int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out userId);
+        }
+
+        private async Task<IReadOnlyList<GroupPostingOptionViewModel>> GetAvailableGroupsAsync(int userId)
+        {
+            return await _context.GroupMembers
+                .AsNoTracking()
+                .Where(member => member.UserId == userId)
+                .Select(member => new GroupPostingOptionViewModel
+                {
+                    Id = member.GroupId,
+                    Name = member.Group.Name,
+                    Slug = member.Group.Slug
+                })
+                .OrderBy(group => group.Name)
+                .ToListAsync();
         }
 
         [HttpGet]

@@ -206,6 +206,10 @@
                                             {
                                                 <span class="category-badge">@post.CategoryName</span>
                                             }
+                                            @if (!string.IsNullOrWhiteSpace(post.GroupName))
+                                            {
+                                                <span class="category-badge">Group: @post.GroupName</span>
+                                            }
                                             <span>@post.CreatedAt.ToString("dd MMM yyyy")</span>
                                         </div>
 

@@ -8,6 +8,7 @@
 
     var posts = Model.Posts?.ToList() ?? new List<Post>();
     var categories = Model.Categories?.ToList() ?? new List<Category>();
+    var featuredGroups = Model.FeaturedGroups?.ToList() ?? new List<GroupListItemViewModel>();
     var friends = Model.Friends?.ToList() ?? new List<FriendSummaryViewModel>();
     var currentSort = (Model.CurrentSort ?? string.Empty).ToLowerInvariant();
     var searchString = Model.SearchString;
@@ -934,6 +935,16 @@
                                     <span class="dot"></span>
                                     <span>@post.CreatedAt.ToString("dd MMM yyyy")</span>
                                     <span class="category-badge">@post.Category.Name</span>
+                                    @if (post.Group is not null)
+                                    {
+                                        <a asp-controller="Group"
+                                           asp-action="Details"
+                                           asp-route-slug="@post.Group.Slug"
+                                           class="category-badge"
+                                           style="text-decoration:none;">
+                                            Group: @post.Group.Name
+                                        </a>
+                                    }
                                 </div>
 
                                 <a asp-controller="Post" asp-action="Details" asp-route-id="@post.Id" class="post-title">
@@ -1116,6 +1127,46 @@
     </section>
 
     <aside class="forum-column forum-right">
+        @if (featuredGroups.Any())
+        {
+            <div class="glass-panel side-panel" style="margin-bottom: 18px;">
+                <div>
+                    <div class="panel-label">Cộng đồng</div>
+                    <h2 class="section-heading">Groups nổi bật</h2>
+                </div>
+
+                <div style="display:grid; gap:10px; margin-top:14px;">
+                    @foreach (var group in featuredGroups)
+                    {
+                        <a asp-controller="Group"
+                           asp-action="Details"
+                           asp-route-slug="@group.Slug"
+                           class="sidebar-link"
+                           style="display:flex; align-items:center; gap:12px; text-decoration:none;">
+                            <span class="avatar" style="width:42px; height:42px; flex:0 0 auto;">
+                                @if (!string.IsNullOrWhiteSpace(group.AvatarUrl))
+                                {
+                                    <img src="@Url.Content("~" + group.AvatarUrl)" alt="@group.Name" />
+                                }
+                                else
+                                {
+                                    <span>@group.Name.Substring(0, 1).ToUpperInvariant()</span>
+                                }
+                            </span>
+                            <span style="min-width:0;">
+                                <strong style="display:block; color:var(--text-primary);">@group.Name</strong>
+                                <span style="display:block; font-size:0.86rem;">@group.MemberCount thành viên • @group.PostCount bài viết</span>
+                            </span>
+                        </a>
+                    }
+                </div>
+
+                <div style="margin-top:14px;">
+                    <a asp-controller="Group" asp-action="Index" class="btn btn-outline" style="width:100%;">Xem tất cả groups</a>
+                </div>
+            </div>
+        }
+
         <div class="glass-panel side-panel">
             <div>
                 <div class="panel-label">Tìm kiếm</div>

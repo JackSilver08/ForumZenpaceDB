@@ -73,6 +73,8 @@ namespace ForumZenpace.Models
         public ICollection<MessageBlock> ReceivedMessageBlocks { get; set; } = new List<MessageBlock>();
         public ICollection<Story> Stories { get; set; } = new List<Story>();
         public ICollection<StoryView> StoryViews { get; set; } = new List<StoryView>();
+        public ICollection<Group> CreatedGroups { get; set; } = new List<Group>();
+        public ICollection<GroupMember> GroupMemberships { get; set; } = new List<GroupMember>();
 
         /// <summary>Averaged embedding vector of liked posts, stored as JSON float array.</summary>
         public string? PreferenceVectorData { get; set; }
@@ -114,6 +116,53 @@ namespace ForumZenpace.Models
         public ICollection<Post> Posts { get; set; } = new List<Post>();
     }
 
+    public class Group
+    {
+        public int Id { get; set; }
+
+        [Required, MaxLength(120)]
+        public string Name { get; set; } = string.Empty;
+
+        [Required, MaxLength(140)]
+        public string Slug { get; set; } = string.Empty;
+
+        [Required, MaxLength(500)]
+        public string Description { get; set; } = string.Empty;
+
+        [Required, MaxLength(32)]
+        public string AccentColor { get; set; } = GroupAccentColors.Sky;
+
+        [MaxLength(255)]
+        public string? Avatar { get; set; }
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        public int CreatorUserId { get; set; }
+        [ForeignKey("CreatorUserId")]
+        public User CreatorUser { get; set; } = null!;
+
+        public ICollection<Post> Posts { get; set; } = new List<Post>();
+        public ICollection<GroupMember> Members { get; set; } = new List<GroupMember>();
+    }
+
+    public class GroupMember
+    {
+        public int Id { get; set; }
+
+        public int GroupId { get; set; }
+        [ForeignKey("GroupId")]
+        public Group Group { get; set; } = null!;
+
+        public int UserId { get; set; }
+        [ForeignKey("UserId")]
+        public User User { get; set; } = null!;
+
+        [Required, MaxLength(20)]
+        public string Role { get; set; } = GroupMemberRoles.Member;
+
+        public DateTime JoinedAt { get; set; } = DateTime.UtcNow;
+    }
+
     public class Post
     {
         public int Id { get; set; }
@@ -138,6 +187,10 @@ namespace ForumZenpace.Models
         public int CategoryId { get; set; }
         [ForeignKey("CategoryId")]
         public Category Category { get; set; } = null!;
+
+        public int? GroupId { get; set; }
+        [ForeignKey("GroupId")]
+        public Group? Group { get; set; }
 
         public ICollection<Comment> Comments { get; set; } = new List<Comment>();
         public ICollection<Like> Likes { get; set; } = new List<Like>();
@@ -458,5 +511,19 @@ namespace ForumZenpace.Models
         public const string Sunset = "sunset";
         public const string Lagoon = "lagoon";
         public const string Midnight = "midnight";
+    }
+
+    public static class GroupMemberRoles
+    {
+        public const string Admin = "Admin";
+        public const string Member = "Member";
+    }
+
+    public static class GroupAccentColors
+    {
+        public const string Sky = "sky";
+        public const string Coral = "coral";
+        public const string Mint = "mint";
+        public const string Gold = "gold";
     }
 }

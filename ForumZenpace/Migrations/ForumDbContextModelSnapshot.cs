@@ -254,6 +254,90 @@ namespace ForumZenpace.Migrations
                     b.ToTable("Friendships");
                 });
 
+            modelBuilder.Entity("ForumZenpace.Models.Group", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AccentColor")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)")
+                        .HasDefaultValue("sky");
+
+                    b.Property<string>("Avatar")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CreatorUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(140)
+                        .HasColumnType("nvarchar(140)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatorUserId");
+
+                    b.HasIndex("Slug")
+                        .IsUnique();
+
+                    b.ToTable("Groups");
+                });
+
+            modelBuilder.Entity("ForumZenpace.Models.GroupMember", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("GroupId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("JoinedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasDefaultValue("Member");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("GroupId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("GroupMembers");
+                });
+
             modelBuilder.Entity("ForumZenpace.Models.Like", b =>
                 {
                     b.Property<int>("Id")
@@ -425,6 +509,9 @@ namespace ForumZenpace.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("GroupId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -449,6 +536,8 @@ namespace ForumZenpace.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CategoryId");
+
+                    b.HasIndex("GroupId");
 
                     b.HasIndex("UserId");
 
@@ -868,6 +957,36 @@ namespace ForumZenpace.Migrations
                     b.Navigation("UserB");
                 });
 
+            modelBuilder.Entity("ForumZenpace.Models.Group", b =>
+                {
+                    b.HasOne("ForumZenpace.Models.User", "CreatorUser")
+                        .WithMany("CreatedGroups")
+                        .HasForeignKey("CreatorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CreatorUser");
+                });
+
+            modelBuilder.Entity("ForumZenpace.Models.GroupMember", b =>
+                {
+                    b.HasOne("ForumZenpace.Models.Group", "Group")
+                        .WithMany("Members")
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ForumZenpace.Models.User", "User")
+                        .WithMany("GroupMemberships")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Group");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("ForumZenpace.Models.Like", b =>
                 {
                     b.HasOne("ForumZenpace.Models.Post", "Post")
@@ -946,6 +1065,11 @@ namespace ForumZenpace.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("ForumZenpace.Models.Group", "Group")
+                        .WithMany("Posts")
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("ForumZenpace.Models.User", "User")
                         .WithMany("Posts")
                         .HasForeignKey("UserId")
@@ -953,6 +1077,8 @@ namespace ForumZenpace.Migrations
                         .IsRequired();
 
                     b.Navigation("Category");
+
+                    b.Navigation("Group");
 
                     b.Navigation("User");
                 });
@@ -1057,6 +1183,13 @@ namespace ForumZenpace.Migrations
                     b.Navigation("Replies");
                 });
 
+            modelBuilder.Entity("ForumZenpace.Models.Group", b =>
+                {
+                    b.Navigation("Members");
+
+                    b.Navigation("Posts");
+                });
+
             modelBuilder.Entity("ForumZenpace.Models.Post", b =>
                 {
                     b.Navigation("Comments");
@@ -1086,7 +1219,11 @@ namespace ForumZenpace.Migrations
 
                     b.Navigation("Comments");
 
+                    b.Navigation("CreatedGroups");
+
                     b.Navigation("DirectMessages");
+
+                    b.Navigation("GroupMemberships");
 
                     b.Navigation("Likes");
 

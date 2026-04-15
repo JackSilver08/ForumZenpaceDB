@@ -37,6 +37,21 @@
                 <span asp-validation-for="CategoryId" class="text-danger"></span>
             </div>
 
+            <div class="field">
+                <label asp-for="GroupId" class="field-label">Đăng trong nhóm</label>
+                <div class="select-shell">
+                    <select asp-for="GroupId" class="form-control category-select">
+                        <option value="">Bài viết công khai ngoài group</option>
+                        @foreach (var group in Model.AvailableGroups)
+                        {
+                            <option value="@group.Id">@group.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="field-hint">Bạn có thể chuyển bài viết về feed chung hoặc giữ nó trong group hiện tại.</div>
+                <span asp-validation-for="GroupId" class="text-danger"></span>
+            </div>
+
             <partial name="_MarkdownEditorField" model="Model" />
 
             <div class="editor-footer">

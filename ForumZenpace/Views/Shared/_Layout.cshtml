@@ -51,6 +51,11 @@
                 <div class="header-actions">
                     @if (User.Identity?.IsAuthenticated == true)
                     {
+                        <a asp-controller="Group" asp-action="Index" class="btn btn-outline">
+                            <i class="fa-solid fa-users"></i>
+                            <span>Groups</span>
+                        </a>
+
                         <button type="button" class="btn btn-outline" data-open-story-modal>
                             <i class="fa-solid fa-plus"></i>
                             <span>Khoảnh khắc</span>
@@ -94,6 +99,7 @@
                     }
                     else
                     {
+                        <a asp-controller="Group" asp-action="Index" class="btn btn-text">Groups</a>
                         <a asp-controller="Auth" asp-action="Login" class="btn btn-text">Đăng nhập</a>
                         <a asp-controller="Auth" asp-action="Register" class="btn btn-primary">Tạo tài khoản</a>
                     }

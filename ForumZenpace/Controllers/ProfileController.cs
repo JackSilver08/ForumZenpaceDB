@@ -283,6 +283,7 @@ namespace ForumZenpace.Controllers
             var posts = await _context.Posts
                 .Where(p => p.UserId == user.Id && p.Status == "Active")
                 .Include(p => p.Category)
+                .Include(p => p.Group)
                 .Include(p => p.Comments)
                 .OrderByDescending(p => p.CreatedAt)
                 .ToListAsync();
@@ -387,6 +388,8 @@ namespace ForumZenpace.Controllers
                     Title = p.Title,
                     Excerpt = PostContentFormatter.ToExcerpt(p.Content, 148),
                     CategoryName = p.Category?.Name ?? string.Empty,
+                    GroupName = p.Group?.Name,
+                    GroupSlug = p.Group?.Slug,
                     CreatedAt = p.CreatedAt,
                     CommentCount = p.Comments.Count,
                     ViewCount = p.ViewCount

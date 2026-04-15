@@ -15,6 +15,16 @@
         <div class="detail-header">
             <div class="detail-kicker">
                 <span class="category-badge" style="margin-left: 0;">@Model.Category.Name</span>
+                @if (Model.Group is not null)
+                {
+                    <a asp-controller="Group"
+                       asp-action="Details"
+                       asp-route-slug="@Model.Group.Slug"
+                       class="category-badge"
+                       style="margin-left: 0; text-decoration: none;">
+                        Group: @Model.Group.Name
+                    </a>
+                }
                 <div class="detail-meta">
                     <span>
                         <i class="fa-regular fa-user"></i>

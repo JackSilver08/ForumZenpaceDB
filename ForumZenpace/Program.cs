@@ -92,6 +92,7 @@ var webRootPath = app.Environment.WebRootPath ?? Path.Combine(app.Environment.Co
 var uploadsRootPath = Path.Combine(webRootPath, "uploads");
 
 Directory.CreateDirectory(Path.Combine(uploadsRootPath, "avatars"));
+Directory.CreateDirectory(Path.Combine(uploadsRootPath, "groups"));
 Directory.CreateDirectory(Path.Combine(uploadsRootPath, "posts"));
 Directory.CreateDirectory(Path.Combine(uploadsRootPath, "stories"));
 Directory.CreateDirectory(Path.Combine(uploadsRootPath, "story-music"));
