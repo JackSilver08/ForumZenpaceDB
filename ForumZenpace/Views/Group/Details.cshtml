@@ -4,6 +4,27 @@
     ViewData["Title"] = Model.Group.Name;
 }
 
+<script>
+    function confirmTransferAdmin(memberName) {
+        return confirm("Bạn có chắc chắn muốn chuyển vai trò Trưởng nhóm sang " + memberName + " không? Bạn sẽ trở thành Thành viên thường.");
+    }
+
+    function confirmBanForever(memberName) {
+        return confirm("Bạn có chắc chắn muốn kick \"" + memberName + "\" vĩnh viễn? Người này sẽ không thể tham gia lại group này.");
+    }
+
+            detail.addEventListener('toggle', function() {
+                if (!detail.open) return;
+                details.forEach(other => {
+                    if (other !== detail) {
+                        other.open = false;
+                    }
+                });
+            });
+        });
+    });
+</script>
+
 <div class="detail-shell animated-entry">
     <div class="surface detail-card">
         <div class="detail-header">
@@ -72,7 +93,7 @@
                     </form>
                 }
 
-                @if (User.Identity?.IsAuthenticated == true && !Model.Group.IsJoined)
+                @if (User.Identity?.IsAuthenticated == true && !Model.Group.IsJoined && !Model.IsBanned)
                 {
                     <form asp-action="Join" method="post" class="inline-form">
                         @Html.AntiForgeryToken()
@@ -80,89 +101,310 @@
                         <button type="submit" class="btn btn-primary">Tham gia group</button>
                     </form>
                 }
+                else if (User.Identity?.IsAuthenticated == true && Model.IsBanned)
+                {
+                    <button type="button" class="btn btn-outline" disabled>Đã bị kick vĩnh viễn</button>
+                }
                 else if (Model.CanCreatePosts)
                 {
                     <a asp-controller="Post" asp-action="Create" asp-route-groupId="@Model.Group.Id" class="btn btn-primary">Đăng bài trong group</a>
+                    @if (Model.CanLeaveGroup)
+                    {
+                        <form asp-action="Leave" asp-route-slug="@Model.Group.Slug" method="post" style="display:inline;">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-outline">Rời nhóm</button>
+                        </form>
+                    }
                 }
             </div>
         </div>
     </div>
 
-    <div class="surface comment-card">
-        <div class="surface-header">
-            <div>
-                <h2 class="section-title">Bài viết trong group</h2>
-                <p class="surface-subtitle">Các chủ đề gần đây của cộng đồng này.</p>
+    <div class="group-detail-layout">
+        <div class="surface comment-card">
+            <div class="surface-header">
+                <div>
+                    <h2 class="section-title">Bài viết trong group</h2>
+                    <p class="surface-subtitle">Các chủ đề gần đây của cộng đồng này.</p>
+                </div>
             </div>
-        </div>
 
-        @if (!Model.Posts.Any())
-        {
-            <div class="comment-empty-state">Group này chưa có bài viết nào.</div>
-        }
-        else
-        {
-            <div class="post-list">
-                @foreach (var post in Model.Posts)
-                {
-                    <article class="glass-panel post-card">
-                        <div class="post-card-body">
-                            <div class="post-meta-row">
-                                <span class="category-badge">@post.Category.Name</span>
-                                <span>@post.CreatedAt.ToString("dd MMM yyyy")</span>
-                            </div>
-                            <a asp-controller="Post" asp-action="Details" asp-route-id="@post.Id" class="post-title">@post.Title</a>
-                            <p class="post-excerpt">@PostContentFormatter.ToExcerpt(post.Content, 180)</p>
-                            <div class="post-footer">
-                                <div class="post-metrics">
-                                    <span class="metric"><i class="fa-regular fa-user"></i><span>@post.User.FullName</span></span>
-                                    <span class="metric likes"><i class="fa-solid fa-fire"></i><span>@post.Likes.Count đề xuất</span></span>
-                                    <span class="metric comments"><i class="fa-regular fa-comment-dots"></i><span>@post.Comments.Count bình luận</span></span>
+            @if (!Model.Posts.Any())
+            {
+                <div class="comment-empty-state">Group này chưa có bài viết nào.</div>
+            }
+            else
+            {
+                <div class="post-list">
+                    @foreach (var post in Model.Posts)
+                    {
+                        <article class="glass-panel post-card">
+                            <div class="post-card-body">
+                                <div class="post-meta-row">
+                                    <span class="category-badge">@post.Category.Name</span>
+                                    <span>@post.CreatedAt.ToString("dd MMM yyyy")</span>
                                 </div>
-                                <a asp-controller="Post" asp-action="Details" asp-route-id="@post.Id" class="btn btn-text">Mở chủ đề</a>
+                                <a asp-controller="Post" asp-action="Details" asp-route-id="@post.Id" class="post-title">@post.Title</a>
+                                <p class="post-excerpt">@PostContentFormatter.ToExcerpt(post.Content, 180)</p>
+                                <div class="post-footer">
+                                    <div class="post-metrics">
+                                        <span class="metric"><i class="fa-regular fa-user"></i><span>@post.User.FullName</span></span>
+                                        <span class="metric likes"><i class="fa-solid fa-fire"></i><span>@post.Likes.Count đề xuất</span></span>
+                                        <span class="metric comments"><i class="fa-regular fa-comment-dots"></i><span>@post.Comments.Count bình luận</span></span>
+                                    </div>
+                                    <a asp-controller="Post" asp-action="Details" asp-route-id="@post.Id" class="btn btn-text">Mở chủ đề</a>
+                                </div>
                             </div>
-                        </div>
-                    </article>
-                }
-            </div>
-        }
-    </div>
-
-    <div class="surface comment-card">
-        <div class="surface-header">
-            <div>
-                <h2 class="section-title">Thành viên</h2>
-                <p class="surface-subtitle">Những người đang tham gia group này.</p>
-            </div>
+                        </article>
+                    }
+                </div>
+            }
         </div>
 
-        <div style="display:grid; gap:10px;">
+        <div class="surface comment-card" style="overflow: visible; height: fit-content;">
+            <div class="surface-header">
+                <div>
+                    <h2 class="section-title">Thành viên</h2>
+                    <p class="surface-subtitle">Những người đang tham gia group này.</p>
+                </div>
+            </div>
+
+            <div style="display:grid; gap:10px;">
             @foreach (var member in Model.Members)
             {
-                <a asp-controller="Profile"
-                   asp-action="UserProfile"
-                   asp-route-username="@member.Username"
-                   style="display:flex; align-items:center; justify-content:space-between; gap:12px; text-decoration:none;"
-                   class="sidebar-link">
-                    <span style="display:flex; align-items:center; gap:12px;">
-                        <span class="avatar" style="width:42px; height:42px;">
-                            @if (!string.IsNullOrWhiteSpace(member.AvatarUrl))
-                            {
-                                <img src="@Url.Content("~" + member.AvatarUrl)" alt="@member.DisplayName" />
-                            }
-                            else
-                            {
-                                <span>@member.DisplayName.Substring(0, 1).ToUpperInvariant()</span>
-                            }
+                var roleDisplay = member.Role switch
+                {
+                    "Admin" => "Trưởng nhóm",
+                    "ViceLeader" => "Phó nhóm",
+                    "Moderator" => "Quản trị viên",
+                    _ => "Thành viên"
+                };
+                
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px; background:rgba(255,255,255,0.03); border-radius:8px;">
+                    <a asp-controller="Profile"
+                       asp-action="UserProfile"
+                       asp-route-username="@member.Username"
+                       style="display:flex; align-items:center; justify-content:space-between; gap:12px; text-decoration:none; flex:1; min-width:0;"
+                       class="sidebar-link">
+                        <span style="display:flex; align-items:center; gap:12px;">
+                            <span class="avatar" style="width:42px; height:42px;">
+                                @if (!string.IsNullOrWhiteSpace(member.AvatarUrl))
+                                {
+                                    <img src="@Url.Content("~" + member.AvatarUrl)" alt="@member.DisplayName" />
+                                }
+                                else
+                                {
+                                    <span>@member.DisplayName.Substring(0, 1).ToUpperInvariant()</span>
+                                }
+                            </span>
+                            <span>
+                                <strong style="display:block; color:var(--text-primary);">@member.DisplayName</strong>
+                                <span style="font-size:0.86rem;">@@@member.Username</span>
+                            </span>
                         </span>
-                        <span>
-                            <strong style="display:block; color:var(--text-primary);">@member.DisplayName</strong>
-                            <span style="font-size:0.86rem;">@@@member.Username</span>
-                        </span>
-                    </span>
-                    <span class="category-badge">@member.Role</span>
-                </a>
+                    </a>
+                    
+                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                        <span class="category-badge">@roleDisplay</span>
+
+                        @if (((Model.CurrentUserRole == "Admin")
+                              || (Model.CurrentUserRole == "ViceLeader" && (member.Role == "Moderator" || member.Role == "Member"))
+                              || (Model.CurrentUserRole == "Moderator" && member.Role == "Member"))
+                             && member.UserId != Model.CurrentUserId)
+                        {
+                            <details style="position:relative; overflow: visible; z-index: 1000;">
+                                <summary style="all:unset; cursor:pointer; display:flex; align-items:center; justify-content:center; width:34px; height:34px; border-radius:50%; background:rgba(255,255,255,0.08); color:var(--text-primary, #fff); border:1px solid rgba(255,255,255,0.1); font-weight:700;">
+                                    ...
+                                </summary>
+                                <div style="position:absolute; right:0; bottom:calc(100% + 8px); min-width:200px; background:rgba(20,22,40,0.96); border:1px solid rgba(255,255,255,0.08); border-radius:14px; box-shadow:0 18px 40px rgba(0,0,0,0.15); padding:10px; display:flex; flex-direction:column; gap:8px; z-index:9999; overflow: visible; transform-origin: bottom right;">
+                                    @if (Model.CurrentUserRole == "Admin")
+                                    {
+                                        <form asp-action="TransferAdmin"
+                                              asp-route-slug="@Model.Group.Slug"
+                                              method="post"
+                                              onsubmit="return confirmTransferAdmin('@member.DisplayName');"
+                                              style="margin:0;">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="targetUserId" value="@member.UserId" />
+                                            <button type="submit" class="btn btn-block" style="width:100%; text-align:left; padding:8px 10px; background:transparent; border:none; color:#ff6b6b; font-size:0.95rem;">Chuyển Trưởng nhóm</button>
+                                        </form>
+                                    }
+
+                                    @if (Model.CurrentUserRole == "Admin" && member.Role == "Member")
+                                    {
+                                        <form asp-action="AppointViceLeader"
+                                              asp-route-slug="@Model.Group.Slug"
+                                              method="post"
+                                              style="margin:0;">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="targetUserId" value="@member.UserId" />
+                                            <button type="submit" class="btn btn-block" style="width:100%; text-align:left; padding:8px 10px; background:transparent; border:none; color:var(--text-primary, #fff); font-size:0.95rem;">Bổ nhiệm Phó nhóm</button>
+                                        </form>
+                                    }
+
+                                    @if (Model.CurrentUserRole == "Admin" && member.Role == "ViceLeader")
+                                    {
+                                        <form asp-action="RemoveViceLeader"
+                                              asp-route-slug="@Model.Group.Slug"
+                                              method="post"
+                                              style="margin:0;">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="targetUserId" value="@member.UserId" />
+                                            <button type="submit" class="btn btn-block" style="width:100%; text-align:left; padding:8px 10px; background:transparent; border:none; color:#ff6b6b; font-size:0.95rem;">Thu hồi Phó</button>
+                                        </form>
+                                    }
+
+                                    @if ((Model.CurrentUserRole == "Admin" || Model.CurrentUserRole == "ViceLeader") && member.Role == "Member")
+                                    {
+                                        <form asp-action="AppointModerator"
+                                              asp-route-slug="@Model.Group.Slug"
+                                              method="post"
+                                              style="margin:0;">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="targetUserId" value="@member.UserId" />
+                                            <button type="submit" class="btn btn-block" style="width:100%; text-align:left; padding:8px 10px; background:transparent; border:none; color:var(--text-primary, #fff); font-size:0.95rem;">Bổ nhiệm QTV</button>
+                                        </form>
+                                    }
+
+                                    @if ((Model.CurrentUserRole == "Admin" || Model.CurrentUserRole == "ViceLeader") && member.Role == "Moderator")
+                                    {
+                                        <form asp-action="RemoveModerator"
+                                              asp-route-slug="@Model.Group.Slug"
+                                              method="post"
+                                              style="margin:0;">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="targetUserId" value="@member.UserId" />
+                                            <button type="submit" class="btn btn-block" style="width:100%; text-align:left; padding:8px 10px; background:transparent; border:none; color:#ff6b6b; font-size:0.95rem;">Thu hồi QTV</button>
+                                        </form>
+                                    }
+
+                                    @if ((Model.CurrentUserRole == "Admin" || Model.CurrentUserRole == "ViceLeader" || Model.CurrentUserRole == "Moderator") && member.Role == "Member")
+                                    {
+                                        <form asp-action="BanMember"
+                                              asp-route-slug="@Model.Group.Slug"
+                                              method="post"
+                                              onsubmit="return confirmBanForever('@member.DisplayName');"
+                                              style="margin:0;">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="targetUserId" value="@member.UserId" />
+                                            <button type="submit" class="btn btn-block" style="width:100%; text-align:left; padding:8px 10px; background:transparent; border:none; color:#ff6b6b; font-size:0.95rem;">Kick vĩnh viễn</button>
+                                        </form>
+                                    }
+
+                                    @if ((Model.CurrentUserRole == "Admin" || Model.CurrentUserRole == "ViceLeader") || (Model.CurrentUserRole == "Moderator" && member.Role == "Member"))
+                                    {
+                                        <form asp-action="KickMember"
+                                              asp-route-slug="@Model.Group.Slug"
+                                              method="post"
+                                              style="margin:0;">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="targetUserId" value="@member.UserId" />
+                                            <button type="submit" class="btn btn-block" style="width:100%; text-align:left; padding:8px 10px; background:transparent; border:none; color:#ff6b6b; font-size:0.95rem;">Kick</button>
+                                        </form>
+                                    }
+                                </div>
+                            </details>
+                        }
+                    </div>
+                </div>
             }
+        </div>
+
+        @if (Model.CanInviteFriends && Model.AvailableFriendsToInvite.Any())
+        {
+            <div style="margin-top:16px; padding:16px; background:rgba(255,255,255,0.04); border-radius:16px;">
+                <div class="surface-header">
+                    <div>
+                        <h2 class="section-title">Mời bạn bè</h2>
+                        <p class="surface-subtitle">Mời những bạn bè vào group.</p>
+                    </div>
+                </div>
+
+                <div style="display:grid; gap:10px; margin-top:12px;">
+                    @foreach (var friend in Model.AvailableFriendsToInvite)
+                    {
+                        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px; background:rgba(255,255,255,0.03); border-radius:8px;">
+                            <a asp-controller="Profile"
+                               asp-action="UserProfile"
+                               asp-route-username="@friend.Username"
+                               style="display:flex; align-items:center; gap:12px; text-decoration:none; flex:1; min-width:0;"
+                               class="sidebar-link">
+                                <span class="avatar" style="width:42px; height:42px;">
+                                    @if (!string.IsNullOrWhiteSpace(friend.AvatarUrl))
+                                    {
+                                        <img src="@Url.Content("~" + friend.AvatarUrl)" alt="@friend.DisplayName" />
+                                    }
+                                    else
+                                    {
+                                        <span>@friend.DisplayName.Substring(0, 1).ToUpperInvariant()</span>
+                                    }
+                                </span>
+                                <span>
+                                    <strong style="display:block; color:var(--text-primary);">@friend.DisplayName</strong>
+                                    <span style="font-size:0.86rem;">@@@friend.Username</span>
+                                </span>
+                            </a>
+                            <form asp-action="InviteFriend"
+                                  asp-route-slug="@Model.Group.Slug"
+                                  method="post"
+                                  style="margin:0;">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="targetUserId" value="@friend.UserId" />
+                                <button type="submit" class="btn btn-primary" style="font-size:0.9rem; padding:6px 12px;">Mời</button>
+                            </form>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        @if (Model.CanManageBans && Model.BannedMembers.Any())
+        {
+            <div style="margin-top:16px; padding:16px; background:rgba(255,255,255,0.04); border-radius:16px;">
+                <div class="surface-header">
+                    <div>
+                        <h2 class="section-title">Danh sách bị kick vĩnh viễn</h2>
+                        <p class="surface-subtitle">Quản lý các thành viên đã bị cấm tái gia nhập.</p>
+                    </div>
+                </div>
+
+                <div style="display:grid; gap:10px; margin-top:12px;">
+                    @foreach (var banned in Model.BannedMembers)
+                    {
+                        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px; background:rgba(255,255,255,0.03); border-radius:8px;">
+                            <a asp-controller="Profile"
+                               asp-action="UserProfile"
+                               asp-route-username="@banned.Username"
+                               style="display:flex; align-items:center; gap:12px; text-decoration:none; flex:1; min-width:0;"
+                               class="sidebar-link">
+                                <span class="avatar" style="width:42px; height:42px;">
+                                    @if (!string.IsNullOrWhiteSpace(banned.AvatarUrl))
+                                    {
+                                        <img src="@Url.Content("~" + banned.AvatarUrl)" alt="@banned.DisplayName" />
+                                    }
+                                    else
+                                    {
+                                        <span>@banned.DisplayName.Substring(0, 1).ToUpperInvariant()</span>
+                                    }
+                                </span>
+                                <span>
+                                    <strong style="display:block; color:var(--text-primary);">@banned.DisplayName</strong>
+                                    <span style="font-size:0.86rem;">@@@banned.Username</span>
+                                </span>
+                            </a>
+                            <form asp-action="UnbanMember"
+                                  asp-route-slug="@Model.Group.Slug"
+                                  method="post"
+                                  style="margin:0;">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="targetUserId" value="@banned.UserId" />
+                                <button type="submit" class="btn btn-outline">Gỡ ban</button>
+                            </form>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
         </div>
     </div>
 </div>

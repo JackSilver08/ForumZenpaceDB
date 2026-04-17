@@ -16,6 +16,8 @@ namespace ForumZenpace.Models
         public DbSet<Category> Categories { get; set; }
         public DbSet<Group> Groups { get; set; }
         public DbSet<GroupMember> GroupMembers { get; set; }
+        public DbSet<GroupBan> GroupBans { get; set; }
+        public DbSet<GroupInvitation> GroupInvitations { get; set; }
         public DbSet<Post> Posts { get; set; }
         public DbSet<Comment> Comments { get; set; }
         public DbSet<Like> Likes { get; set; }
@@ -64,6 +66,10 @@ namespace ForumZenpace.Models
 
             modelBuilder.Entity<GroupMember>()
                 .HasIndex(member => new { member.GroupId, member.UserId })
+                .IsUnique();
+
+            modelBuilder.Entity<GroupBan>()
+                .HasIndex(ban => new { ban.GroupId, ban.UserId })
                 .IsUnique();
 
             modelBuilder.Entity<Story>()
@@ -136,6 +142,35 @@ namespace ForumZenpace.Models
                 .HasOne(member => member.User)
                 .WithMany(user => user.GroupMemberships)
                 .HasForeignKey(member => member.UserId);
+
+            modelBuilder.Entity<GroupBan>()
+                .HasOne(ban => ban.Group)
+                .WithMany(group => group.Bans)
+                .HasForeignKey(ban => ban.GroupId);
+
+            modelBuilder.Entity<GroupBan>()
+                .HasOne(ban => ban.User)
+                .WithMany(user => user.GroupBans)
+                .HasForeignKey(ban => ban.UserId);
+
+            modelBuilder.Entity<GroupInvitation>()
+                .HasIndex(invitation => new { invitation.GroupId, invitation.ReceiverId, invitation.Status })
+                .IsUnique();
+
+            modelBuilder.Entity<GroupInvitation>()
+                .HasOne(invitation => invitation.Group)
+                .WithMany(group => group.Invitations)
+                .HasForeignKey(invitation => invitation.GroupId);
+
+            modelBuilder.Entity<GroupInvitation>()
+                .HasOne(invitation => invitation.Sender)
+                .WithMany(user => user.SentInvitations)
+                .HasForeignKey(invitation => invitation.SenderId);
+
+            modelBuilder.Entity<GroupInvitation>()
+                .HasOne(invitation => invitation.Receiver)
+                .WithMany(user => user.ReceivedInvitations)
+                .HasForeignKey(invitation => invitation.ReceiverId);
 
             modelBuilder.Entity<Post>()
                 .HasOne(post => post.Group)

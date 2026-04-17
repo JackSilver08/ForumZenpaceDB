@@ -330,6 +330,8 @@ namespace ForumZenpace.Services
                 .AsNoTracking()
                 .Include(notification => notification.ActorUser)
                 .Include(notification => notification.FriendRequest)
+                .Include(notification => notification.GroupInvitation)
+                    .ThenInclude(invitation => invitation.Group)
                 .Where(notification => notification.UserId == userId)
                 .OrderByDescending(notification => notification.CreatedAt)
                 .ToListAsync(cancellationToken);
@@ -643,6 +645,7 @@ namespace ForumZenpace.Services
         {
             var actorUser = actorUserOverride ?? notification.ActorUser;
             var friendRequest = friendRequestOverride ?? notification.FriendRequest;
+            var groupInvitation = notification.GroupInvitation;
 
             return new NotificationItemViewModel
             {
@@ -657,9 +660,12 @@ namespace ForumZenpace.Services
                 ActorAvatarUrl = actorUser?.Avatar,
                 FriendRequestId = friendRequest?.Id ?? notification.FriendRequestId,
                 StoryId = notification.StoryId,
+                GroupInvitationId = groupInvitation?.Id ?? notification.GroupInvitationId,
                 TargetUrl = notification.StoryId.HasValue ? StoryService.GetStoryViewerUrl(notification.StoryId.Value) : string.Empty,
                 ActionLabel = notification.StoryId.HasValue ? "Mo story" : string.Empty,
                 FriendRequestStatus = friendRequest?.Status ?? string.Empty,
+                GroupName = groupInvitation?.Group?.Name,
+                GroupSlug = groupInvitation?.Group?.Slug,
                 CanAcceptFriendRequest =
                     string.Equals(notification.Type, NotificationTypes.FriendRequest, StringComparison.OrdinalIgnoreCase) &&
                     friendRequest?.ReceiverId == currentUserId &&
@@ -667,7 +673,11 @@ namespace ForumZenpace.Services
                 CanDeclineFriendRequest =
                     string.Equals(notification.Type, NotificationTypes.FriendRequest, StringComparison.OrdinalIgnoreCase) &&
                     friendRequest?.ReceiverId == currentUserId &&
-                    string.Equals(friendRequest.Status, FriendRequestStatuses.Pending, StringComparison.OrdinalIgnoreCase)
+                    string.Equals(friendRequest.Status, FriendRequestStatuses.Pending, StringComparison.OrdinalIgnoreCase),
+                CanAcceptGroupInvitation =
+                    string.Equals(notification.Type, NotificationTypes.GroupInvitation, StringComparison.OrdinalIgnoreCase) &&
+                    groupInvitation?.ReceiverId == currentUserId &&
+                    string.Equals(groupInvitation.Status, GroupInvitationStatuses.Pending, StringComparison.OrdinalIgnoreCase)
             };
         }
 

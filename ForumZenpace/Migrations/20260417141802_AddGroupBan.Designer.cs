@@ -4,6 +4,7 @@ using ForumZenpace.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ForumZenpace.Migrations
 {
     [DbContext(typeof(ForumDbContext))]
-    partial class ForumDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260417141802_AddGroupBan")]
+    partial class AddGroupBan
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -331,46 +334,6 @@ namespace ForumZenpace.Migrations
                     b.ToTable("GroupBans");
                 });
 
-            modelBuilder.Entity("ForumZenpace.Models.GroupInvitation", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("GroupId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ReceiverId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("RespondedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("SenderId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ReceiverId");
-
-                    b.HasIndex("SenderId");
-
-                    b.HasIndex("GroupId", "ReceiverId", "Status")
-                        .IsUnique();
-
-                    b.ToTable("GroupInvitations");
-                });
-
             modelBuilder.Entity("ForumZenpace.Models.GroupMember", b =>
                 {
                     b.Property<int>("Id")
@@ -477,9 +440,6 @@ namespace ForumZenpace.Migrations
                     b.Property<int?>("FriendRequestId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("GroupInvitationId")
-                        .HasColumnType("int");
-
                     b.Property<bool>("IsRead")
                         .HasColumnType("bit");
 
@@ -501,8 +461,6 @@ namespace ForumZenpace.Migrations
                     b.HasIndex("ActorUserId");
 
                     b.HasIndex("FriendRequestId");
-
-                    b.HasIndex("GroupInvitationId");
 
                     b.HasIndex("StoryId");
 
@@ -1059,33 +1017,6 @@ namespace ForumZenpace.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("ForumZenpace.Models.GroupInvitation", b =>
-                {
-                    b.HasOne("ForumZenpace.Models.Group", "Group")
-                        .WithMany("Invitations")
-                        .HasForeignKey("GroupId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("ForumZenpace.Models.User", "Receiver")
-                        .WithMany("ReceivedInvitations")
-                        .HasForeignKey("ReceiverId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("ForumZenpace.Models.User", "Sender")
-                        .WithMany("SentInvitations")
-                        .HasForeignKey("SenderId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Group");
-
-                    b.Navigation("Receiver");
-
-                    b.Navigation("Sender");
-                });
-
             modelBuilder.Entity("ForumZenpace.Models.GroupMember", b =>
                 {
                     b.HasOne("ForumZenpace.Models.Group", "Group")
@@ -1155,11 +1086,6 @@ namespace ForumZenpace.Migrations
                         .HasForeignKey("FriendRequestId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("ForumZenpace.Models.GroupInvitation", "GroupInvitation")
-                        .WithMany()
-                        .HasForeignKey("GroupInvitationId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("ForumZenpace.Models.Story", "Story")
                         .WithMany()
                         .HasForeignKey("StoryId")
@@ -1174,8 +1100,6 @@ namespace ForumZenpace.Migrations
                     b.Navigation("ActorUser");
 
                     b.Navigation("FriendRequest");
-
-                    b.Navigation("GroupInvitation");
 
                     b.Navigation("Story");
 
@@ -1312,8 +1236,6 @@ namespace ForumZenpace.Migrations
                 {
                     b.Navigation("Bans");
 
-                    b.Navigation("Invitations");
-
                     b.Navigation("Members");
 
                     b.Navigation("Posts");
@@ -1370,8 +1292,6 @@ namespace ForumZenpace.Migrations
 
                     b.Navigation("ReceivedFriendRequests");
 
-                    b.Navigation("ReceivedInvitations");
-
                     b.Navigation("ReceivedMessageBlocks");
 
                     b.Navigation("Reports");
@@ -1381,8 +1301,6 @@ namespace ForumZenpace.Migrations
                     b.Navigation("SecondaryFriendships");
 
                     b.Navigation("SentFriendRequests");
-
-                    b.Navigation("SentInvitations");
 
                     b.Navigation("SentMessageBlocks");
 

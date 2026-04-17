@@ -3280,10 +3280,25 @@ body.profile-modal-open {
 }
 
 .detail-shell {
-    max-width: 980px;
+    width: min(100%, 1440px);
+    max-width: 1440px;
     margin: 0 auto;
     display: grid;
     gap: var(--space-5);
+}
+
+.group-detail-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(360px, 480px);
+    gap: var(--space-5);
+    align-items: start;
+    width: 100%;
+}
+
+@media (max-width: 1400px) {
+    .group-detail-layout {
+        grid-template-columns: 1fr;
+    }
 }
 
 .detail-card {

@@ -75,6 +75,9 @@ namespace ForumZenpace.Models
         public ICollection<StoryView> StoryViews { get; set; } = new List<StoryView>();
         public ICollection<Group> CreatedGroups { get; set; } = new List<Group>();
         public ICollection<GroupMember> GroupMemberships { get; set; } = new List<GroupMember>();
+        public ICollection<GroupBan> GroupBans { get; set; } = new List<GroupBan>();
+        public ICollection<GroupInvitation> SentInvitations { get; set; } = new List<GroupInvitation>();
+        public ICollection<GroupInvitation> ReceivedInvitations { get; set; } = new List<GroupInvitation>();
 
         /// <summary>Averaged embedding vector of liked posts, stored as JSON float array.</summary>
         public string? PreferenceVectorData { get; set; }
@@ -143,6 +146,8 @@ namespace ForumZenpace.Models
 
         public ICollection<Post> Posts { get; set; } = new List<Post>();
         public ICollection<GroupMember> Members { get; set; } = new List<GroupMember>();
+        public ICollection<GroupBan> Bans { get; set; } = new List<GroupBan>();
+        public ICollection<GroupInvitation> Invitations { get; set; } = new List<GroupInvitation>();
     }
 
     public class GroupMember
@@ -161,6 +166,44 @@ namespace ForumZenpace.Models
         public string Role { get; set; } = GroupMemberRoles.Member;
 
         public DateTime JoinedAt { get; set; } = DateTime.UtcNow;
+    }
+
+    public class GroupBan
+    {
+        public int Id { get; set; }
+
+        public int GroupId { get; set; }
+        [ForeignKey("GroupId")]
+        public Group Group { get; set; } = null!;
+
+        public int UserId { get; set; }
+        [ForeignKey("UserId")]
+        public User User { get; set; } = null!;
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    }
+
+    public class GroupInvitation
+    {
+        public int Id { get; set; }
+
+        public int GroupId { get; set; }
+        [ForeignKey("GroupId")]
+        public Group Group { get; set; } = null!;
+
+        public int SenderId { get; set; }
+        [ForeignKey("SenderId")]
+        public User Sender { get; set; } = null!;
+
+        public int ReceiverId { get; set; }
+        [ForeignKey("ReceiverId")]
+        public User Receiver { get; set; } = null!;
+
+        [Required, MaxLength(20)]
+        public string Status { get; set; } = GroupInvitationStatuses.Pending;
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime? RespondedAt { get; set; }
     }
 
     public class Post
@@ -386,6 +429,10 @@ namespace ForumZenpace.Models
         [ForeignKey("StoryId")]
         public Story? Story { get; set; }
 
+        public int? GroupInvitationId { get; set; }
+        [ForeignKey("GroupInvitationId")]
+        public GroupInvitation? GroupInvitation { get; set; }
+
         public bool IsRead { get; set; } = false;
         
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
@@ -503,6 +550,14 @@ namespace ForumZenpace.Models
         public const string FriendRequest = "FriendRequest";
         public const string FriendAccepted = "FriendAccepted";
         public const string StoryPublished = "StoryPublished";
+        public const string GroupInvitation = "GroupInvitation";
+    }
+
+    public static class GroupInvitationStatuses
+    {
+        public const string Pending = "Pending";
+        public const string Accepted = "Accepted";
+        public const string Declined = "Declined";
     }
 
     public static class StoryBackgroundStyles
@@ -515,8 +570,10 @@ namespace ForumZenpace.Models
 
     public static class GroupMemberRoles
     {
-        public const string Admin = "Admin";
-        public const string Member = "Member";
+        public const string Admin = "Admin";           // Trưởng nhóm
+        public const string ViceLeader = "ViceLeader"; // Phó nhóm
+        public const string Moderator = "Moderator";   // Quản trị viên
+        public const string Member = "Member";         // Thành viên
     }
 
     public static class GroupAccentColors

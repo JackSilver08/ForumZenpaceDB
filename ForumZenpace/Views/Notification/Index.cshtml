@@ -95,6 +95,28 @@
                                 </button>
                             }
 
+                            @if (notification.CanAcceptGroupInvitation && notification.GroupInvitationId.HasValue && !string.IsNullOrWhiteSpace(notification.GroupSlug))
+                            {
+                                <form asp-controller="Group" 
+                                      asp-action="AcceptInvitation"
+                                      asp-route-slug="@notification.GroupSlug"
+                                      method="post"
+                                      style="display:inline;">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="invitationId" value="@notification.GroupInvitationId.Value" />
+                                    <button type="submit" class="btn btn-primary btn-sm">Chấp nhận</button>
+                                </form>
+                                <form asp-controller="Group" 
+                                      asp-action="DeclineInvitation"
+                                      asp-route-slug="@notification.GroupSlug"
+                                      method="post"
+                                      style="display:inline;">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="invitationId" value="@notification.GroupInvitationId.Value" />
+                                    <button type="submit" class="btn btn-text btn-sm">Từ chối</button>
+                                </form>
+                            }
+
                             @if (!string.IsNullOrWhiteSpace(notification.TargetUrl))
                             {
                                 <a href="@notification.TargetUrl" class="btn btn-outline btn-sm">

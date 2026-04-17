@@ -363,11 +363,15 @@ namespace ForumZenpace.Models
         public string? ActorAvatarUrl { get; set; }
         public int? FriendRequestId { get; set; }
         public int? StoryId { get; set; }
+        public int? GroupInvitationId { get; set; }
         public string TargetUrl { get; set; } = string.Empty;
         public string ActionLabel { get; set; } = string.Empty;
         public string FriendRequestStatus { get; set; } = string.Empty;
         public bool CanAcceptFriendRequest { get; set; }
         public bool CanDeclineFriendRequest { get; set; }
+        public bool CanAcceptGroupInvitation { get; set; }
+        public string? GroupName { get; set; }
+        public string? GroupSlug { get; set; }
     }
 
     public class NotificationPageViewModel
@@ -499,9 +503,33 @@ namespace ForumZenpace.Models
         public GroupListItemViewModel Group { get; set; } = new();
         public IReadOnlyList<Post> Posts { get; set; } = Array.Empty<Post>();
         public IReadOnlyList<GroupMemberSummaryViewModel> Members { get; set; } = Array.Empty<GroupMemberSummaryViewModel>();
+        public IReadOnlyList<GroupBanSummaryViewModel> BannedMembers { get; set; } = Array.Empty<GroupBanSummaryViewModel>();
+        public IReadOnlyList<InvitableFriendSummaryViewModel> AvailableFriendsToInvite { get; set; } = Array.Empty<InvitableFriendSummaryViewModel>();
         public bool CanCreatePosts { get; set; }
+        public bool CanLeaveGroup { get; set; }
+        public bool CanManageBans { get; set; }
+        public bool CanInviteFriends { get; set; }
+        public bool IsBanned { get; set; }
         public string SuccessMessage { get; set; } = string.Empty;
         public string ErrorMessage { get; set; } = string.Empty;
+        public int? CurrentUserId { get; set; }
+        public string? CurrentUserRole { get; set; }
+    }
+
+    public class InvitableFriendSummaryViewModel
+    {
+        public int UserId { get; set; }
+        public string Username { get; set; } = string.Empty;
+        public string DisplayName { get; set; } = string.Empty;
+        public string? AvatarUrl { get; set; }
+    }
+
+    public class GroupBanSummaryViewModel
+    {
+        public int UserId { get; set; }
+        public string Username { get; set; } = string.Empty;
+        public string DisplayName { get; set; } = string.Empty;
+        public string? AvatarUrl { get; set; }
     }
 
     public class GroupMemberSummaryViewModel
