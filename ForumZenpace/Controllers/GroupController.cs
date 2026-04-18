@@ -1019,16 +1019,31 @@ namespace ForumZenpace.Controllers
                 return RedirectToAction(nameof(Details), new { slug = invitation.Group.Slug });
             }
 
-            // Add to group
-            _context.GroupMembers.Add(new GroupMember
-            {
-                GroupId = invitation.GroupId,
-                UserId = currentUserId,
-                Role = GroupMemberRoles.Member,
-                JoinedAt = DateTime.UtcNow
-            });
+            var isAlreadyMember = await _context.GroupMembers
+                .AnyAsync(member => member.GroupId == invitation.GroupId && member.UserId == currentUserId, cancellationToken);
 
-            invitation.Status = GroupInvitationStatuses.Accepted;
+            if (!isAlreadyMember)
+            {
+                _context.GroupMembers.Add(new GroupMember
+                {
+                    GroupId = invitation.GroupId,
+                    UserId = currentUserId,
+                    Role = GroupMemberRoles.Member,
+                    JoinedAt = DateTime.UtcNow
+                });
+            }
+
+            var hasAcceptedInvitation = await _context.GroupInvitations
+                .AnyAsync(i =>
+                    i.GroupId == invitation.GroupId &&
+                    i.ReceiverId == currentUserId &&
+                    i.Status == GroupInvitationStatuses.Accepted &&
+                    i.Id != invitation.Id,
+                    cancellationToken);
+
+            invitation.Status = hasAcceptedInvitation
+                ? GroupInvitationStatuses.Declined
+                : GroupInvitationStatuses.Accepted;
             invitation.RespondedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync(cancellationToken);
@@ -1062,8 +1077,33 @@ namespace ForumZenpace.Controllers
                 return RedirectToAction(nameof(Details), new { slug = invitation.Group.Slug });
             }
 
-            invitation.Status = GroupInvitationStatuses.Declined;
-            invitation.RespondedAt = DateTime.UtcNow;
+            var existingDeclinedInvitation = await _context.GroupInvitations
+                .FirstOrDefaultAsync(i =>
+                    i.GroupId == invitation.GroupId &&
+                    i.ReceiverId == currentUserId &&
+                    i.Status == GroupInvitationStatuses.Declined &&
+                    i.Id != invitation.Id,
+                    cancellationToken);
+
+            if (existingDeclinedInvitation is null)
+            {
+                invitation.Status = GroupInvitationStatuses.Declined;
+                invitation.RespondedAt = DateTime.UtcNow;
+            }
+            else
+            {
+                var relatedNotifications = await _context.Notifications
+                    .Where(notification => notification.GroupInvitationId == invitation.Id)
+                    .ToListAsync(cancellationToken);
+
+                foreach (var notification in relatedNotifications)
+                {
+                    notification.GroupInvitationId = existingDeclinedInvitation.Id;
+                }
+
+                existingDeclinedInvitation.RespondedAt = DateTime.UtcNow;
+                _context.GroupInvitations.Remove(invitation);
+            }
 
             await _context.SaveChangesAsync(cancellationToken);
 
